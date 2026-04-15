@@ -1,0 +1,3700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Erek's Everquest Parser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080c18;
+    --bg2:       #0e1428;
+    --bg3:       #141a30;
+    --border:    #1e2a4a;
+    --accent:    #00d4ff;
+    --accent2:   #ff6b35;
+    --accent3:   #7cff6b;
+    --accent4:   #ffd700;
+    --text:      #c8d8f0;
+    --text-dim:  #5a6a8a;
+    --danger:    #ff4444;
+    --mono:      'Share Tech Mono', monospace;
+    --sans:      'Exo 2', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Titlebar ── */
+  #titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    height: 36px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+    flex-shrink: 0;
+  }
+  #titlebar .title {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  #titlebar .title span { color: var(--accent2); }
+  .win-btns {
+    display: flex;
+    gap: 6px;
+    -webkit-app-region: no-drag;
+  }
+  .win-btn {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .win-btn:hover { opacity: 0.7; }
+  .win-btn.close { background: var(--danger); }
+  .win-btn.min { background: var(--accent4); }
+
+  /* ── Nav Tabs ── */
+  #nav {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    padding: 10px 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    font-family: var(--mono);
+  }
+  .nav-tab:hover { color: var(--text); background: var(--bg3); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Status Bar ── */
+  #status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+  .status-dot.combat { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); animation: pulse 0.6s infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+  #status-text { color: var(--text-dim); }
+  #log-path-display { color: var(--accent); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 400px; }
+
+  /* ── Main Content ── */
+  #content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab-panel {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+  }
+  .tab-panel.active { display: flex; }
+
+  /* ── Setup Tab ── */
+  .setup-wrap {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .field-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .field-row label {
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 120px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  input[type=text], input[type=number], select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .btn {
+    padding: 8px 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.danger:hover { background: var(--danger); color: #fff; }
+  .btn.success { border-color: var(--accent3); color: var(--accent3); }
+  .btn.success:hover { background: var(--accent3); color: var(--bg); }
+  .btn.warn { border-color: var(--accent2); color: var(--accent2); }
+  .btn.warn:hover { background: var(--accent2); color: var(--bg); }
+
+  /* ── DPS Tab ── */
+  .dps-wrap {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .dps-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .dps-stat {
+    text-align: center;
+  }
+  .dps-stat .val {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .dps-stat .lbl {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  #combat-indicator {
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    border-radius: 20px;
+    background: var(--bg3);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  #combat-indicator.active {
+    background: rgba(255,107,53,0.15);
+    color: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .player-row:first-child { border-color: var(--accent4); }
+  .player-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: rgba(0,212,255,0.06);
+    transition: width 0.4s ease;
+    pointer-events: none;
+  }
+  .player-row:first-child .player-bar { background: rgba(255,215,0,0.06); }
+  .player-rank {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 20px;
+    flex-shrink: 0;
+  }
+  .player-name {
+    font-weight: 700;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player-name.self { color: var(--accent3); }
+  .player-dmg { font-family: var(--mono); font-size: 13px; color: var(--accent); width: 90px; text-align: right; }
+  .player-dps { font-family: var(--mono); font-size: 11px; color: var(--text-dim); width: 70px; text-align: right; }
+  .player-pct { font-family: var(--mono); font-size: 11px; color: var(--accent4); width: 40px; text-align: right; }
+
+  #no-combat {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+  }
+  #no-combat .big { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+  /* ── Buff Timers Tab ── */
+  .buff-wrap {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+  .buff-active {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .buff-config {
+    width: 320px;
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .buff-timer-item {
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .buff-timer-item.expiring { border-color: var(--danger); }
+  .buff-timer-item.expiring .buff-progress { background: var(--danger); }
+  .buff-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .buff-name { font-weight: 700; font-size: 13px; }
+  .buff-time { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .buff-time.expiring { color: var(--danger); animation: pulse 0.5s infinite alternate; }
+  .buff-track {
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .buff-progress {
+    height: 100%;
+    background: var(--accent);
+    transition: width 1s linear;
+    border-radius: 2px;
+  }
+
+  .buff-def-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .buff-def-name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .buff-def-dur { font-family: var(--mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  .toggle { width: 14px; height: 14px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+
+  /* ── Triggers Tab ── */
+  .triggers-wrap {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  .trigger-list {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .trigger-editor {
+    width: 340px;
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .trigger-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .trigger-item:hover { border-color: var(--accent); }
+  .trigger-item.selected { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+  .trigger-info { flex: 1; min-width: 0; }
+  .trigger-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+  .trigger-pattern { font-family: var(--mono); font-size: 10px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trigger-tts { font-size: 11px; color: var(--accent2); margin-top: 3px; }
+  .trigger-badges { display: flex; gap: 4px; flex-shrink: 0; }
+  .badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    font-weight: 700;
+  }
+  .badge.tts { background: rgba(255,107,53,0.2); color: var(--accent2); }
+  .badge.off { background: rgba(90,106,138,0.2); color: var(--text-dim); }
+  .badge.on { background: rgba(124,255,107,0.2); color: var(--accent3); }
+
+  /* ── PQDI lookup ── */
+  .pqdi-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .pqdi-results {
+    max-height: 160px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .pqdi-result {
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .pqdi-result:last-child { border-bottom: none; }
+  .pqdi-result:hover { background: var(--bg3); }
+  .pqdi-result .spell-name { font-weight: 600; margin-bottom: 2px; }
+  .pqdi-result .spell-cast { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+  .pqdi-result .spell-dur { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+  /* ── Log Tab ── */
+  .log-wrap {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+  }
+  #log-output {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .log-line { color: var(--text-dim); margin-bottom: 1px; }
+  .log-line.trigger-match { color: var(--accent2); }
+  .log-line.combat { color: var(--accent3); }
+
+  .form-section { margin-bottom: 20px; }
+  .form-section .section-title { font-size: 10px; margin-bottom: 10px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  /* Combat alerts */
+  #combat-alert-overlay {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .combat-alert-banner {
+    padding: 10px 28px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    animation: alert-in 0.2s ease, alert-out 0.4s ease 2.6s forwards;
+    min-width: 260px;
+  }
+  .combat-alert-banner.enrage {
+    background: rgba(255, 100, 30, 0.95);
+    color: #fff;
+    border: 2px solid #ff6418;
+    box-shadow: 0 0 30px rgba(255,100,30,0.6);
+  }
+  .combat-alert-banner.rampage {
+    background: rgba(220, 30, 30, 0.95);
+    color: #fff;
+    border: 2px solid var(--danger);
+    box-shadow: 0 0 30px rgba(220,30,30,0.6);
+  }
+  .combat-alert-banner.rampage-hit {
+    background: rgba(180, 0, 0, 0.98);
+    color: #fff;
+    border: 2px solid #ff0000;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8);
+    font-size: 20px;
+  }
+  .combat-alert-banner.wild-rampage {
+    background: rgba(160, 0, 200, 0.95);
+    color: #fff;
+    border: 2px solid #cc00ff;
+    box-shadow: 0 0 30px rgba(160,0,200,0.6);
+  }
+  @keyframes alert-in {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes alert-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  /* Drag handles */
+  .drag-handle {
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.15s;
+    position: relative;
+    z-index: 10;
+  }
+  .drag-handle:hover, .drag-handle.dragging { background: var(--accent); }
+  .drag-handle-h {
+    width: 4px;
+    cursor: col-resize;
+  }
+  .drag-handle-h::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px; height: 40px;
+    background: transparent;
+  }
+  .drag-handle-v {
+    height: 4px;
+    cursor: row-resize;
+    width: 100%;
+  }
+  .drag-handle-v::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 16px; width: 40px;
+    background: transparent;
+  }
+
+  /* Cooldown bar */
+  .cooldown-cell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg2);
+    padding: 6px 10px;
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
+    cursor: default;
+  }
+  .cooldown-cell.raid-warning {
+    animation: raid-pulse 0.5s infinite alternate;
+  }
+  @keyframes raid-pulse {
+    from { background: var(--bg2); }
+    to   { background: rgba(180,40,40,0.25); }
+  }
+  .cooldown-cell.raid-warning .cooldown-label,
+  .cooldown-cell.raid-warning .cooldown-time { color: var(--accent2); }
+  .cooldown-prog.raid { background: var(--accent2); }
+  .cooldown-cell.ready {
+    background: rgba(124,255,107,0.1);
+  }
+  .cooldown-cell.active {
+    background: var(--bg2);
+  }
+  .cooldown-cell.available {
+    background: rgba(0,212,255,0.05);
+  }
+  .cooldown-time.available { color: var(--accent3); font-size: 11px; letter-spacing: 1px; }
+  .cooldown-prog.available { background: var(--accent3); opacity: 0.25; }
+  .cooldown-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+  .cooldown-time {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .cooldown-time.ready { color: var(--accent3); }
+  .cooldown-track {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--bg3);
+  }
+  .cooldown-prog {
+    height: 100%;
+    background: var(--accent);
+    transition: width 1s linear;
+  }
+  .cooldown-prog.ready { background: var(--accent3); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ── Compact timer rows ── */
+  .timer-row-compact {
+    position: relative;
+    height: 22px;
+    margin: 2px 4px;
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: default;
+  }
+  .timer-row-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 3px;
+  }
+  .timer-row-bg.buff    { background: #0e2018; }
+  .timer-row-bg.debuff  { background: #150e24; }
+  .timer-row-bg.expiring { background: #2a0a0a; }
+  .timer-row-prog {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    border-radius: 3px;
+    opacity: 0.4;
+    transition: width 1s linear;
+  }
+  .timer-row-prog.buff    { background: var(--accent3); }
+  .timer-row-prog.debuff  { background: #9b59b6; }
+  .timer-row-prog.expiring { background: var(--danger); }
+  .timer-row-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .timer-row-name {
+    font-size: 11px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+  }
+  .timer-row-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .timer-row-who {
+    font-size: 10px;
+    color: #ffe066;
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+  .timer-group-pill {
+    font-size: 9px;
+    color: #dce8f0;
+    background: rgba(52,152,219,0.15);
+    border: 1px solid rgba(52,152,219,0.4);
+    border-radius: 3px;
+    padding: 0 4px;
+    white-space: nowrap;
+    font-family: var(--mono);
+  }
+  .timer-row-time {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+    min-width: 40px;
+    text-align: right;
+  }
+  .timer-row-time.buff    { color: var(--accent3); }
+  .timer-row-time.debuff  { color: #9b59b6; }
+  .timer-row-time.expiring { color: var(--danger); }
+  .timer-row-dismiss {
+    background: none; border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 0 1px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .timer-row-compact:hover .timer-row-dismiss { opacity: 0.6; }
+  .timer-row-dismiss:hover { opacity: 1 !important; color: var(--danger); }
+
+  /* ── Group headers (dashboard) ── */
+  .timer-group-section { margin-bottom: 1px; }
+  .timer-group-hdr {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 1px;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-family: var(--mono);
+    cursor: pointer;
+    user-select: none;
+  }
+  .timer-group-hdr:hover { color: var(--accent); }
+  .timer-group-arrow { font-size: 7px; width: 8px; flex-shrink: 0; }
+
+  /* ── Compact DPS rows ── */
+  .player-row-compact {
+    position: relative;
+    height: 22px;
+    margin: 2px 4px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .player-row-bg-c {
+    position: absolute;
+    inset: 0;
+    background: var(--bg3);
+    border-radius: 3px;
+  }
+  .player-row-bar-c {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    border-radius: 3px;
+    opacity: 0.2;
+    background: var(--accent);
+    transition: width 0.4s ease;
+  }
+  .player-row-bar-c.self  { background: var(--accent3); }
+  .player-row-bar-c.top   { background: var(--accent4); }
+  .player-row-bar-c.enemy { background: var(--accent2); }
+  .player-name-c.enemy    { color: var(--accent2); }
+  .enemy-separator { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 2px; padding: 4px 6px 2px; }
+  .player-row-text-c {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    gap: 0;
+    font-family: var(--mono);
+  }
+  .player-rank-c { font-size: 9px; color: var(--text-dim); width: 16px; flex-shrink: 0; }
+  .player-name-c { font-size: 11px; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-name-c.self { color: var(--accent3); }
+  .player-name-c.top  { color: var(--accent4); }
+  .player-dps-c  { font-size: 10px; color: var(--accent); width: 58px; text-align: right; flex-shrink: 0; }
+  .player-dmg-c  { font-size: 10px; color: var(--text-dim); width: 52px; text-align: right; flex-shrink: 0; }
+  .player-pct-c  { font-size: 9px;  color: var(--accent4); width: 26px; text-align: right; flex-shrink: 0; }
+  .player-hits-c { font-size: 9px;  color: #333355;         width: 24px; text-align: right; flex-shrink: 0; }
+
+  /* Compact DPS header */
+  .dps-header-compact {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px 10px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .dps-stat-c { display: flex; align-items: baseline; gap: 3px; }
+  .dps-val-c   { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .dps-val-c.dmg { color: var(--accent2); }
+  .dps-val-c.time { color: var(--text-dim); }
+  .dps-lbl-c   { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* ── Loot Panel ── */
+  .loot-cell {
+    background: var(--bg3);
+    padding: 6px 10px;
+    min-width: 150px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .loot-cell.closing { animation: loot-pulse 0.6s infinite alternate; }
+  @keyframes loot-pulse { from { background: var(--bg3); } to { background: rgba(255,107,53,0.12); } }
+  .loot-item-name {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+  }
+  .loot-winner-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .loot-status-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-weight: normal;
+  }
+  .loot-status-badge.mem { background: rgba(124,255,107,0.15); color: var(--accent3); }
+  .loot-status-badge.app { background: rgba(255,215,0,0.15);   color: var(--accent4); }
+  .loot-status-badge.alt { background: rgba(90,106,138,0.2);   color: var(--text-dim); }
+  .loot-winner-amount { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+  .loot-no-bids { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .loot-shadow { font-family: var(--mono); font-size: 9px; color: var(--accent2); }
+  .loot-countdown { font-family: var(--mono); font-size: 11px; color: var(--accent2); font-weight: bold; }
+
+  /* ── Loot Tab ── */
+  .loot-setup-wrap { padding: 24px; overflow-y: auto; flex: 1; }
+
+  /* ── Timers Tab groups ── */
+  .timer-def-group { margin: 0 6px 6px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .timer-def-group-hdr {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 8px;
+    background: var(--bg2);
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .timer-def-group-hdr:hover { background: var(--bg3); }
+  .timer-def-group-arrow { font-size: 8px; color: var(--text-dim); width: 10px; }
+  .timer-def-group-name { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: 1px; flex: 1; }
+  .timer-def-group-count { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+  .timer-def-group-menu { font-size: 11px; color: var(--text-dim); cursor: pointer; padding: 0 3px; }
+  .timer-def-group-menu:hover { color: var(--accent); }
+
+  .timer-def-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px;
+    height: 28px;
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    cursor: grab;
+    transition: background 0.1s;
+  }
+  .timer-def-item:hover { background: #141830; }
+  .timer-def-item.drag-over-top { border-top: 2px solid var(--accent); }
+  .timer-def-item.drag-over-bottom { border-bottom: 2px solid var(--accent); }
+  .timer-def-item.dragging { opacity: 0.35; }
+  .timer-def-grip { color: var(--border); font-size: 11px; cursor: grab; flex-shrink: 0; letter-spacing: -2px; user-select: none; }
+  .timer-def-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .timer-def-dot.buff { background: var(--accent3); }
+  .timer-def-dot.debuff { background: #9b59b6; }
+  .timer-def-name { font-family: var(--mono); font-size: 11px; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .timer-def-dur { font-family: var(--mono); font-size: 9px; color: var(--text-dim); width: 48px; text-align: right; flex-shrink: 0; }
+  .timer-def-toggle { width: 12px; height: 12px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+  .timer-def-btn { background: none; border: none; cursor: pointer; font-size: 10px; color: var(--text-dim); padding: 1px 3px; border-radius: 2px; transition: color 0.15s; }
+  .timer-def-btn:hover.edit { color: var(--accent); }
+  .timer-def-btn:hover.del  { color: var(--danger); }
+
+  .timer-def-add-group {
+    display: flex; align-items: center; gap: 6px;
+    margin: 4px 6px;
+    padding: 4px 8px;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+  }
+  .timer-def-add-group:hover { border-color: var(--accent); color: var(--accent); }
+
+  .group-drop-zone {
+    height: 8px;
+    margin: 0 6px;
+    border-radius: 3px;
+    transition: background 0.1s;
+  }
+  .group-drop-zone.drag-over { background: rgba(0,212,255,0.2); height: 16px; }
+
+  .flash {
+    animation: flash-anim 0.4s ease;
+  }
+  @keyframes flash-anim {
+    0% { background: rgba(0,212,255,0.3); }
+    100% { background: transparent; }
+  }
+</style>
+</head>
+<body>
+
+<div id="titlebar">
+  <div class="title">EREK'S<span>//</span>EQ PARSER</div>
+  <div class="win-btns">
+    <button class="win-btn min" onclick="ipcRenderer.invoke('minimize-window')"></button>
+    <button class="win-btn close" onclick="ipcRenderer.invoke('close-window')"></button>
+  </div>
+</div>
+
+<div id="nav">
+  <div class="nav-tab active" data-tab="dashboard">Dashboard</div>
+  <div class="nav-tab" data-tab="setup">Setup</div>
+  <div class="nav-tab" data-tab="timers">Timers</div>
+  <div class="nav-tab" data-tab="triggers">Triggers</div>
+  <div class="nav-tab" data-tab="loot">Loot</div>
+  <div class="nav-tab" data-tab="log">Log</div>
+</div>
+
+<div id="status-bar">
+  <div class="status-dot" id="watch-dot"></div>
+  <span id="status-text">Not watching</span>
+  <span id="log-path-display"></span>
+  <span id="profile-indicator" style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-left:8px;"></span>
+  <div style="flex:1"></div>
+  <div class="status-dot" id="combat-dot"></div>
+  <span id="combat-status-text" style="color:var(--text-dim);font-size:11px">No combat</span>
+</div>
+
+<div id="content">
+
+  <!-- ── SETUP TAB ── -->
+  <div class="tab-panel" id="tab-setup">
+    <div class="setup-wrap">
+      <div class="form-section">
+        <div class="section-title">Log File</div>
+        <div class="field-row">
+          <label>Log Path</label>
+          <input type="text" id="log-path-input" placeholder="/home/paul/Games/everquest/eqlog_Erek_pq.proj.txt"/>
+          <button class="btn" onclick="startWatching()">Watch</button>
+          <button class="btn danger" onclick="stopWatching()">Stop</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-left:130px;">
+          Enter the full Linux path to your EQ log file.
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Character</div>
+        <div class="field-row">
+          <label>Your Name</label>
+          <input type="text" id="char-name" placeholder="Erek" style="max-width:200px;"/>
+        </div>
+        <div class="field-row">
+          <label>Class</label>
+          <select id="char-class" style="max-width:200px;" onchange="updateAaSection(this.value); updateDiscSection(this.value, [])">
+            <option value="">— Select class —</option>
+            <option value="Bard">Bard</option>
+            <option value="Beastlord">Beastlord</option>
+            <option value="Berserker">Berserker</option>
+            <option value="Cleric">Cleric</option>
+            <option value="Druid">Druid</option>
+            <option value="Enchanter">Enchanter</option>
+            <option value="Magician">Magician</option>
+            <option value="Monk">Monk</option>
+            <option value="Necromancer">Necromancer</option>
+            <option value="Paladin">Paladin</option>
+            <option value="Ranger">Ranger</option>
+            <option value="Rogue">Rogue</option>
+            <option value="Shadowknight">Shadowknight</option>
+            <option value="Shaman">Shaman</option>
+            <option value="Warrior">Warrior</option>
+            <option value="Wizard">Wizard</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Warder Name</label>
+          <input type="text" id="warder-name" placeholder="Erek's warder" style="max-width:240px;"/>
+          <span style="font-size:10px;color:var(--text-dim);font-family:var(--mono);">Tells from this name are ignored</span>
+        </div>
+        <div class="field-row">
+          <label>AA Spell Extend</label>
+          <input type="number" id="spell-extend-pct" placeholder="0" min="0" max="100" style="max-width:80px;"/> 
+          <span style="font-size:10px;color:var(--text-dim);font-family:var(--mono);">% — extends all buff durations</span>
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Audio</div>
+        <div class="field-row">
+          <label>TTS Voice</label>
+          <select id="tts-rate" style="max-width:200px;">
+            <option value="0.8">Slow</option>
+            <option value="1.0" selected>Normal</option>
+            <option value="1.3">Fast</option>
+          </select>
+        </div>
+        <div class="field-row" style="margin-top:8px;">
+          <label></label>
+          <button class="btn" onclick="testTTS()">Test Voice</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+          <input type="checkbox" id="announce-skillups" class="toggle"/>
+          <label style="font-size:12px;cursor:pointer;">Announce skillups via voice</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="checkbox" id="rampage-change-enabled" class="toggle"/>
+          <label style="font-size:12px;cursor:pointer;">Rampage Change — announce target switches via voice</label>
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">AA Abilities Cooldowns</div>
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:10px;">Shown in the AA panel on the dashboard. Announces via voice when ready.</div>
+
+        <div id="aa-row-paragon" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="checkbox" id="cooldown-paragon" class="toggle"/>
+          <label style="font-size:12px;width:160px;">Paragon of Spirit</label>
+          <input type="number" id="cooldown-paragon-dur" placeholder="900" style="max-width:70px;" title="Cooldown in seconds"/>
+          <span style="font-size:10px;color:var(--text-dim);">sec</span>
+        </div>
+        <div id="aa-row-mgb" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="checkbox" id="cooldown-mgb" class="toggle"/>
+          <label style="font-size:12px;width:160px;">Mass Group Buff</label>
+          <input type="number" id="cooldown-mgb-dur" placeholder="4320" style="max-width:70px;" title="Cooldown in seconds"/>
+          <span style="font-size:10px;color:var(--text-dim);">sec</span>
+        </div>
+        <div id="aa-row-frenzy" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="checkbox" id="cooldown-frenzy" class="toggle"/>
+          <label style="font-size:12px;width:160px;">Frenzy of Spirit</label>
+          <input type="number" id="cooldown-frenzy-dur" placeholder="600" style="max-width:70px;" title="Cooldown in seconds"/>
+          <span style="font-size:10px;color:var(--text-dim);">sec</span>
+        </div>
+        <div id="aa-no-class-msg" style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:4px 0;">Select a class above to see available AA abilities.</div>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Disciplines</div>
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:10px;">Enabled disciplines appear in the AA Timers panel. Click ✎ to configure a trigger line and cooldown.</div>
+        <div id="disc-section-content">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:4px 0;">Select a class above to see available disciplines.</div>
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Raid Event Timers</div>
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:10px;">Repeating AOE warnings for raid bosses. Timer resets each time the trigger fires; stops on the death message.</div>
+        <div id="raid-timer-def-list" style="margin-bottom:10px;"></div>
+        <button class="btn success" style="padding:3px 10px;font-size:9px;" onclick="showRaidTimerModal()">+ Add Boss</button>
+      </div>
+
+      <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Actions</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn success" onclick="saveSettings()">Save Settings</button>
+          <button class="btn warn" onclick="clearCombat()">Reset DPS</button>
+          <button class="btn" onclick="exportTimers()">Export Timers</button>
+          <button class="btn" onclick="importTimers()">Import Timers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD TAB ── -->
+  <div class="tab-panel active" id="tab-dashboard">
+    <div id="dashboard-container" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- Row 0: Zone / Raid Timers (full width, toggleable) -->
+      <div id="panel-zone-timers" style="flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 12px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <div class="section-title" style="margin:0;border:none;font-size:9px;color:var(--accent4);">ZONE / RAID TIMERS</div>
+        </div>
+        <div style="padding:6px 16px;display:flex;gap:40px;align-items:center;min-height:38px;flex-wrap:wrap;">
+          <div id="zone-name-block" style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">Zone</span>
+            <span id="zone-name-display" style="font-family:var(--mono);font-size:12px;color:var(--text);">—</span>
+          </div>
+          <div id="zone-afk-block" style="display:none;align-items:center;gap:10px;">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">AFK Kick</span>
+            <span id="zone-afk-countdown" style="font-family:var(--mono);font-size:16px;font-weight:bold;color:var(--accent4);">--:--</span>
+          </div>
+          <div id="portal-timers-row" style="display:contents;"></div>
+        </div>
+      </div>
+
+      <!-- AA Timers: always visible when any AA is enabled -->
+      <div id="panel-aa-timers" style="display:none;flex-direction:column;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent4);">AA TIMERS</div>
+        </div>
+        <div id="aa-timer-bar" style="display:flex;align-items:stretch;gap:1px;background:var(--border);min-height:52px;"></div>
+      </div>
+
+      <!-- Loot Bidding Panel (hidden when no active bids) -->
+      <div id="panel-loot" style="display:none;flex-direction:column;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent4);">BIDDING</div>
+          <div style="flex:1;"></div>
+          <button class="btn" style="padding:2px 8px;font-size:9px;" onclick="clearBiddingPanel()" title="Manually clear all active bids">✕ Clear</button>
+        </div>
+        <div id="loot-items-bar" style="display:flex;align-items:stretch;gap:1px;background:var(--border);flex-wrap:wrap;padding:0;min-height:62px;"></div>
+      </div>
+
+      <!-- Row 1: Cooldown bar (full width, hidden when empty) -->
+      <div id="panel-cooldowns" style="display:none;flex-direction:column;overflow:hidden;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div id="cooldown-bar" style="display:flex;align-items:stretch;gap:1px;background:var(--border);min-height:44px;"></div>
+        <div id="raid-timer-bar" style="display:none;align-items:stretch;gap:1px;background:var(--border);min-height:44px;"></div>
+      </div>
+
+      <!-- Row 2: Buff timers (full width, hidden when empty, up to 4 cols) -->
+      <div id="panel-buffs" style="display:none;flex-direction:column;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div class="section-title" style="margin:0;border:none;font-size:10px;">BUFFS</div>
+          <button class="btn success" style="padding:2px 8px;font-size:9px;" onclick="showBuffModal()">+ Add</button>
+        </div>
+        <div style="padding:4px;">
+          <div id="active-buffs" style="display:grid;gap:0;align-items:start;"></div>
+        </div>
+      </div>
+
+      <!-- Row 3: Debuff timers (full width, hidden when empty, up to 4 cols) -->
+      <div id="panel-debuffs" style="display:none;flex-direction:column;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent2);">DEBUFFS</div>
+          <button class="btn warn" style="padding:2px 8px;font-size:9px;" onclick="showDebuffModal()">+ Add</button>
+        </div>
+        <div style="padding:4px;">
+          <div id="active-debuffs" style="display:grid;gap:0;align-items:start;"></div>
+        </div>
+      </div>
+
+      <!-- Row 4: DPS Meter (full width, always visible) -->
+      <div id="panel-dps" style="display:flex;flex-direction:column;overflow:hidden;min-height:0;flex:1;">
+        <div class="dps-header-compact">
+          <span class="section-title" style="margin:0;border:none;font-size:9px;flex-shrink:0;">DPS</span>
+          <div class="dps-stat-c"><span class="dps-val-c" id="total-dps">0</span><span class="dps-lbl-c">dps</span></div>
+          <div class="dps-stat-c"><span class="dps-val-c dmg" id="total-dmg">0</span><span class="dps-lbl-c">dmg</span></div>
+          <div class="dps-stat-c"><span class="dps-val-c time" id="elapsed-time">0s</span><span class="dps-lbl-c">time</span></div>
+          <div style="flex:1;"></div>
+          <div class="dps-stat-c" id="enemy-dps-stat" style="display:none;">
+            <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-right:4px;">inc</span>
+            <span class="dps-val-c" id="enemy-dps" style="font-size:12px;color:var(--accent2);">0</span><span class="dps-lbl-c">dps</span>
+          </div>
+          <div id="combat-indicator">IDLE</div>
+        </div>
+        <div style="padding:10px;overflow-y:auto;flex:1;min-height:0;">
+          <div id="player-list">
+            <div id="no-combat">
+              <div class="big">⚔</div>
+              Waiting for combat data...
+            </div>
+          </div>
+          <div id="enemy-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── BUFF MODAL ── -->
+  <div id="buff-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:24px;width:420px;max-height:85vh;overflow-y:auto;">
+      <div class="section-title">Add Buff Timer</div>
+      <div style="margin-bottom:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;">
+        <div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-bottom:8px;letter-spacing:2px;">PQDI IMPORT</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">Find spell on <a href="#" onclick="ipcRenderer.send('open-pqdi', 15);return false;" style="color:var(--accent);">pqdi.cc</a>, copy the ID from the URL (e.g. pqdi.cc/spell/<b style="color:var(--accent);">2634</b>)</div>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="pqdi-spell-id" placeholder="Spell ID e.g. 2634" style="font-size:11px;max-width:160px;"/>
+          <button class="btn success" onclick="importByPqdiId('buff')" style="padding:6px 12px;">Import</button>
+          <button class="btn" onclick="ipcRenderer.send('open-pqdi', 15)" style="padding:6px 10px;font-size:10px;">Browse BST</button>
+          <button class="btn" onclick="ipcRenderer.send('open-pqdi', null)" style="padding:6px 10px;font-size:10px;">All Classes</button>
+        </div>
+        <div id="pqdi-import-status" style="font-size:10px;color:var(--text-dim);margin-top:6px;font-family:var(--mono);"></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">BUFF NAME</div>
+        <input type="text" id="buff-name" placeholder="e.g. Virtue"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">LOG TRIGGER PATTERN (regex)</div>
+        <input type="text" id="buff-pattern" placeholder="e.g. You feel virtuous"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Text from your log when buff lands. Start with <span style="color:var(--accent);font-family:var(--mono);">\] </span> e.g. <span style="color:var(--accent);font-family:var(--mono);">\] You feel virtuous</span></div>
+        <div id="buff-fadetext-hint" style="font-size:10px;color:var(--text-dim);margin-top:3px;display:none;">Spell fades: <span id="buff-fades-text" style="color:var(--accent3);font-family:var(--mono);"></span> — auto-cleared when worn off</div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DURATION (seconds)</div>
+        <input type="number" id="buff-duration" placeholder="3600" style="max-width:120px;"/>
+      </div>
+      <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="buff-is-group-spell" class="toggle"/>
+        <label style="font-size:12px;cursor:pointer;" for="buff-is-group-spell">Group spell (shows "Group · &lt;anchor&gt;" on dashboard)</label>
+      </div>
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="buff-expire-alert" class="toggle"/>
+        <label style="font-size:12px;cursor:pointer;" for="buff-expire-alert">Alert when expiring</label>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn success" onclick="saveBuffDef()">Save</button>
+        <button class="btn" onclick="hideBuffModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEBUFF MODAL ── -->
+  <div id="debuff-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent2);border-radius:8px;padding:24px;width:420px;max-height:85vh;overflow-y:auto;">
+      <div class="section-title" style="color:var(--accent2);">Add Debuff Timer</div>
+      <div style="margin-bottom:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;">
+        <div style="font-size:10px;color:var(--accent2);font-family:var(--mono);margin-bottom:8px;letter-spacing:2px;">PQDI IMPORT</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">Find spell on <a href="#" onclick="ipcRenderer.send('open-pqdi', null);return false;" style="color:var(--accent2);">pqdi.cc</a>, copy the ID from the URL (e.g. pqdi.cc/spell/<b style="color:var(--accent2);">2634</b>)</div>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="pqdi-debuff-spell-id" placeholder="Spell ID e.g. 2634" style="font-size:11px;max-width:160px;"/>
+          <button class="btn warn" onclick="importByPqdiId('debuff')" style="padding:6px 12px;">Import</button>
+          <button class="btn" onclick="ipcRenderer.send('open-pqdi', null)" style="padding:6px 10px;font-size:10px;">Browse</button>
+        </div>
+        <div id="pqdi-debuff-import-status" style="font-size:10px;color:var(--text-dim);margin-top:6px;font-family:var(--mono);"></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DEBUFF NAME</div>
+        <input type="text" id="debuff-name" placeholder="e.g. Sha's Lethargy"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">SPELL CAST NAME <span style="font-weight:normal;text-transform:none;letter-spacing:0;">(optional — if different from above)</span></div>
+        <input type="text" id="debuff-castname" placeholder="Spell name as in 'You begin casting X.' — defaults to Debuff Name"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">LOG TRIGGER PATTERN (regex)</div>
+        <input type="text" id="debuff-pattern" placeholder="e.g. (.+?) has been slowed"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Always start with <span style="color:var(--accent);font-family:var(--mono);">\] (.+?)</span> to capture mob name e.g. <span style="color:var(--accent);font-family:var(--mono);">\] (.+?) feels lethargic</span></div>
+        <div id="debuff-fadetext-hint" style="font-size:10px;color:var(--text-dim);margin-top:3px;display:none;">Spell fades: <span id="debuff-fades-text" style="color:var(--accent3);font-family:var(--mono);"></span> — auto-cleared when worn off</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DURATION (seconds)</div>
+        <input type="number" id="debuff-duration" placeholder="120" style="max-width:120px;"/>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn warn" onclick="saveDebuffDef()">Save</button>
+        <button class="btn" onclick="hideDebuffModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DISCIPLINE EDIT MODAL ── -->
+  <div id="disc-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:24px;width:400px;">
+      <div class="section-title" style="color:var(--accent);" id="disc-edit-title">Edit Discipline</div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">LOG TRIGGER LINE</div>
+        <input type="text" id="disc-edit-detect" placeholder="e.g. You enter a defensive stance."/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">The line that appears in your log when this discipline activates.</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">COOLDOWN (seconds)</div>
+        <input type="number" id="disc-edit-cooldown" placeholder="1800" style="max-width:120px;" min="1"/>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn success" onclick="saveDiscEdit()">Save</button>
+        <button class="btn" onclick="hideDiscEditModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RAID TIMER MODAL ── -->
+  <div id="raid-timer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent2);border-radius:8px;padding:24px;width:440px;max-height:85vh;overflow-y:auto;">
+      <div class="section-title" style="color:var(--accent2);" id="raid-timer-modal-title">Add Raid Event Timer</div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">BOSS / EVENT NAME</div>
+        <input type="text" id="raid-timer-name" placeholder="e.g. Lord Inquisitor Seru"/>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">AOE TRIGGER LINE</div>
+        <input type="text" id="raid-timer-aoe" placeholder="e.g. stricken by torturing winds"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Distinctive part of the AOE message — omit the player name so it matches anyone hit (e.g. "stricken by torturing winds" matches both "You are stricken..." and "Ezekial is stricken..."). Timer resets on each match.</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">INTERVAL (seconds)</div>
+          <input type="number" id="raid-timer-interval" placeholder="45" min="1" style="width:100%;"/>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">WARNING LEAD (seconds)</div>
+          <input type="number" id="raid-timer-lead" placeholder="10" min="1" style="width:100%;"/>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DEATH / STOP PATTERN <span style="font-weight:normal;text-transform:none;letter-spacing:0;">(optional)</span></div>
+        <input type="text" id="raid-timer-death" placeholder="e.g. Lord Inquisitor Seru has been slain"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Timer cancels when this appears in the log. Format: "Mob Name has been slain" — matches regardless of who lands the kill.</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn warn" onclick="saveRaidTimerDef()">Save</button>
+        <button class="btn" onclick="hideRaidTimerModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TIMERS TAB ── -->
+  <div class="tab-panel" id="tab-timers">
+
+    <!-- Zone timer display options -->
+    <div style="flex-shrink:0;padding:6px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:20px;">
+      <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;flex-shrink:0;">Zone Timers</span>
+      <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim);cursor:pointer;">
+        <input type="checkbox" id="zt-show-zone" class="toggle" onchange="saveZoneTimerOptions()"> Zone Name
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim);cursor:pointer;">
+        <input type="checkbox" id="zt-show-afk" class="toggle" onchange="saveZoneTimerOptions()"> AFK Kick
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-dim);cursor:pointer;">
+        <input type="checkbox" id="zt-show-portals" class="toggle" onchange="saveZoneTimerOptions()"> Portal Timers
+      </label>
+    </div>
+
+    <div style="display:flex;flex:1;overflow:hidden;">
+
+      <!-- Buff Definitions -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+        <div style="padding:7px 10px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <div class="section-title" style="margin:0;border:none;flex:1;">Buff Timers</div>
+          <button class="btn success" style="padding:3px 10px;font-size:9px;" onclick="showBuffModal()">+ Timer</button>
+          <button class="btn" style="padding:3px 10px;font-size:9px;border-color:var(--accent4);color:var(--accent4);" onclick="addTimerGroup('buff')">+ Group</button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:4px 0;">
+          <div id="buff-def-list-tab"></div>
+          <div class="timer-def-add-group" onclick="addTimerGroup('buff')">+ Add group...</div>
+        </div>
+      </div>
+
+      <!-- Debuff Definitions -->
+      <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:7px 10px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <div class="section-title" style="margin:0;border:none;color:var(--accent2);flex:1;">Debuff Timers</div>
+          <button class="btn warn" style="padding:3px 10px;font-size:9px;" onclick="showDebuffModal()">+ Timer</button>
+          <button class="btn" style="padding:3px 10px;font-size:9px;border-color:var(--accent4);color:var(--accent4);" onclick="addTimerGroup('debuff')">+ Group</button>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:4px 0;">
+          <div id="debuff-def-list-tab"></div>
+          <div class="timer-def-add-group" onclick="addTimerGroup('debuff')">+ Add group...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRIGGERS TAB ── -->
+  <div class="tab-panel" id="tab-triggers">
+    <div class="triggers-wrap">
+      <div class="trigger-list">
+        <div class="section-title">Triggers</div>
+        <div id="trigger-list-items"></div>
+      </div>
+      <div class="trigger-editor">
+        <div class="section-title" id="editor-title">New Trigger</div>
+
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">PQDI SPELL LOOKUP</div>
+          <div class="pqdi-wrap">
+            <input type="text" id="pqdi-trigger-search" placeholder="Spell name..."/>
+            <button class="btn" onclick="pqdiTriggerSearch()" style="padding:6px 12px;">Search</button>
+          </div>
+          <div class="pqdi-results" id="pqdi-trigger-results"></div>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">TRIGGER NAME</div>
+          <input type="text" id="trigger-name" placeholder="e.g. Rampage Warning"/>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">LOG PATTERN (regex)</div>
+          <input type="text" id="trigger-pattern" placeholder="e.g. goes on a RAMPAGE"/>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">TTS TEXT (spoken aloud)</div>
+          <input type="text" id="trigger-tts" placeholder="e.g. Rampage incoming"/>
+        </div>
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="trigger-enabled" class="toggle" checked/>
+          <label style="font-size:12px;cursor:pointer;" for="trigger-enabled">Enabled</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn success" onclick="saveTrigger()">Save</button>
+          <button class="btn" onclick="testTrigger()">Test TTS</button>
+          <button class="btn" onclick="newTrigger()">New</button>
+          <button class="btn danger" onclick="deleteTrigger()" id="delete-trigger-btn" style="display:none;">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOOT TAB ── -->
+  <div class="tab-panel" id="tab-loot">
+    <div class="loot-setup-wrap">
+      <div class="form-section">
+        <div class="section-title">Loot Bidding</div>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">Configure guild loot message patterns. Settings are global (not per-character).</p>
+
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="loot-enabled" class="toggle"/>
+          <label style="font-size:12px;cursor:pointer;" for="loot-enabled">Enable loot tracking</label>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">BIDS OPEN KEYWORD</div>
+            <input type="text" id="loot-bids-open-kw" placeholder="BIDS OPEN"/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Keyword in guild message that opens bidding on a list of items.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">MEMBER STATUSES <span style="font-weight:normal;text-transform:none;letter-spacing:0;">(priority order, comma-separated)</span></div>
+            <input type="text" id="loot-bid-statuses" placeholder="mem, app, alt"/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">First listed = highest priority. Members beat applicants/alts even with lower bids.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">CLOSING KEYWORD</div>
+            <input type="text" id="loot-closing-kw" placeholder="CLOSING IN"/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Start of countdown message, e.g. "CLOSING IN 15s!" or "CLOSING IN LAST CALL!"</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">SOLD KEYWORD</div>
+            <input type="text" id="loot-sold-kw" placeholder="SOLD!"/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Clears all active bids from the panel when seen.</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">BIDS OPEN ITEM SEPARATOR</div>
+            <input type="text" id="loot-bids-open-sep" placeholder=","/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Separates item names in the bids-open announcement (e.g. comma).</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">STATUS MESSAGE ITEM DELIMITER</div>
+            <input type="text" id="loot-item-delimiter" placeholder=" // "/>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Separates items in CLOSING IN and SOLD messages (e.g. " // ").</div>
+          </div>
+        </div>
+
+        <button class="btn success" onclick="saveLootConfig()">Save Settings</button>
+      </div>
+
+      <div class="form-section" style="margin-top:16px;">
+        <div class="section-title">Example Message Formats</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:2;">
+          <div><span style="color:var(--accent4);">Bids open:</span> &nbsp;Stardrakin tells the guild, 'Item One, Item Two - <span style="color:var(--accent);">BIDS OPEN</span>'</div>
+          <div><span style="color:var(--accent4);">Player bid:</span> &nbsp;Nightwish tells the guild, 'Soul Essence of Aten Ha Ra <span style="color:var(--accent);">mem</span> 125'</div>
+          <div><span style="color:var(--accent4);">Countdown: </span> &nbsp;Balthemal tells the guild, '<span style="color:var(--accent);">CLOSING IN</span> 15s! Item (Winner - 125 dkp) // ...'</div>
+          <div><span style="color:var(--accent4);">Sold:      </span> &nbsp;Balthemal tells the guild, '<span style="color:var(--accent);">SOLD!</span> Item (Winner - 125 dkp) // ...'</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOG TAB ── -->
+  <div class="tab-panel" id="tab-log">
+    <div class="log-wrap">
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+        <div class="section-title" style="margin:0;border:none;">Live Log</div>
+        <div style="flex:1"></div>
+        <label style="font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="log-autoscroll" checked class="toggle"/> Auto-scroll
+        </label>
+        <button class="btn danger" onclick="clearLog()" style="padding:4px 10px;font-size:10px;">Clear</button>
+      </div>
+      <div id="log-output"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="combat-alert-overlay"></div>
+
+<!-- ── GROUP NAME MODAL ── -->
+<div id="group-name-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--accent4);border-radius:8px;padding:24px;width:320px;">
+    <div class="section-title" style="color:var(--accent4);margin-bottom:16px;">New Group</div>
+    <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:8px;">GROUP NAME</div>
+    <input type="text" id="group-name-input" placeholder="e.g. Raid, Self, Slows..." style="margin-bottom:16px;" onkeydown="if(event.key==='Enter')saveGroupName();if(event.key==='Escape')hideGroupModal();"/>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" style="border-color:var(--accent4);color:var(--accent4);" onclick="saveGroupName()">Create</button>
+      <button class="btn" onclick="hideGroupModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let watching = false;
+let currentTriggerId = null;
+let activeBuffTimers = {};
+let activeDebuffTimers = {};
+let lastCombatSummary = null;
+let charName = '';
+let currentProfileKey = 'default';
+
+function profileKeyFromPath(logPath) {
+  if (!logPath) return 'default';
+  const base = (logPath || '').replace(/\\/g, '/').split('/').pop().replace(/\.txt$/i, '');
+  const m = base.match(/^eqlog_(.+)$/i);
+  return m ? m[1] : (base || 'default');
+}
+
+function updateProfileIndicator() {
+  const el = document.getElementById('profile-indicator');
+  if (el) el.textContent = currentProfileKey !== 'default' ? `[${currentProfileKey}]` : '';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const logPath = await ipcRenderer.invoke('store-get', 'logPath');
+  if (logPath) document.getElementById('log-path-input').value = logPath;
+
+  // Sync profile key
+  currentProfileKey = profileKeyFromPath(logPath);
+  await ipcRenderer.invoke('store-set', 'currentProfileKey', currentProfileKey);
+  updateProfileIndicator();
+
+  // Load profile settings
+  const profile = await ipcRenderer.invoke('get-profile') || {};
+
+  charName = profile.charName || '';
+  document.getElementById('char-name').value = charName;
+  document.getElementById('char-class').value = profile.charClass || '';
+
+  document.getElementById('warder-name').value = profile.warderName || '';
+
+  const spellExtend = profile.spellExtendPct || 0;
+  document.getElementById('spell-extend-pct').value = spellExtend;
+
+  const cdSettings = profile.cooldownSettings || {};
+  updateAaSection(profile.charClass || '');
+  document.getElementById('cooldown-paragon').checked = !!cdSettings.paragonEnabled;
+  document.getElementById('cooldown-paragon-dur').value = cdSettings.paragonDuration || 900;
+  document.getElementById('cooldown-mgb').checked = !!cdSettings.mgbEnabled;
+  document.getElementById('cooldown-mgb-dur').value = cdSettings.mgbDuration || 4320;
+  document.getElementById('cooldown-frenzy').checked = !!cdSettings.frenzyEnabled;
+  document.getElementById('cooldown-frenzy-dur').value = cdSettings.frenzyDuration || 600;
+  document.getElementById('announce-skillups').checked = !!profile.announceSkillups;
+  document.getElementById('rampage-change-enabled').checked = !!profile.rampageChangeEnabled;
+
+  discOverrides = profile.discOverrides || {};
+  updateDiscSection(profile.charClass || '', profile.enabledDiscs || []);
+
+  const zto = profile.zoneTimerOptions || {};
+  document.getElementById('zt-show-zone').checked    = zto.showZone    !== false;
+  document.getElementById('zt-show-afk').checked     = zto.showAfk     !== false;
+  document.getElementById('zt-show-portals').checked = zto.showPortals !== false;
+  applyZoneTimerOptions();
+
+  buildAaDefs(cdSettings, profile.enabledDiscs || [], profile.charClass || '');
+  renderAAPanel();
+
+  startCooldownTick();
+
+  renderTriggers();
+  renderBuffDefs();
+  renderDebuffDefs();
+  renderRaidDefs();
+  renderActiveBuffs();
+  renderActiveDebuffs();
+  await loadLootConfig();
+  startBuffTick();
+}
+
+// ── Tab Navigation ────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+async function startWatching() {
+  const path = document.getElementById('log-path-input').value.trim();
+  if (!path) return;
+  const newKey = profileKeyFromPath(path);
+  if (newKey !== currentProfileKey) {
+    currentProfileKey = newKey;
+    await ipcRenderer.invoke('store-set', 'currentProfileKey', currentProfileKey);
+    updateProfileIndicator();
+    // Reload profile settings for new character
+    const profile = await ipcRenderer.invoke('get-profile') || {};
+    charName = profile.charName || '';
+    document.getElementById('char-name').value = charName;
+    document.getElementById('char-class').value = profile.charClass || '';
+    document.getElementById('warder-name').value = profile.warderName || '';
+    document.getElementById('spell-extend-pct').value = profile.spellExtendPct || 0;
+    document.getElementById('announce-skillups').checked = !!profile.announceSkillups;
+    document.getElementById('rampage-change-enabled').checked = !!profile.rampageChangeEnabled;
+    const cdSettings = profile.cooldownSettings || {};
+    updateAaSection(profile.charClass || '');
+    document.getElementById('cooldown-paragon').checked = !!cdSettings.paragonEnabled;
+    document.getElementById('cooldown-paragon-dur').value = cdSettings.paragonDuration || 900;
+    document.getElementById('cooldown-mgb').checked = !!cdSettings.mgbEnabled;
+    document.getElementById('cooldown-mgb-dur').value = cdSettings.mgbDuration || 4320;
+    document.getElementById('cooldown-frenzy').checked = !!cdSettings.frenzyEnabled;
+    document.getElementById('cooldown-frenzy-dur').value = cdSettings.frenzyDuration || 600;
+    discOverrides = profile.discOverrides || {};
+    updateDiscSection(profile.charClass || '', profile.enabledDiscs || []);
+    buildAaDefs(cdSettings, profile.enabledDiscs || [], profile.charClass || ''); renderAAPanel();
+    renderBuffDefs(); renderDebuffDefs();
+  }
+  ipcRenderer.send('start-watching', path);
+}
+
+function stopWatching() {
+  ipcRenderer.send('stop-watching');
+  watching = false;
+  document.getElementById('watch-dot').className = 'status-dot';
+  document.getElementById('status-text').textContent = 'Stopped';
+}
+
+function getCdSettings() {
+  return {
+    paragonEnabled:  document.getElementById('cooldown-paragon').checked,
+    paragonDuration: parseInt(document.getElementById('cooldown-paragon-dur').value) || 900,
+    mgbEnabled:      document.getElementById('cooldown-mgb').checked,
+    mgbDuration:     parseInt(document.getElementById('cooldown-mgb-dur').value) || 4320,
+    frenzyEnabled:   document.getElementById('cooldown-frenzy').checked,
+    frenzyDuration:  parseInt(document.getElementById('cooldown-frenzy-dur').value) || 600,
+  };
+}
+
+function saveSettings() {
+  const path = document.getElementById('log-path-input').value.trim();
+  charName = document.getElementById('char-name').value.trim();
+  const warderName = document.getElementById('warder-name').value.trim();
+  const charClass = document.getElementById('char-class').value;
+  const spellExtend = parseInt(document.getElementById('spell-extend-pct').value) || 0;
+  ipcRenderer.invoke('store-set', 'logPath', path);
+
+  // Update profile key if path changed
+  const newKey = profileKeyFromPath(path);
+  if (newKey !== currentProfileKey) {
+    currentProfileKey = newKey;
+    ipcRenderer.invoke('store-set', 'currentProfileKey', currentProfileKey);
+    updateProfileIndicator();
+  }
+
+  const cdSettings = getCdSettings();
+  const enabledDiscs = getEnabledDiscs();
+  ipcRenderer.invoke('set-profile', {
+    charName,
+    warderName,
+    charClass,
+    spellExtendPct: spellExtend,
+    cooldownSettings: cdSettings,
+    announceSkillups: document.getElementById('announce-skillups').checked,
+    rampageChangeEnabled: document.getElementById('rampage-change-enabled').checked,
+    enabledDiscs,
+    discOverrides,
+    discTriggers: getEnabledDiscTriggers(charClass, enabledDiscs),
+  });
+  buildAaDefs(cdSettings, enabledDiscs, charClass);
+  renderAAPanel();
+  showToast('Settings saved');
+}
+
+function testTTS() {
+  ipcRenderer.send('speak', 'EQ Parser is ready. Welcome to Norrath.');
+}
+
+function clearCombat() {
+  lastCombatSummary = null;
+  renderDPS(null);
+}
+
+// ── IPC Events ────────────────────────────────────────────────────────────────
+ipcRenderer.on('watch-started', (e, path) => {
+  watching = true;
+  document.getElementById('watch-dot').className = 'status-dot active';
+  document.getElementById('status-text').textContent = 'Watching';
+  document.getElementById('log-path-display').textContent = path;
+  ipcRenderer.invoke('store-set', 'logPath', path);
+});
+
+ipcRenderer.on('watch-error', (e, msg) => {
+  document.getElementById('status-text').textContent = 'Error: ' + msg;
+});
+
+ipcRenderer.on('log-line', (e, line) => {
+  appendLog(line, '');
+});
+
+ipcRenderer.on('trigger-fired', (e, { trigger, line }) => {
+  appendLog(line, 'trigger-match');
+  showToast(`⚡ ${trigger.name}`);
+});
+
+ipcRenderer.on('combat-start', () => {
+  document.getElementById('combat-dot').className = 'status-dot combat';
+  document.getElementById('combat-status-text').textContent = 'In Combat';
+  document.getElementById('combat-indicator').className = 'active';
+  document.getElementById('combat-indicator').textContent = 'COMBAT';
+});
+
+ipcRenderer.on('combat-end', (e, summary) => {
+  document.getElementById('combat-dot').className = 'status-dot';
+  document.getElementById('combat-status-text').textContent = 'No combat';
+  document.getElementById('combat-indicator').className = '';
+  document.getElementById('combat-indicator').textContent = 'IDLE';
+  lastCombatSummary = summary;
+  renderDPS(summary);
+});
+
+ipcRenderer.on('combat-update', (e, summary) => {
+  lastCombatSummary = summary;
+  renderDPS(summary);
+});
+
+ipcRenderer.on('buff-started', (e, { id, name, recipient, endsAt, durationSeconds, group, isGroupSpell }) => {
+  activeBuffTimers[id] = { name, recipient, endsAt, durationSeconds, group: group || 'General', isGroupSpell: !!isGroupSpell };
+  renderActiveBuffs();
+});
+
+ipcRenderer.on('buff-expired', (e, { id, name }) => {
+  delete activeBuffTimers[id];
+  renderActiveBuffs();
+  showToast(`⏰ ${name} expired!`);
+});
+
+ipcRenderer.on('debuff-started', (e, { id, name, mobName, endsAt, durationSeconds, group }) => {
+  activeDebuffTimers[id] = { name, mobName, endsAt, durationSeconds, group: group || 'General' };
+  renderActiveDebuffs();
+});
+
+ipcRenderer.on('debuff-expired', (e, { id, name, mobName }) => {
+  delete activeDebuffTimers[id];
+  renderActiveDebuffs();
+  showToast(`↑ ${name} wore off ${mobName}`);
+});
+
+ipcRenderer.on('debuffs-cleared', (e, { mobName, ids }) => {
+  ids.forEach(id => delete activeDebuffTimers[id]);
+  renderActiveDebuffs();
+  showToast(`💀 ${mobName} died — debuffs cleared`);
+});
+
+ipcRenderer.on('warder-died', (e, { warderName }) => {
+  showToast(`☠ ${warderName} has died!`, 5000);
+});
+
+ipcRenderer.on('warder-buffs-cleared', (e, { warderName, cleared }) => {
+  cleared.forEach(({ id }) => delete activeBuffTimers[id]);
+  renderActiveBuffs();
+  showToast(`🐾 ${cleared.length} buff(s) cleared for ${warderName}`, 4000);
+});
+
+// ── Cooldowns ─────────────────────────────────────────────────────────────────
+let activeCooldowns = {};
+
+ipcRenderer.on('cooldown-started', (e, { id, name, endsAt, durationSeconds }) => {
+  activeCooldowns[id] = { name, endsAt, durationSeconds };
+  renderCooldownBar();
+  renderAAPanel();
+});
+
+ipcRenderer.on('cooldown-ready', (e, { id, name }) => {
+  if (activeCooldowns[id]) activeCooldowns[id].ready = true;
+  renderCooldownBar();
+  renderAAPanel();
+  showToast(`✨ ${name} ready!`, 4000);
+});
+
+ipcRenderer.on('skillup', (e, { skill, level }) => {
+  showToast(`📈 ${skill} → ${level}`, 3000);
+});
+
+ipcRenderer.on('raid-timer-started', (e, { id, name, endsAt, interval, warningLeadTime }) => {
+  activeRaidTimers[id] = { name, endsAt, interval, warningLeadTime, inWarning: false };
+  renderRaidTimerBar();
+});
+
+ipcRenderer.on('raid-timer-warning', (e, { id }) => {
+  if (activeRaidTimers[id]) activeRaidTimers[id].inWarning = true;
+  const cell = document.getElementById('rt-' + id);
+  if (cell) cell.classList.add('raid-warning');
+});
+
+ipcRenderer.on('raid-timer-stopped', (e, { id }) => {
+  delete activeRaidTimers[id];
+  renderRaidTimerBar();
+});
+
+function renderCooldownBar() {
+  const panel = document.getElementById('panel-cooldowns');
+  const bar = document.getElementById('cooldown-bar');
+  const entries = Object.entries(activeCooldowns);
+  if (entries.length === 0) {
+    panel.style.display = 'none';
+    bar.innerHTML = '';
+    return;
+  }
+  const aaIds = new Set(aaDefs.map(d => d.id));
+  const nonAA = entries.filter(([id]) => !aaIds.has(id));
+  if (nonAA.length === 0) { panel.style.display = 'none'; bar.innerHTML = ''; return; }
+  panel.style.display = 'flex';
+  bar.style.display = 'flex';
+  bar.innerHTML = nonAA.map(([id, cd]) => {
+    const remaining = Math.max(0, Math.round((cd.endsAt - Date.now()) / 1000));
+    const pct = cd.ready ? 100 : Math.round(((cd.durationSeconds - remaining) / cd.durationSeconds) * 100);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const timeStr = cd.ready ? 'READY' : (mins > 0 ? `${mins}m ${secs}s` : `${secs}s`);
+    return `
+      <div class="cooldown-cell ${cd.ready ? 'ready' : 'active'}" id="cd-${id}" onclick="ipcRenderer.send('dismiss-cooldown', '${id}');delete activeCooldowns['${id}'];renderCooldownBar();" title="Click to dismiss">
+        <div class="cooldown-label">${cd.name}</div>
+        <div class="cooldown-time ${cd.ready ? 'ready' : ''}" id="cd-time-${id}">${timeStr}</div>
+        <div class="cooldown-track"><div class="cooldown-prog ${cd.ready ? 'ready' : ''}" id="cd-prog-${id}" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRaidTimerBar() {
+  const panel = document.getElementById('panel-cooldowns');
+  const bar   = document.getElementById('raid-timer-bar');
+  if (!bar) return;
+  const entries = Object.entries(activeRaidTimers);
+  if (entries.length === 0) {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    // Hide panel only if cooldown bar is also empty
+    const cooldownBar = document.getElementById('cooldown-bar');
+    if (cooldownBar && !cooldownBar.innerHTML.trim()) panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'flex';
+  bar.style.display = 'flex';
+  bar.innerHTML = entries.map(([id, rt]) => {
+    const remaining = Math.max(0, Math.round((rt.endsAt - Date.now()) / 1000));
+    const pct = Math.round(((rt.interval - remaining) / rt.interval) * 100);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    const warningClass = rt.inWarning ? 'raid-warning' : 'active';
+    return `
+      <div class="cooldown-cell ${warningClass}" id="rt-${id}" onclick="ipcRenderer.send('dismiss-raid-timer','${id}');delete activeRaidTimers['${id}'];renderRaidTimerBar();" title="Click to dismiss">
+        <div class="cooldown-label">${rt.name}</div>
+        <div class="cooldown-time" id="rt-time-${id}">${timeStr}</div>
+        <div class="cooldown-track"><div class="cooldown-prog raid" id="rt-prog-${id}" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+// ── Discipline Definitions ─────────────────────────────────────────────────────
+const DISC_DEFS = {
+  Bard: [
+    { id: 'disc_resistant',  name: 'Resistant',  level: 51, duration: 60,  cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',   name: 'Fearless',   level: 54, duration: 11,  cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_deftdance',  name: 'Deft Dance', level: 55, duration: 10,  cooldown: 4320, desc: 'Auto dodge and dual-wield' },
+    { id: 'disc_puretone',   name: 'Pure Tone',  level: 60, duration: 240, cooldown: 4320, desc: 'Best instrument bonuses (28 modifier)' },
+  ],
+  Beastlord: [
+    { id: 'disc_resistant',        name: 'Resistant',        level: 30, duration: 60, cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',         name: 'Fearless',         level: 40, duration: 11, cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_protective_spirit', name: 'Protective Spirit', level: 55, duration: 12, cooldown: 600, detect: 'A protective spirit guards you.', desc: 'Reduces damage to ~1/3' },
+    { id: 'disc_beastial_rage',    name: 'Beastial Rage',    level: 60, duration: 12, cooldown: 1800, desc: '4x base weapon damage' },
+  ],
+  Monk: [
+    { id: 'disc_resistant',    name: 'Resistant',    level: 30, duration: 60, cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',     name: 'Fearless',     level: 40, duration: 11, cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_stonestance',  name: 'Stone Stance', level: 51, duration: 12, cooldown: 360,  desc: 'Greatly decreased melee damage' },
+    { id: 'disc_thunderkick',  name: 'Thunder Kick', level: 52, duration: 0,  cooldown: 240,  desc: 'Enhanced Flying Kick (until next use)' },
+    { id: 'disc_whirlwind',    name: 'Whirlwind',    level: 53, duration: 9,  cooldown: 3600, desc: 'Riposte every attack' },
+    { id: 'disc_voiddance',    name: 'Void Dance',   level: 54, duration: 8,  cooldown: 3300, desc: 'Avoid melee attacks' },
+    { id: 'disc_innerflame',   name: 'Inner Flame',  level: 56, duration: 12, cooldown: 1560, desc: 'Improved damage' },
+    { id: 'disc_hundredfists', name: 'Hundred Fists', level: 57, duration: 15, cooldown: 1800, desc: 'Increased attack rate' },
+    { id: 'disc_silentfist',   name: 'Silent Fist',  level: 59, duration: 0,  cooldown: 540,  desc: 'Enhanced Dragon Punch (until next use)' },
+    { id: 'disc_ashenhand',    name: 'Ashen Hand',   level: 60, duration: 0,  cooldown: 4320, desc: 'Enhanced Eagle Strike (until next use)' },
+  ],
+  Paladin: [
+    { id: 'disc_resistant',      name: 'Resistant',      level: 51, duration: 60,  cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',       name: 'Fearless',        level: 54, duration: 11,  cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_holyforge',      name: 'Holy Forge',      level: 55, duration: 300, cooldown: 4320, desc: 'Critical hits & crippling blows vs undead' },
+    { id: 'disc_sanctification', name: 'Sanctification',  level: 60, duration: 18,  cooldown: 4320, desc: '100% spell resistance' },
+  ],
+  Ranger: [
+    { id: 'disc_resistant',    name: 'Resistant',    level: 51, duration: 60,  cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',     name: 'Fearless',     level: 54, duration: 11,  cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_trueshot',     name: 'Trueshot',     level: 55, duration: 120, cooldown: 4320, desc: 'Bow damage and accuracy boost' },
+    { id: 'disc_weaponshield', name: 'Weapon Shield', level: 60, duration: 18, cooldown: 4320, desc: 'Parries all front melee attacks' },
+  ],
+  Rogue: [
+    { id: 'disc_resistant',     name: 'Resistant',     level: 30, duration: 60, cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',      name: 'Fearless',      level: 40, duration: 11, cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_counterattack', name: 'Counterattack', level: 53, duration: 9,  cooldown: 3600, desc: 'Automatic riposte' },
+    { id: 'disc_deadeye',       name: 'Dead Eye',      level: 54, duration: 14, cooldown: 1800, desc: 'Guaranteed hits' },
+    { id: 'disc_nimble',        name: 'Nimble',        level: 55, duration: 12, cooldown: 1800, desc: 'Dodge attacks' },
+    { id: 'disc_kinesthetics',  name: 'Kinesthetics',  level: 57, duration: 18, cooldown: 1800, desc: '4 attacks/round, guaranteed' },
+    { id: 'disc_blindingspeed', name: 'Blinding Speed', level: 58, duration: 15, cooldown: 1800, desc: 'Stackable haste' },
+    { id: 'disc_duelist',       name: 'Duelist',       level: 59, duration: 12, cooldown: 1800, desc: 'Quadruple damage' },
+  ],
+  Shadowknight: [
+    { id: 'disc_resistant',  name: 'Resistant',  level: 30, duration: 60, cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',   name: 'Fearless',   level: 40, duration: 11, cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_unholyaura', name: 'Unholy Aura', level: 55, duration: 0,  cooldown: 4320, desc: '25% Harm Touch boost (until next use)' },
+    { id: 'disc_leechcurse', name: 'Leech Curse', level: 60, duration: 15, cooldown: 4320, desc: 'Heal self for every melee hit' },
+  ],
+  Warrior: [
+    { id: 'disc_resistant',    name: 'Resistant',    level: 30, duration: 60,  cooldown: 3600, desc: '+3 to all resistances (up to +10)' },
+    { id: 'disc_fearless',     name: 'Fearless',     level: 40, duration: 11,  cooldown: 3600, desc: 'Immunity to fear spells' },
+    { id: 'disc_evasive',      name: 'Evasive',      level: 52, duration: 180, cooldown: 900,  desc: 'Avoid attacks / lower hit rate' },
+    { id: 'disc_charge',       name: 'Charge',       level: 53, duration: 14,  cooldown: 1800, desc: 'Increased accuracy' },
+    { id: 'disc_mightystrike', name: 'Mighty Strike', level: 54, duration: 10, cooldown: 3600, desc: 'Every attack crits' },
+    { id: 'disc_defensive',    name: 'Defensive',    level: 55, duration: 180, cooldown: 900,  desc: 'Reduce damage / lower output' },
+    { id: 'disc_furious',      name: 'Furious',      level: 56, duration: 9,   cooldown: 3600, desc: 'Riposte every blow' },
+    { id: 'disc_precision',    name: 'Precision',    level: 57, duration: 180, cooldown: 1800, desc: 'Increased hit rate' },
+    { id: 'disc_felstrike',    name: 'Felstrike',    level: 58, duration: 12,  cooldown: 1800, desc: 'Damage increase' },
+    { id: 'disc_fortitude',    name: 'Fortitude',    level: 59, duration: 8,   cooldown: 3600, desc: 'Evasion boost' },
+    { id: 'disc_aggressive',   name: 'Aggressive',   level: 60, duration: 180, cooldown: 1620, desc: 'Increased damage / take more' },
+  ],
+};
+
+// ── AA Timer Panel ─────────────────────────────────────────────────────────────
+let aaDefs = []; // { id, name, duration }
+
+function buildAaDefs(cdSettings, enabledDiscs, charClass) {
+  aaDefs = [];
+  if (cdSettings.paragonEnabled) aaDefs.push({ id: 'paragon', name: 'Paragon of Spirit', duration: cdSettings.paragonDuration || 900 });
+  if (cdSettings.mgbEnabled)     aaDefs.push({ id: 'mgb',     name: 'Mass Group Buff',   duration: cdSettings.mgbDuration    || 4320 });
+  if (cdSettings.frenzyEnabled)  aaDefs.push({ id: 'frenzy',  name: 'Frenzy of Spirit',  duration: cdSettings.frenzyDuration  || 600 });
+  const classDefs = DISC_DEFS[charClass] || [];
+  (enabledDiscs || []).forEach(discId => {
+    const def = classDefs.find(d => d.id === discId);
+    if (def) {
+      const override = discOverrides[discId] || {};
+      aaDefs.push({ id: def.id, name: def.name, duration: override.cooldown || def.cooldown });
+    }
+  });
+}
+
+const AA_PARAGON_CLASSES  = new Set(['Beastlord']);
+const AA_MGB_NO_CLASSES   = new Set(['Rogue', 'Monk', 'Bard', 'Warrior', 'Berserker']);
+
+function updateAaSection(charClass) {
+  const paragonRow = document.getElementById('aa-row-paragon');
+  const mgbRow     = document.getElementById('aa-row-mgb');
+  const frenzyRow  = document.getElementById('aa-row-frenzy');
+  const noClassMsg = document.getElementById('aa-no-class-msg');
+  const showParagon = charClass && AA_PARAGON_CLASSES.has(charClass);
+  const showMgb     = charClass && !AA_MGB_NO_CLASSES.has(charClass);
+  const showFrenzy  = charClass && AA_PARAGON_CLASSES.has(charClass); // Beastlord only
+  if (paragonRow) paragonRow.style.display = showParagon ? 'flex' : 'none';
+  if (mgbRow)     mgbRow.style.display     = showMgb     ? 'flex' : 'none';
+  if (frenzyRow)  frenzyRow.style.display  = showFrenzy  ? 'flex' : 'none';
+  if (noClassMsg) noClassMsg.style.display = (!showParagon && !showMgb && !showFrenzy) ? 'block' : 'none';
+  // Uncheck hidden rows so they don't accidentally save as enabled
+  if (!showParagon && document.getElementById('cooldown-paragon')) document.getElementById('cooldown-paragon').checked = false;
+  if (!showMgb     && document.getElementById('cooldown-mgb'))     document.getElementById('cooldown-mgb').checked     = false;
+  if (!showFrenzy  && document.getElementById('cooldown-frenzy'))  document.getElementById('cooldown-frenzy').checked  = false;
+}
+
+function updateDiscSection(charClass, enabledDiscs) {
+  const container = document.getElementById('disc-section-content');
+  if (!container) return;
+  const defs = DISC_DEFS[charClass] || [];
+  if (!charClass) {
+    container.innerHTML = '<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:4px 0;">Select a class above to see available disciplines.</div>';
+    return;
+  }
+  if (defs.length === 0) {
+    container.innerHTML = `<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:4px 0;">No disciplines available for ${charClass}.</div>`;
+    return;
+  }
+  const enabled = new Set(enabledDiscs || []);
+  container.innerHTML = defs.map(d => {
+    const override = discOverrides[d.id] || {};
+    const cooldown = override.cooldown || d.cooldown;
+    const detect   = override.detect   || d.detect   || '';
+    const cdStr    = formatDur(cooldown);
+    const configured = detect ? `<span style="color:var(--accent3);font-family:var(--mono);font-size:10px;" title="${detect}">✓</span>` : `<span style="color:var(--text-dim);font-family:var(--mono);font-size:10px;" title="No trigger set">—</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <input type="checkbox" class="toggle" id="disc-chk-${d.id}" ${enabled.has(d.id) ? 'checked' : ''}/>
+      <span style="font-size:12px;width:140px;">${d.name}</span>
+      <span style="font-size:10px;color:var(--text-dim);font-family:var(--mono);width:28px;" title="Min level">L${d.level}</span>
+      <span style="font-size:10px;color:var(--accent);font-family:var(--mono);width:54px;" title="Reuse cooldown">⏱ ${cdStr}</span>
+      <span style="width:16px;text-align:center;" title="${detect || 'No trigger set'}">${configured}</span>
+      <button class="btn" style="padding:2px 7px;font-size:10px;" onclick="editDisc('${d.id}')">✎</button>
+      <span style="font-size:10px;color:var(--text-dim);">${d.desc}</span>
+    </div>`;
+  }).join('');
+}
+
+function getEnabledDiscTriggers(charClass, enabledDiscs) {
+  const classDefs = DISC_DEFS[charClass] || [];
+  return classDefs
+    .filter(d => enabledDiscs.includes(d.id))
+    .map(d => {
+      const override = discOverrides[d.id] || {};
+      return { id: d.id, name: d.name, cooldown: override.cooldown || d.cooldown, detect: override.detect || d.detect || '' };
+    });
+}
+
+let _editingDiscId = null;
+
+function editDisc(discId) {
+  const charClass = document.getElementById('char-class').value;
+  const classDefs = DISC_DEFS[charClass] || [];
+  const def = classDefs.find(d => d.id === discId);
+  if (!def) return;
+  _editingDiscId = discId;
+  const override = discOverrides[discId] || {};
+  document.getElementById('disc-edit-title').textContent = def.name;
+  document.getElementById('disc-edit-detect').value = override.detect || def.detect || '';
+  document.getElementById('disc-edit-cooldown').value = override.cooldown || def.cooldown;
+  document.getElementById('disc-edit-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('disc-edit-detect').focus(), 50);
+}
+
+function hideDiscEditModal() {
+  document.getElementById('disc-edit-modal').style.display = 'none';
+  _editingDiscId = null;
+}
+
+async function saveDiscEdit() {
+  if (!_editingDiscId) return;
+  const detect  = document.getElementById('disc-edit-detect').value.trim();
+  const cooldown = parseInt(document.getElementById('disc-edit-cooldown').value);
+  if (isNaN(cooldown) || cooldown <= 0) { showToast('Enter a valid cooldown'); return; }
+  discOverrides[_editingDiscId] = { detect, cooldown };
+  const charClass = document.getElementById('char-class').value;
+  const enabledDiscs = getEnabledDiscs();
+  await ipcRenderer.invoke('set-profile', {
+    discOverrides,
+    discTriggers: getEnabledDiscTriggers(charClass, enabledDiscs),
+  });
+  buildAaDefs(getCdSettings(), enabledDiscs, charClass);
+  renderAAPanel();
+  hideDiscEditModal();
+  updateDiscSection(charClass, enabledDiscs);
+  showToast('Discipline updated');
+}
+
+// ── Raid Event Timer Management ────────────────────────────────────────────────
+let _editingRaidTimerId = null;
+
+async function renderRaidDefs() {
+  const defs = await ipcRenderer.invoke('store-get', 'raidTimers') || [];
+  const container = document.getElementById('raid-timer-def-list');
+  if (!container) return;
+  if (defs.length === 0) {
+    container.innerHTML = '<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);">No raid event timers configured.</div>';
+    return;
+  }
+  container.innerHTML = defs.map((d, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 8px;background:var(--bg3);border-radius:4px;">
+      <span style="font-size:11px;flex:1;">${d.name}</span>
+      <span style="font-size:10px;color:var(--accent);font-family:var(--mono);">⏱ ${d.interval}s</span>
+      <span style="font-size:10px;color:var(--accent2);font-family:var(--mono);">⚠ ${d.warningLeadTime || 10}s</span>
+      <button class="btn" style="padding:2px 7px;font-size:10px;" onclick="showRaidTimerModal(${i})">✎</button>
+      <button class="btn danger" style="padding:2px 7px;font-size:10px;" onclick="deleteRaidTimerDef(${i})">✕</button>
+    </div>`).join('');
+}
+
+function showRaidTimerModal(editIdx) {
+  _editingRaidTimerId = editIdx !== undefined ? editIdx : null;
+  document.getElementById('raid-timer-modal-title').textContent = _editingRaidTimerId !== null ? 'Edit Raid Event Timer' : 'Add Raid Event Timer';
+  document.getElementById('raid-timer-name').value     = '';
+  document.getElementById('raid-timer-aoe').value      = '';
+  document.getElementById('raid-timer-interval').value = '';
+  document.getElementById('raid-timer-lead').value     = '10';
+  document.getElementById('raid-timer-death').value    = '';
+  if (_editingRaidTimerId !== null) {
+    ipcRenderer.invoke('store-get', 'raidTimers').then(defs => {
+      const d = (defs || [])[_editingRaidTimerId];
+      if (!d) return;
+      document.getElementById('raid-timer-name').value     = d.name;
+      document.getElementById('raid-timer-aoe').value      = d.aoeTrigger || '';
+      document.getElementById('raid-timer-interval').value = d.interval;
+      document.getElementById('raid-timer-lead').value     = d.warningLeadTime || 10;
+      document.getElementById('raid-timer-death').value    = d.deathPattern || '';
+    });
+  }
+  document.getElementById('raid-timer-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('raid-timer-name').focus(), 50);
+}
+
+function hideRaidTimerModal() {
+  document.getElementById('raid-timer-modal').style.display = 'none';
+  _editingRaidTimerId = null;
+}
+
+async function saveRaidTimerDef() {
+  const name     = document.getElementById('raid-timer-name').value.trim();
+  const aoeTrigger = document.getElementById('raid-timer-aoe').value.trim();
+  const interval = parseInt(document.getElementById('raid-timer-interval').value);
+  const warningLeadTime = parseInt(document.getElementById('raid-timer-lead').value) || 10;
+  const deathPattern = document.getElementById('raid-timer-death').value.trim();
+  if (!name) { showToast('Enter a name'); return; }
+  if (isNaN(interval) || interval <= 0) { showToast('Enter a valid interval'); return; }
+  if (warningLeadTime >= interval) { showToast('Warning lead must be less than interval'); return; }
+  const defs = await ipcRenderer.invoke('store-get', 'raidTimers') || [];
+  const entry = { id: Date.now().toString(), name, aoeTrigger, interval, warningLeadTime, deathPattern };
+  if (_editingRaidTimerId !== null && defs[_editingRaidTimerId]) {
+    entry.id = defs[_editingRaidTimerId].id;
+    defs[_editingRaidTimerId] = entry;
+  } else {
+    defs.push(entry);
+  }
+  await ipcRenderer.invoke('store-set', 'raidTimers', defs);
+  hideRaidTimerModal();
+  renderRaidDefs();
+  showToast(_editingRaidTimerId !== null ? 'Raid timer updated' : 'Raid timer added');
+}
+
+async function deleteRaidTimerDef(idx) {
+  const defs = await ipcRenderer.invoke('store-get', 'raidTimers') || [];
+  const [removed] = defs.splice(idx, 1);
+  await ipcRenderer.invoke('store-set', 'raidTimers', defs);
+  if (removed) {
+    delete activeRaidTimers[removed.id];
+    ipcRenderer.send('dismiss-raid-timer', removed.id);
+    renderRaidTimerBar();
+  }
+  renderRaidDefs();
+  showToast('Raid timer deleted');
+}
+
+function getEnabledDiscs() {
+  const container = document.getElementById('disc-section-content');
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('input[type=checkbox][id^="disc-chk-"]'))
+    .filter(cb => cb.checked)
+    .map(cb => cb.id.replace('disc-chk-', ''));
+}
+
+function renderAAPanel() {
+  const panel = document.getElementById('panel-aa-timers');
+  const bar   = document.getElementById('aa-timer-bar');
+  if (!panel || !bar) return;
+  if (aaDefs.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+  bar.innerHTML = aaDefs.map(({ id, name, duration }) => {
+    const cd = activeCooldowns[id];
+    let stateClass, timeStr, pct;
+    if (!cd) {
+      stateClass = 'available'; timeStr = 'Available'; pct = 100;
+    } else if (cd.ready) {
+      stateClass = 'ready'; timeStr = 'Ready'; pct = 100;
+    } else {
+      stateClass = 'active';
+      const remaining = Math.max(0, Math.round((cd.endsAt - Date.now()) / 1000));
+      const actualDur = cd.durationSeconds || duration;
+      pct = Math.round(((actualDur - remaining) / actualDur) * 100);
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+    }
+    return `<div class="cooldown-cell ${stateClass}" id="aa-cd-${id}" onclick="dismissAA('${id}')" title="Click to dismiss">
+      <div class="cooldown-label">${name}</div>
+      <div class="cooldown-time ${stateClass}" id="aa-time-${id}">${timeStr}</div>
+      <div class="cooldown-track"><div class="cooldown-prog ${stateClass}" id="aa-prog-${id}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function dismissAA(id) {
+  ipcRenderer.send('dismiss-cooldown', id);
+  delete activeCooldowns[id];
+  renderAAPanel();
+}
+
+function startCooldownTick() {
+  setInterval(() => {
+    // Non-AA cooldowns
+    Object.entries(activeCooldowns).forEach(([id, cd]) => {
+      if (cd.ready) return;
+      const remaining = Math.max(0, Math.round((cd.endsAt - Date.now()) / 1000));
+      const pct = Math.round(((cd.durationSeconds - remaining) / cd.durationSeconds) * 100);
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const timeEl = document.getElementById('cd-time-' + id);
+      const progEl = document.getElementById('cd-prog-' + id);
+      if (timeEl) timeEl.textContent = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      if (progEl) progEl.style.width = pct + '%';
+    });
+    // Raid timer cells
+    Object.entries(activeRaidTimers).forEach(([id, rt]) => {
+      const remaining = Math.max(0, Math.round((rt.endsAt - Date.now()) / 1000));
+      const pct = Math.round(((rt.interval - remaining) / rt.interval) * 100);
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      const timeEl = document.getElementById('rt-time-' + id);
+      const progEl = document.getElementById('rt-prog-' + id);
+      if (timeEl) timeEl.textContent = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      if (progEl) progEl.style.width = pct + '%';
+    });
+    // AA panel cells
+    aaDefs.forEach(({ id, duration }) => {
+      const cd = activeCooldowns[id];
+      if (!cd || cd.ready) return;
+      const remaining = Math.max(0, Math.round((cd.endsAt - Date.now()) / 1000));
+      const actualDur = cd.durationSeconds || duration;
+      const pct = Math.round(((actualDur - remaining) / actualDur) * 100);
+      const m = Math.floor(remaining / 60), s = remaining % 60;
+      const timeEl = document.getElementById('aa-time-' + id);
+      const progEl = document.getElementById('aa-prog-' + id);
+      if (timeEl) timeEl.textContent = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      if (progEl) progEl.style.width = pct + '%';
+    });
+  }, 1000);
+}
+
+// Zone tracking
+let currentZone = null;
+let zoneAfkInterval = null;
+
+function updateZonePanel() {
+  const showZone    = document.getElementById('zt-show-zone')?.checked !== false;
+  const showAfk     = document.getElementById('zt-show-afk')?.checked  !== false;
+  const showPortals = document.getElementById('zt-show-portals')?.checked !== false;
+  const hasAfk      = !!zoneAfkInterval;
+  const hasPortals  = Object.keys(portalTimers).length > 0;
+  // Panel visible only when there's active timer data (AFK or portals running)
+  const hasActiveTimers = (showAfk && hasAfk) || (showPortals && hasPortals);
+  const panel = document.getElementById('panel-zone-timers');
+  if (panel) panel.style.display = hasActiveTimers ? '' : 'none';
+  // Zone name block
+  const nameBlock = document.getElementById('zone-name-block');
+  if (nameBlock) nameBlock.style.display = (showZone && hasActiveTimers) ? 'flex' : 'none';
+  // AFK block
+  const afkBlock = document.getElementById('zone-afk-block');
+  if (afkBlock) afkBlock.style.display = (showAfk && hasAfk) ? 'flex' : 'none';
+  // Portal row
+  const portalRow = document.getElementById('portal-timers-row');
+  if (portalRow) portalRow.style.display = showPortals ? 'contents' : 'none';
+}
+
+function applyZoneTimerOptions() { updateZonePanel(); }
+function saveZoneTimerOptions() {
+  ipcRenderer.invoke('set-profile', { zoneTimerOptions: {
+    showZone:    document.getElementById('zt-show-zone').checked,
+    showAfk:     document.getElementById('zt-show-afk').checked,
+    showPortals: document.getElementById('zt-show-portals').checked,
+  }});
+  updateZonePanel();
+}
+
+ipcRenderer.on('zone-entered', (e, { zoneName }) => {
+  currentZone = zoneName;
+  document.getElementById('zone-name-display').textContent = zoneName;
+  clearZoneAfk();
+});
+ipcRenderer.on('zone-afk-timer', (e, { totalSeconds }) => {
+  if (!document.getElementById('zt-show-afk')?.checked) return;
+  clearZoneAfk();
+  const display = document.getElementById('zone-afk-countdown');
+  let remaining = totalSeconds;
+  function tick() {
+    if (remaining <= 0) {
+      clearZoneAfk();
+      display.textContent = '00:00';
+      display.style.color = 'var(--danger)';
+      return;
+    }
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    display.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    display.style.color = remaining <= 60 ? 'var(--danger)' : remaining <= 180 ? 'var(--accent2)' : 'var(--accent4)';
+    remaining--;
+  }
+  tick();
+  zoneAfkInterval = setInterval(tick, 1000);
+  updateZonePanel();
+});
+function clearZoneAfk() {
+  if (zoneAfkInterval) { clearInterval(zoneAfkInterval); zoneAfkInterval = null; }
+  updateZonePanel();
+}
+
+// Portal timers — keyed by label so re-announcements reset the same chip
+const portalTimers = {}; // label -> { interval, chipEl }
+ipcRenderer.on('portal-timer', (e, { label, totalSeconds }) => {
+  if (!document.getElementById('zt-show-portals')?.checked) return;
+  const row = document.getElementById('portal-timers-row');
+  // Clear existing timer for this label if it re-fires
+  if (portalTimers[label]) {
+    clearInterval(portalTimers[label].interval);
+    portalTimers[label].chipEl.remove();
+    delete portalTimers[label];
+  }
+  // Build chip
+  const chip = document.createElement('div');
+  chip.style.cssText = 'display:flex;align-items:center;gap:10px;';
+  chip.innerHTML = '<span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;">' + label + '</span>'
+    + '<span class="portal-cd" style="font-family:var(--mono);font-size:16px;font-weight:bold;color:var(--accent4);">--:--</span>';
+  row.appendChild(chip);
+  const cdEl = chip.querySelector('.portal-cd');
+  let remaining = totalSeconds;
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(portalTimers[label].interval);
+      cdEl.textContent = 'NOW';
+      cdEl.style.color = 'var(--accent3)';
+      setTimeout(() => { chip.remove(); delete portalTimers[label]; updateZonePanel(); }, 15000);
+      return;
+    }
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    cdEl.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    cdEl.style.color = remaining <= 60 ? 'var(--danger)' : remaining <= 120 ? 'var(--accent2)' : 'var(--accent4)';
+    remaining--;
+  }
+  tick();
+  portalTimers[label] = { interval: setInterval(tick, 1000), chipEl: chip };
+  updateZonePanel();
+});
+
+ipcRenderer.on('combat-alert', (e, { type, mobName, message, dmg }) => {
+  showCombatAlert(type, message);
+  appendLog('[ALERT] ' + message, 'trigger-match');
+});
+
+function showCombatAlert(type, message) {
+  const overlay = document.getElementById('combat-alert-overlay');
+  const banner = document.createElement('div');
+  banner.className = 'combat-alert-banner ' + type;
+
+  // Icon per type
+  const icons = {
+    'enrage': '⚡ ENRAGE ⚡',
+    'rampage': '⚔ RAMPAGE ⚔',
+    'rampage-hit': '💥 RAMP HIT 💥',
+    'wild-rampage': '🌀 WILD RAMP 🌀',
+  };
+  banner.innerHTML = (icons[type] || '⚠ ALERT') + '<br><span style="font-size:11px;letter-spacing:1px;opacity:0.9;">' + message + '</span>';
+  overlay.appendChild(banner);
+
+  // Remove after animation completes (3 seconds)
+  setTimeout(() => {
+    if (banner.parentNode) banner.parentNode.removeChild(banner);
+  }, 3000);
+}
+
+ipcRenderer.on('tell-received', (e, { sender, msg }) => {
+  ipcRenderer.send('play-sound', 'tell');
+  showToast(`📨 ${sender}: ${msg}`, 5000);
+  appendLog(`[TELL] ${sender}: ${msg}`, 'trigger-match');
+});
+
+// ── DPS Rendering ─────────────────────────────────────────────────────────────
+function renderDPS(summary) {
+  const list      = document.getElementById('player-list');
+  const enemyList = document.getElementById('enemy-list');
+  const enemyStat = document.getElementById('enemy-dps-stat');
+  if (!summary || (!summary.players?.length && !summary.enemies?.length)) {
+    list.style.cssText = '';
+    list.innerHTML = '<div id="no-combat"><div class="big">⚔</div>Waiting for combat data...</div>';
+    if (enemyList) { enemyList.style.cssText = ''; enemyList.innerHTML = ''; }
+    document.getElementById('total-dps').textContent = '0';
+    document.getElementById('total-dmg').textContent = '0';
+    document.getElementById('elapsed-time').textContent = '0s';
+    if (enemyStat) enemyStat.style.display = 'none';
+    return;
+  }
+  document.getElementById('total-dps').textContent = summary.dps.toLocaleString();
+  document.getElementById('total-dmg').textContent = summary.totalDmg.toLocaleString();
+  document.getElementById('elapsed-time').textContent = summary.elapsed + 's';
+
+  const makeRow = (p, i, isEnemy) => {
+    const isSelf    = !isEnemy && (p.name === charName || p.name === 'You');
+    const isTop     = !isEnemy && i === 0;
+    const nameClass = isEnemy ? 'enemy' : (isSelf ? 'self' : (isTop ? 'top' : ''));
+    const barClass  = isEnemy ? 'enemy' : (isSelf ? 'self' : (isTop ? 'top' : ''));
+    return `<div class="player-row-compact">
+      <div class="player-row-bg-c"></div>
+      <div class="player-row-bar-c ${barClass}" style="width:${p.pct}%"></div>
+      <div class="player-row-text-c">
+        <span class="player-rank-c">#${i+1}</span>
+        <span class="player-name-c ${nameClass}">${p.name}</span>
+        <span class="player-dps-c">${p.dps.toLocaleString()}</span>
+        <span class="player-dmg-c">${(p.totalDmg||0).toLocaleString()}</span>
+        <span class="player-pct-c">${p.pct}%</span>
+        <span class="player-hits-c">${p.hits}h</span>
+      </div>
+    </div>`;
+  };
+
+  function buildColumns(items, isEnemy) {
+    const cols = Math.min(Math.max(1, Math.ceil(items.length / 6)), 2);
+    const perCol = Math.ceil(items.length / cols);
+    return Array.from({ length: cols }, (_, c) => {
+      const chunk = items.slice(c * perCol, (c + 1) * perCol);
+      const html = chunk.map((p, ci) => makeRow(p, c * perCol + ci, isEnemy)).join('');
+      return html ? `<div style="flex:1;min-width:0;">${html}</div>` : '';
+    }).filter(Boolean).join('');
+  }
+
+  const players = summary.players || [];
+  if (players.length > 0) {
+    list.style.cssText = 'display:flex;align-items:start;gap:4px;';
+    list.innerHTML = buildColumns(players, false);
+  } else {
+    list.style.cssText = '';
+    list.innerHTML = '<div id="no-combat"><div class="big">⚔</div>Waiting for combat data...</div>';
+  }
+
+  if (enemyList) {
+    const enemies = summary.enemies || [];
+    if (enemies.length > 0) {
+      enemyList.style.cssText = 'display:flex;flex-direction:column;';
+      enemyList.innerHTML = `<div class="enemy-separator">INCOMING</div>` +
+        `<div style="display:flex;align-items:start;gap:4px;">${buildColumns(enemies, true)}</div>`;
+    } else {
+      enemyList.style.cssText = '';
+      enemyList.innerHTML = '';
+    }
+  }
+
+  if (enemyStat) {
+    if (summary.enemies && summary.enemies.length > 0) {
+      enemyStat.style.display = '';
+      document.getElementById('enemy-dps').textContent = summary.enemyDps.toLocaleString();
+    } else {
+      enemyStat.style.display = 'none';
+    }
+  }
+}
+
+// ── Buff Timer Rendering ──────────────────────────────────────────────────────
+function makeTimerRowHtml(id, name, recipient, endsAt, durationSeconds, type, isGroupSpell) {
+  const remaining = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+  const pct = Math.round((remaining / durationSeconds) * 100);
+  const expiring = type === 'buff' ? remaining < 30 : remaining < 15;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  const cls = expiring ? 'expiring' : type;
+  const isSelf = !recipient || recipient.toLowerCase() === charName.toLowerCase() || recipient === 'Me';
+  const recipientHtml = isGroupSpell
+    ? `<span class="timer-group-pill">Group · ${recipient}</span>`
+    : isSelf ? ''
+    : `<span class="timer-row-who">${recipient}</span>`;
+  return `<div class="timer-row-compact" id="${type}-active-${id}">
+    <div class="timer-row-bg ${cls}"></div>
+    <div class="timer-row-prog ${cls}" id="${type}-prog-${id}" style="width:${pct}%"></div>
+    <div class="timer-row-text">
+      <span class="timer-row-name">${name}</span>
+      <span class="timer-row-right">
+        ${recipientHtml}
+        <span class="timer-row-time ${cls}" id="${type}-time-${id}">${timeStr}</span>
+        <button class="timer-row-dismiss" onclick="dismiss${type==='buff'?'Buff':'Debuff'}('${id}')" title="Dismiss">✕</button>
+      </span>
+    </div>
+  </div>`;
+}
+
+// Group collapse state
+let buffGroupCollapsed = {};
+let debuffGroupCollapsed = {};
+let discOverrides = {};
+let activeRaidTimers = {}; // { [id]: { name, endsAt, interval, warningLeadTime, inWarning } }
+
+function renderActiveBuffs() {
+  const container = document.getElementById('active-buffs');
+  const panel = document.getElementById('panel-buffs');
+  const entries = Object.entries(activeBuffTimers).sort((a, b) => a[1].endsAt - b[1].endsAt);
+  if (entries.length === 0) {
+    panel.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'flex';
+
+  // Build groups (for counts and collapsed-header rendering)
+  const groups = {};
+  entries.forEach(([id, buff]) => {
+    const g = buff.group || 'General';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push([id, buff]);
+  });
+
+  // Flat visible items in endsAt order (preserves time-remaining sort across groups)
+  const visibleItems = [];
+  entries.forEach(([id, buff]) => {
+    const g = buff.group || 'General';
+    if (!buffGroupCollapsed[g]) visibleItems.push({ id, buff, group: g });
+  });
+
+  // Columns based on visible item count, aiming for ~6 per column, max 4
+  const cols = Math.min(Math.max(1, Math.ceil(visibleItems.length / 6)), 4);
+  const perCol = Math.ceil(visibleItems.length / cols);
+
+  const colDivs = Array.from({ length: cols }, (_, c) => {
+    const chunk = visibleItems.slice(c * perCol, (c + 1) * perCol);
+    let html = '';
+    // First column: show collapsed group headers
+    if (c === 0) {
+      Object.keys(groups).sort().filter(g => buffGroupCollapsed[g]).forEach(g => {
+        html += `<div class="timer-group-hdr" onclick="toggleBuffGroup('${g}')"><span class="timer-group-arrow">▶</span><span style="font-size:9px;font-family:var(--mono);letter-spacing:1px;">${g.toUpperCase()}</span><span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);">${groups[g].length}</span></div>`;
+      });
+    }
+    let lastGroup = null;
+    chunk.forEach(({ id, buff, group }) => {
+      if (group !== lastGroup) {
+        html += `<div class="timer-group-hdr" onclick="toggleBuffGroup('${group}')"><span class="timer-group-arrow">▼</span><span style="font-size:9px;font-family:var(--mono);letter-spacing:1px;">${group.toUpperCase()}</span><span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);">${groups[group].length}</span></div>`;
+        lastGroup = group;
+      }
+      html += makeTimerRowHtml(id, buff.name, buff.recipient, buff.endsAt, buff.durationSeconds, 'buff', buff.isGroupSpell);
+    });
+    return html ? `<div style="flex:1;min-width:0;">${html}</div>` : '';
+  }).filter(Boolean).join('');
+
+  container.style.cssText = 'display:flex;align-items:start;gap:4px;';
+  container.innerHTML = colDivs;
+}
+
+function toggleBuffGroup(g) { buffGroupCollapsed[g] = !buffGroupCollapsed[g]; renderActiveBuffs(); }
+function toggleDebuffGroup(g) { debuffGroupCollapsed[g] = !debuffGroupCollapsed[g]; renderActiveDebuffs(); }
+
+function startBuffTick() {
+  setInterval(() => {
+    // Tick buffs
+    let needsReorder = false;
+    Object.entries(activeBuffTimers).forEach(([id, buff]) => {
+      const remaining = Math.max(0, Math.round((buff.endsAt - Date.now()) / 1000));
+      const pct = Math.round((remaining / buff.durationSeconds) * 100);
+      const expiring = remaining < 30;
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      const timeEl = document.getElementById('buff-time-' + id);
+      const progEl = document.getElementById('buff-prog-' + id);
+      const bgEl   = document.getElementById('buff-active-' + id);
+      if (timeEl) timeEl.textContent = timeStr;
+      if (progEl) progEl.style.width = pct + '%';
+      if (expiring && bgEl) {
+        // switch classes to expiring
+        bgEl.querySelector('.timer-row-bg').className = 'timer-row-bg expiring';
+        bgEl.querySelector('.timer-row-prog').className = 'timer-row-prog expiring';
+        if (timeEl) { timeEl.className = 'timer-row-time expiring'; }
+      }
+    });
+    // Tick loot countdowns
+    if (Object.values(activeLootItems).some(s => s.closingAt)) renderLootPanel();
+    // Tick debuffs
+    Object.entries(activeDebuffTimers).forEach(([id, d]) => {
+      const remaining = Math.max(0, Math.round((d.endsAt - Date.now()) / 1000));
+      const pct = Math.round((remaining / d.durationSeconds) * 100);
+      const expiring = remaining < 15;
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      const timeEl = document.getElementById('debuff-time-' + id);
+      const progEl = document.getElementById('debuff-prog-' + id);
+      const bgEl   = document.getElementById('debuff-active-' + id);
+      if (timeEl) timeEl.textContent = timeStr;
+      if (progEl) progEl.style.width = pct + '%';
+      if (expiring && bgEl) {
+        bgEl.querySelector('.timer-row-bg').className = 'timer-row-bg expiring';
+        bgEl.querySelector('.timer-row-prog').className = 'timer-row-prog expiring';
+        if (timeEl) { timeEl.className = 'timer-row-time expiring'; }
+      }
+    });
+  }, 1000);
+}
+
+function formatDur(secs) {
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return m > 0 ? `${m}m${s > 0 ? s + 's' : ''}` : `${s}s`;
+}
+
+async function renderBuffDefs() {
+  const defs = await ipcRenderer.invoke('store-get', 'buffTimers') || [];
+  const storedGroups = await ipcRenderer.invoke('store-get', 'buffTimerGroups') || ['General'];
+  const profile = await ipcRenderer.invoke('get-profile') || {};
+  const enabledIds = profile.enabledBuffTimers || null;
+  const tabContainer = document.getElementById('buff-def-list-tab');
+  if (!tabContainer) return;
+  if (defs.length === 0 && storedGroups.filter(g => g !== 'General').length === 0) {
+    tabContainer.innerHTML = '<div class="empty-state" style="font-size:10px;padding:16px;">No buff timers defined</div>'; return;
+  }
+  renderTimerDefList(defs, tabContainer, 'buff', storedGroups, enabledIds);
+}
+
+async function renderDebuffDefs() {
+  const defs = await ipcRenderer.invoke('store-get', 'debuffTimers') || [];
+  const storedGroups = await ipcRenderer.invoke('store-get', 'debuffTimerGroups') || ['General'];
+  const profile = await ipcRenderer.invoke('get-profile') || {};
+  const enabledIds = profile.enabledDebuffTimers || null;
+  const tabContainer = document.getElementById('debuff-def-list-tab');
+  if (!tabContainer) return;
+  if (defs.length === 0 && storedGroups.filter(g => g !== 'General').length === 0) {
+    tabContainer.innerHTML = '<div class="empty-state" style="font-size:10px;padding:16px;">No debuff timers defined</div>'; return;
+  }
+  renderTimerDefList(defs, tabContainer, 'debuff', storedGroups, enabledIds);
+}
+
+function renderTimerDefList(defs, container, type, storedGroups, enabledIds) {
+  // Group by group field, default 'General', sorted alphabetically
+  const groups = {};
+  // Seed from stored groups so empty groups still appear
+  (storedGroups || ['General']).forEach(g => { if (!groups[g]) groups[g] = []; });
+  defs.forEach((d, i) => {
+    const g = d.group || 'General';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ def: d, idx: i });
+  });
+  const sortedGroups = Object.keys(groups).sort();
+  const collapseKey = type + 'DefCollapsed';
+  if (!window[collapseKey]) window[collapseKey] = {};
+
+  container.innerHTML = sortedGroups.map(g => {
+    const collapsed = window[collapseKey][g];
+    const items = groups[g].sort((a, b) => a.def.name.localeCompare(b.def.name));
+    const rows = collapsed ? '' : items.map(({ def, idx }) => {
+      const isEnabled = enabledIds ? enabledIds.includes(def.id) : def.enabled;
+      return `<div class="timer-def-item" draggable="true"
+          data-idx="${idx}" data-type="${type}" data-group="${g}"
+          ondragstart="timerDefDragStart(event)"
+          ondragover="timerDefDragOver(event)"
+          ondragleave="timerDefDragLeave(event)"
+          ondrop="timerDefDrop(event, '${type}')">
+        <span class="timer-def-grip">⠿</span>
+        <span class="timer-def-dot ${type}"></span>
+        <input type="checkbox" class="timer-def-toggle" ${isEnabled ? 'checked' : ''} onchange="toggle${type==='buff'?'Buff':'Debuff'}Def(${idx}, this.checked)" onclick="event.stopPropagation()"/>
+        <span class="timer-def-name">${def.name}</span>
+        <span class="timer-def-dur">${formatDur(def.durationSeconds)}</span>
+        <button class="timer-def-btn edit" onclick="editTimerDef(${idx},'${type}')" title="Edit">✎</button>
+        <button class="timer-def-btn del" onclick="delete${type==='buff'?'Buff':'Debuff'}Def(${idx})" title="Delete">✕</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="timer-def-group" data-group="${g}" data-type="${type}"
+        ondragover="groupDragOver(event)" ondragleave="groupDragLeave(event)" ondrop="groupDrop(event,'${type}','${g}')">
+      <div class="timer-def-group-hdr" onclick="toggleTimerDefGroup('${type}','${g}')">
+        <span class="timer-def-group-arrow">${collapsed ? '▶' : '▼'}</span>
+        <span class="timer-def-group-name">${g}</span>
+        <span class="timer-def-group-count">${groups[g].length}</span>
+        <span class="timer-def-group-menu" onclick="event.stopPropagation();groupMenu(event,'${type}','${g}')" title="Rename / Delete group">···</span>
+      </div>
+      ${rows}
+      ${!collapsed ? `<div class="group-drop-zone" data-group="${g}" data-type="${type}"
+        ondragover="groupDragOver(event)" ondrop="groupDrop(event,'${type}','${g}')"></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleTimerDefGroup(type, g) {
+  const key = type + 'DefCollapsed';
+  if (!window[key]) window[key] = {};
+  window[key][g] = !window[key][g];
+  type === 'buff' ? renderBuffDefs() : renderDebuffDefs();
+}
+
+// PQDI Import by ID
+async function importByPqdiId(mode) {
+  const idField = mode === 'buff' ? 'pqdi-spell-id'
+                : mode === 'debuff' ? 'pqdi-debuff-spell-id'
+                : 'pqdi-trigger-spell-id';
+  const statusEl = mode === 'buff' ? 'pqdi-import-status'
+                 : mode === 'debuff' ? 'pqdi-debuff-import-status'
+                 : 'pqdi-trigger-import-status';
+
+  const spellId = document.getElementById(idField).value.trim();
+  if (!spellId) { document.getElementById(statusEl).textContent = 'Enter a spell ID first'; return; }
+
+  document.getElementById(statusEl).textContent = 'Fetching from pqdi.cc...';
+  document.getElementById(statusEl).style.color = 'var(--text-dim)';
+
+  const spell = await ipcRenderer.invoke('fetch-spell-by-id', spellId);
+
+  if (!spell || spell.error) {
+    document.getElementById(statusEl).textContent = 'Error: ' + (spell?.error || 'Not found');
+    document.getElementById(statusEl).style.color = 'var(--danger)';
+    return;
+  }
+
+  const isDebuff = mode === 'debuff' || (!spell.isGoodEffect && mode !== 'trigger');
+  const logText = isDebuff
+    ? (spell.cast_on_other || spell.cast_on_you || '').trim()
+    : (spell.cast_on_you || '').trim();
+
+  if (mode === 'buff') {
+    document.getElementById('buff-name').value = spell.name;
+    // For buffs cast on others, use cast_on_other with capture group for recipient
+    const buffLogText = spell.cast_on_other && spell.cast_on_other.trim()
+      ? spell.cast_on_other.trim()
+      : spell.cast_on_you;
+    // If cast_on_other starts with space or "soandso", it needs capture group
+    const needsCapture = spell.cast_on_other && spell.cast_on_other.trim();
+    if (needsCapture) {
+      const cleanOther = spell.cast_on_other.trim().replace(/^soandso\s*/i, '');
+      document.getElementById('buff-pattern').value = '\\] (.+?) ' + escapeRegex(cleanOther);
+    } else {
+      document.getElementById('buff-pattern').value = '\\] ' + escapeRegex(spell.cast_on_you);
+    }
+    if (spell.durationSeconds > 0) document.getElementById('buff-duration').value = spell.durationSeconds;
+    document.getElementById(statusEl).textContent = '✓ ' + spell.name + ' imported' + (spell.durationSeconds > 0 ? ' (' + formatSeconds(spell.durationSeconds) + ')' : '');
+    document.getElementById(statusEl).style.color = 'var(--accent3)';
+    if (spell.spell_fades && document.getElementById('buff-fades-text')) {
+      document.getElementById('buff-fadetext-hint').style.display = 'block';
+      document.getElementById('buff-fades-text').textContent = spell.spell_fades;
+    }
+    console.log('Buff import', spell.name, '| cast_on_you:', JSON.stringify(spell.cast_on_you), '| cast_on_other:', JSON.stringify(spell.cast_on_other), '| fades:', spell.spell_fades);
+
+  } else if (mode === 'debuff') {
+    document.getElementById('debuff-name').value = spell.name;
+    document.getElementById('debuff-castname').value = spell.name;
+    const cleanOther = logText.replace(/^soandso\s*/i, '');
+    document.getElementById('debuff-pattern').value = '\\] (.+?) ' + escapeRegex(cleanOther);
+    if (spell.durationSeconds > 0) document.getElementById('debuff-duration').value = spell.durationSeconds;
+    document.getElementById(statusEl).textContent = '✓ ' + spell.name + ' imported' + (spell.durationSeconds > 0 ? ' (' + formatSeconds(spell.durationSeconds) + ')' : '');
+    document.getElementById(statusEl).style.color = 'var(--accent3)';
+
+  } else if (mode === 'trigger') {
+    document.getElementById('trigger-name').value = spell.name;
+    document.getElementById('trigger-pattern').value = '\\] ' + escapeRegex(spell.cast_on_you || logText);
+    document.getElementById('trigger-tts').value = spell.name;
+    document.getElementById(statusEl).textContent = '✓ ' + spell.name + ' imported';
+    document.getElementById(statusEl).style.color = 'var(--accent3)';
+  }
+}
+
+function dismissBuff(id) {
+  // Tell main process to cancel the timer
+  ipcRenderer.send('dismiss-buff', id);
+  delete activeBuffTimers[id];
+  renderActiveBuffs();
+}
+
+function showBuffModal() { const m = document.getElementById('buff-modal'); m.style.display = 'flex'; }
+function hideBuffModal() {
+  const m = document.getElementById('buff-modal'); m.style.display = 'none';
+  document.getElementById('buff-name').value = '';
+  document.getElementById('buff-pattern').value = '';
+  document.getElementById('buff-duration').value = '';
+  document.getElementById('buff-is-group-spell').checked = false;
+  const pqdiResults = document.getElementById('pqdi-results');
+  if (pqdiResults) pqdiResults.style.display = 'none';
+}
+
+// ── Debuff Rendering ──────────────────────────────────────────────────────────
+function renderActiveDebuffs() {
+  const container = document.getElementById('active-debuffs');
+  const panel = document.getElementById('panel-debuffs');
+  const entries = Object.entries(activeDebuffTimers).sort((a, b) => a[1].endsAt - b[1].endsAt);
+  if (entries.length === 0) {
+    panel.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'flex';
+
+  const groups = {};
+  entries.forEach(([id, d]) => {
+    const g = d.group || 'General';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push([id, d]);
+  });
+
+  // Flat visible items in endsAt order (preserves time-remaining sort across groups)
+  const visibleItems = [];
+  entries.forEach(([id, d]) => {
+    const g = d.group || 'General';
+    if (!debuffGroupCollapsed[g]) visibleItems.push({ id, d, group: g });
+  });
+
+  const cols = Math.min(Math.max(1, Math.ceil(visibleItems.length / 6)), 4);
+  const perCol = Math.ceil(visibleItems.length / cols);
+
+  const colDivs = Array.from({ length: cols }, (_, c) => {
+    const chunk = visibleItems.slice(c * perCol, (c + 1) * perCol);
+    let html = '';
+    if (c === 0) {
+      Object.keys(groups).sort().filter(g => debuffGroupCollapsed[g]).forEach(g => {
+        html += `<div class="timer-group-hdr" onclick="toggleDebuffGroup('${g}')"><span class="timer-group-arrow">▶</span><span style="font-size:9px;font-family:var(--mono);letter-spacing:1px;">${g.toUpperCase()}</span><span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);">${groups[g].length}</span></div>`;
+      });
+    }
+    let lastGroup = null;
+    chunk.forEach(({ id, d, group }) => {
+      if (group !== lastGroup) {
+        html += `<div class="timer-group-hdr" onclick="toggleDebuffGroup('${group}')"><span class="timer-group-arrow">▼</span><span style="font-size:9px;font-family:var(--mono);letter-spacing:1px;">${group.toUpperCase()}</span><span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);">${groups[group].length}</span></div>`;
+        lastGroup = group;
+      }
+      html += makeTimerRowHtml(id, d.name, d.mobName, d.endsAt, d.durationSeconds, 'debuff');
+    });
+    return html ? `<div style="flex:1;min-width:0;">${html}</div>` : '';
+  }).filter(Boolean).join('');
+
+  container.style.cssText = 'display:flex;align-items:start;gap:4px;';
+  container.innerHTML = colDivs;
+}
+
+// renderDebuffDefs moved above
+
+function dismissDebuff(id) {
+  ipcRenderer.send('dismiss-debuff', id);
+  delete activeDebuffTimers[id];
+  renderActiveDebuffs();
+}
+
+function showDebuffModal() { document.getElementById('debuff-modal').style.display = 'flex'; }
+function hideDebuffModal() {
+  document.getElementById('debuff-modal').style.display = 'none';
+  document.getElementById('debuff-name').value = '';
+  document.getElementById('debuff-castname').value = '';
+  document.getElementById('debuff-pattern').value = '';
+  document.getElementById('debuff-duration').value = '';
+  const pqdiDebuffResults = document.getElementById('pqdi-debuff-results');
+  if (pqdiDebuffResults) pqdiDebuffResults.style.display = 'none';
+}
+
+async function saveDebuffDef() {
+  const name = document.getElementById('debuff-name').value.trim();
+  const castName = (document.getElementById('debuff-castname').value.trim()) || name;
+  const pattern = document.getElementById('debuff-pattern').value.trim();
+  const duration = parseInt(document.getElementById('debuff-duration').value);
+  if (!name || !pattern || isNaN(duration)) { showToast('Fill in all fields'); return; }
+  // Validate regex compiles before saving
+  try { new RegExp(pattern, 'i'); } catch(e) {
+    showToast('Invalid pattern: ' + e.message);
+    console.error('Bad pattern:', JSON.stringify(pattern), e.message);
+    return;
+  }
+  const defs = await ipcRenderer.invoke('store-get', 'debuffTimers') || [];
+  const spellFadesText = document.getElementById('debuff-fades-text') ? document.getElementById('debuff-fades-text').textContent : '';
+  defs.push({ id: Date.now().toString(), name, castName, triggerPattern: pattern, durationSeconds: duration, spellFades: spellFadesText, enabled: true });
+  // Reset fades hint
+  if (document.getElementById('debuff-fadetext-hint')) document.getElementById('debuff-fadetext-hint').style.display = 'none';
+  if (document.getElementById('debuff-fades-text')) document.getElementById('debuff-fades-text').textContent = '';
+  await ipcRenderer.invoke('store-set', 'debuffTimers', defs);
+  renderDebuffDefs();
+  hideDebuffModal();
+  showToast('Debuff timer saved');
+}
+
+async function toggleDebuffDef(index, enabled) {
+  const defs = await ipcRenderer.invoke('store-get', 'debuffTimers') || [];
+  const def = defs[index];
+  if (!def) return;
+  const profile = await ipcRenderer.invoke('get-profile') || {};
+  let enabledIds = profile.enabledDebuffTimers || defs.filter(d => d.enabled).map(d => d.id);
+  if (enabled) {
+    if (!enabledIds.includes(def.id)) enabledIds = [...enabledIds, def.id];
+  } else {
+    enabledIds = enabledIds.filter(id => id !== def.id);
+  }
+  await ipcRenderer.invoke('set-profile', { enabledDebuffTimers: enabledIds });
+}
+
+async function deleteDebuffDef(index) {
+  const defs = await ipcRenderer.invoke('store-get', 'debuffTimers') || [];
+  defs.splice(index, 1);
+  await ipcRenderer.invoke('store-set', 'debuffTimers', defs);
+  renderDebuffDefs();
+}
+
+async function pqdiDebuffSearch() {
+  const q = document.getElementById('pqdi-debuff-search').value.trim();
+  if (!q) return;
+  const resultsEl = document.getElementById('pqdi-debuff-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div class="pqdi-result">Searching pqdi.cc...</div>';
+  const data = await ipcRenderer.invoke('fetch-spell', q);
+  renderPqdiResults(data, resultsEl, 'debuff');
+}
+
+async function saveBuffDef() {
+  const name = document.getElementById('buff-name').value.trim();
+  const pattern = document.getElementById('buff-pattern').value.trim();
+  const duration = parseInt(document.getElementById('buff-duration').value);
+  const expireAlert = document.getElementById('buff-expire-alert').checked;
+  const isGroupSpell = document.getElementById('buff-is-group-spell').checked;
+  if (!name || !pattern || isNaN(duration)) { showToast('Fill in all fields'); return; }
+  const defs = await ipcRenderer.invoke('store-get', 'buffTimers') || [];
+  const buffFadesText = document.getElementById('buff-fades-text') ? document.getElementById('buff-fades-text').textContent : '';
+  defs.push({ id: Date.now().toString(), name, triggerPattern: pattern, durationSeconds: duration, expireAlert, isGroupSpell, spellFades: buffFadesText, enabled: true });
+  if (document.getElementById('buff-fadetext-hint')) document.getElementById('buff-fadetext-hint').style.display = 'none';
+  if (document.getElementById('buff-fades-text')) document.getElementById('buff-fades-text').textContent = '';
+  await ipcRenderer.invoke('store-set', 'buffTimers', defs);
+  renderBuffDefs();
+  hideBuffModal();
+  showToast('Buff timer saved');
+}
+
+async function toggleBuffDef(index, enabled) {
+  const defs = await ipcRenderer.invoke('store-get', 'buffTimers') || [];
+  const def = defs[index];
+  if (!def) return;
+  const profile = await ipcRenderer.invoke('get-profile') || {};
+  let enabledIds = profile.enabledBuffTimers || defs.filter(d => d.enabled).map(d => d.id);
+  if (enabled) {
+    if (!enabledIds.includes(def.id)) enabledIds = [...enabledIds, def.id];
+  } else {
+    enabledIds = enabledIds.filter(id => id !== def.id);
+  }
+  await ipcRenderer.invoke('set-profile', { enabledBuffTimers: enabledIds });
+}
+
+async function deleteBuffDef(index) {
+  const defs = await ipcRenderer.invoke('store-get', 'buffTimers') || [];
+  defs.splice(index, 1);
+  await ipcRenderer.invoke('store-set', 'buffTimers', defs);
+  renderBuffDefs();
+}
+
+// ── Triggers ──────────────────────────────────────────────────────────────────
+async function renderTriggers() {
+  const triggers = await ipcRenderer.invoke('store-get', 'triggers') || [];
+  const container = document.getElementById('trigger-list-items');
+  if (triggers.length === 0) {
+    container.innerHTML = '<div class="empty-state">No triggers defined.<br>Add one using the editor →</div>';
+    return;
+  }
+  container.innerHTML = triggers.map((t, i) => `
+    <div class="trigger-item ${currentTriggerId === t.id ? 'selected' : ''}" onclick="selectTrigger('${t.id}')">
+      <div class="trigger-info">
+        <div class="trigger-name">${t.name}</div>
+        <div class="trigger-pattern">${t.pattern}</div>
+        ${t.ttsText ? `<div class="trigger-tts">🔊 "${t.ttsText}"</div>` : ''}
+      </div>
+      <div class="trigger-badges">
+        <span class="badge ${t.enabled ? 'on' : 'off'}">${t.enabled ? 'ON' : 'OFF'}</span>
+        ${t.ttsText ? '<span class="badge tts">TTS</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function selectTrigger(id) {
+  const triggers = await ipcRenderer.invoke('store-get', 'triggers') || [];
+  const t = triggers.find(x => x.id === id);
+  if (!t) return;
+  currentTriggerId = id;
+  document.getElementById('trigger-name').value = t.name;
+  document.getElementById('trigger-pattern').value = t.pattern;
+  document.getElementById('trigger-tts').value = t.ttsText || '';
+  document.getElementById('trigger-enabled').checked = t.enabled;
+  document.getElementById('editor-title').textContent = 'Edit Trigger';
+  document.getElementById('delete-trigger-btn').style.display = 'inline-block';
+  renderTriggers();
+}
+
+function newTrigger() {
+  currentTriggerId = null;
+  document.getElementById('trigger-name').value = '';
+  document.getElementById('trigger-pattern').value = '';
+  document.getElementById('trigger-tts').value = '';
+  document.getElementById('trigger-enabled').checked = true;
+  document.getElementById('editor-title').textContent = 'New Trigger';
+  document.getElementById('delete-trigger-btn').style.display = 'none';
+  renderTriggers();
+}
+
+async function saveTrigger() {
+  const name = document.getElementById('trigger-name').value.trim();
+  const pattern = document.getElementById('trigger-pattern').value.trim();
+  const ttsText = document.getElementById('trigger-tts').value.trim();
+  const enabled = document.getElementById('trigger-enabled').checked;
+  if (!name || !pattern) { showToast('Name and pattern required'); return; }
+  const triggers = await ipcRenderer.invoke('store-get', 'triggers') || [];
+  if (currentTriggerId) {
+    const idx = triggers.findIndex(t => t.id === currentTriggerId);
+    if (idx >= 0) triggers[idx] = { ...triggers[idx], name, pattern, ttsText, enabled };
+  } else {
+    triggers.push({ id: Date.now().toString(), name, pattern, ttsText, enabled });
+    currentTriggerId = triggers[triggers.length - 1].id;
+  }
+  await ipcRenderer.invoke('store-set', 'triggers', triggers);
+  renderTriggers();
+  document.getElementById('editor-title').textContent = 'Edit Trigger';
+  document.getElementById('delete-trigger-btn').style.display = 'inline-block';
+  showToast('Trigger saved');
+}
+
+async function deleteTrigger() {
+  if (!currentTriggerId) return;
+  const triggers = await ipcRenderer.invoke('store-get', 'triggers') || [];
+  const updated = triggers.filter(t => t.id !== currentTriggerId);
+  await ipcRenderer.invoke('store-set', 'triggers', updated);
+  currentTriggerId = null;
+  newTrigger();
+  renderTriggers();
+  showToast('Trigger deleted');
+}
+
+function testTrigger() {
+  const tts = document.getElementById('trigger-tts').value.trim();
+  if (tts) ipcRenderer.send('speak', tts);
+  else showToast('No TTS text to test');
+}
+
+// ── PQDI Lookup ───────────────────────────────────────────────────────────────
+async function pqdiSearch() {
+  const q = document.getElementById('pqdi-search').value.trim();
+  if (!q) return;
+  const resultsEl = document.getElementById('pqdi-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div class="pqdi-result">Searching pqdi.cc...</div>';
+  const data = await ipcRenderer.invoke('fetch-spell', q);
+  renderPqdiResults(data, resultsEl, 'buff');
+}
+
+async function pqdiTriggerSearch() {
+  const q = document.getElementById('pqdi-trigger-search').value.trim();
+  if (!q) return;
+  const resultsEl = document.getElementById('pqdi-trigger-results');
+  resultsEl.style.display = 'block';
+  resultsEl.innerHTML = '<div class="pqdi-result">Searching pqdi.cc...</div>';
+  const data = await ipcRenderer.invoke('fetch-spell', q);
+  renderPqdiResults(data, resultsEl, 'trigger');
+}
+
+function renderPqdiResults(data, container, mode) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    container.innerHTML = '<div class="pqdi-result" style="color:var(--text-dim)">No results found. Try a different spell name.</div>';
+    return;
+  }
+  container.innerHTML = data.slice(0, 8).map(spell => {
+    // For debuffs use cast_on_other (what the mob sees), for buffs/triggers use cast_on_you
+    const isDebuff = mode === 'debuff';
+    const logText = isDebuff
+      ? (spell.cast_on_other || spell.cast_on_you || '')
+      : (spell.cast_on_you || '');
+    const dur = spell.durationSeconds > 0 ? formatSeconds(spell.durationSeconds) : 'Unknown dur';
+    const safeSpell = encodeURIComponent(JSON.stringify(spell));
+    return `
+      <div class="pqdi-result" onclick="selectPqdiSpell('${safeSpell}', '${mode}')">
+        <div class="spell-name">${spell.name}</div>
+        ${logText
+          ? `<div class="spell-cast">Log: "${logText}"</div>`
+          : '<div class="spell-cast" style="color:var(--text-dim)">No log text found — enter manually</div>'}
+        <div class="spell-dur">${dur}</div>
+        ${spell.spell_fades ? `<div class="spell-dur" style="color:var(--text-dim)">Fades: "${spell.spell_fades}"</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function formatSeconds(secs) {
+  if (!secs || secs <= 0) return 'Instant';
+  const mins = Math.floor(secs / 60);
+  const s = secs % 60;
+  return mins > 0 ? `${mins}m${s > 0 ? ' ' + s + 's' : ''}` : `${s}s`;
+}
+
+function selectPqdiSpell(encoded, mode) {
+  let spell;
+  try { spell = JSON.parse(decodeURIComponent(encoded)); } catch(e) { return; }
+  const castOn = spell.cast_on_you || spell.name;
+  const duration = spell.durationSeconds || 0;
+
+  if (mode === 'buff') {
+    document.getElementById('buff-name').value = spell.name;
+    document.getElementById('buff-pattern').value = '\\] ' + escapeRegex(castOn);
+    if (duration > 0) document.getElementById('buff-duration').value = duration;
+    const pr = document.getElementById('pqdi-results'); if (pr) pr.style.display = 'none';
+  } else if (mode === 'debuff') {
+    document.getElementById('debuff-name').value = spell.name;
+    document.getElementById('debuff-castname').value = spell.name;
+    // Anchor past timestamp, capture mob name, then cast text (strip leading "you" since mobs get different text)
+    const castText = escapeRegex(castOn).replace(/^you /i, '').replace(/^your /i, '');
+    document.getElementById('debuff-pattern').value = '\\] (.+?) ' + castText;
+    if (duration > 0) document.getElementById('debuff-duration').value = duration;
+    const dpr = document.getElementById('pqdi-debuff-results'); if (dpr) dpr.style.display = 'none';
+  } else {
+    document.getElementById('trigger-name').value = spell.name;
+    document.getElementById('trigger-pattern').value = '\\] ' + escapeRegex(castOn);
+    document.getElementById('trigger-tts').value = spell.name;
+    document.getElementById('pqdi-trigger-results').style.display = 'none';
+  }
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function appendLog(line, cls) {
+  const output = document.getElementById('log-output');
+  const div = document.createElement('div');
+  div.className = 'log-line ' + cls;
+  div.textContent = line;
+  output.appendChild(div);
+  // Keep last 500 lines
+  while (output.children.length > 500) output.removeChild(output.firstChild);
+  if (document.getElementById('log-autoscroll').checked) {
+    output.scrollTop = output.scrollHeight;
+  }
+}
+
+function clearLog() {
+  document.getElementById('log-output').innerHTML = '';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+async function exportTimers() {
+  const result = await ipcRenderer.invoke('export-timers');
+  if (result.success) showToast('Exported to ' + result.filePath.split('/').pop());
+  else showToast('Export cancelled');
+}
+
+async function importTimers() {
+  const result = await ipcRenderer.invoke('import-timers');
+  if (!result.success) {
+    if (result.error) showToast('Import failed: ' + result.error);
+    return;
+  }
+  renderBuffDefs();
+  renderDebuffDefs();
+  if (result.hasDiscs || result.hasCooldowns) {
+    // Reload profile to pick up disc/cooldown changes
+    const profile = await ipcRenderer.invoke('get-profile') || {};
+    const cdSettings = profile.cooldownSettings || {};
+    if (result.hasCooldowns) {
+      document.getElementById('cooldown-paragon').checked    = !!cdSettings.paragonEnabled;
+      document.getElementById('cooldown-paragon-dur').value  = cdSettings.paragonDuration || 900;
+      document.getElementById('cooldown-mgb').checked        = !!cdSettings.mgbEnabled;
+      document.getElementById('cooldown-mgb-dur').value      = cdSettings.mgbDuration    || 4320;
+      document.getElementById('cooldown-frenzy').checked     = !!cdSettings.frenzyEnabled;
+      document.getElementById('cooldown-frenzy-dur').value   = cdSettings.frenzyDuration  || 600;
+    }
+    if (result.hasDiscs) {
+      discOverrides = profile.discOverrides || {};
+      const charClass = document.getElementById('char-class').value;
+      updateDiscSection(charClass, profile.enabledDiscs || []);
+    }
+    buildAaDefs(getCdSettings(), profile.enabledDiscs || [], document.getElementById('char-class').value);
+    renderAAPanel();
+  }
+  if (result.raidTimerCount > 0) renderRaidDefs();
+  const parts = [`${result.buffCount} buff${result.buffCount !== 1 ? 's' : ''}`, `${result.debuffCount} debuff${result.debuffCount !== 1 ? 's' : ''}`];
+  if (result.raidTimerCount > 0) parts.push(`${result.raidTimerCount} raid timer${result.raidTimerCount !== 1 ? 's' : ''}`);
+  if (result.hasDiscs)           parts.push('disciplines');
+  if (result.hasCooldowns)       parts.push('AA cooldowns');
+  showToast('Imported ' + parts.join(', '));
+}
+
+function showToast(msg, duration=2500) {
+  const existing = document.getElementById('toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'toast';
+  toast.textContent = msg;
+  toast.style.cssText = `
+    position:fixed;bottom:20px;right:20px;
+    background:var(--bg3);border:1px solid var(--accent);
+    color:var(--accent);padding:8px 16px;border-radius:4px;
+    font-family:var(--mono);font-size:12px;z-index:9999;
+    animation:flash-anim 0.3s ease;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+}
+
+init();
+initResizablePanels();
+
+// ── Timer Group Management ─────────────────────────────────────────────────────
+let _groupModalType = null;
+
+function addTimerGroup(type) {
+  _groupModalType = type;
+  document.getElementById('group-name-input').value = '';
+  const modal = document.getElementById('group-name-modal');
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('group-name-input').focus(), 50);
+}
+
+function hideGroupModal() {
+  document.getElementById('group-name-modal').style.display = 'none';
+  _groupModalType = null;
+}
+
+async function saveGroupName() {
+  const name = document.getElementById('group-name-input').value.trim();
+  if (!name) { showToast('Enter a group name'); return; }
+  const type = _groupModalType;
+  hideGroupModal();
+  const groupsKey = type + 'TimerGroups';
+  const groups = await ipcRenderer.invoke('store-get', groupsKey) || ['General'];
+  if (!groups.includes(name)) { groups.push(name); groups.sort(); }
+  await ipcRenderer.invoke('store-set', groupsKey, groups);
+  type === 'buff' ? renderBuffDefs() : renderDebuffDefs();
+  showToast('Group "' + name + '" created');
+}
+
+async function groupMenu(event, type, g) {
+  if (g === 'General') { showToast('Cannot rename or delete the General group'); return; }
+  // Use a toast-style confirmation instead of confirm() which doesn't work in Electron
+  showConfirm(`Delete group "${g}"? Timers will move to General.`, async () => {
+  // Move all timers in this group to General
+    const storeKey = type === 'buff' ? 'buffTimers' : 'debuffTimers';
+    const defs = await ipcRenderer.invoke('store-get', storeKey) || [];
+    defs.forEach(d => { if (d.group === g) d.group = 'General'; });
+    await ipcRenderer.invoke('store-set', storeKey, defs);
+    const groupsKey = type + 'TimerGroups';
+    const groups = (await ipcRenderer.invoke('store-get', groupsKey) || []).filter(x => x !== g);
+    await ipcRenderer.invoke('store-set', groupsKey, groups);
+    type === 'buff' ? renderBuffDefs() : renderDebuffDefs();
+    showToast(`Group "${g}" deleted`);
+  });
+}
+
+// Inline confirm widget (confirm() doesn't work in Electron)
+function showConfirm(msg, onYes) {
+  const existing = document.getElementById('eq-confirm');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'eq-confirm';
+  el.style.cssText = `position:fixed;bottom:60px;right:20px;background:var(--bg2);border:1px solid var(--accent2);
+    color:var(--text);padding:12px 16px;border-radius:6px;font-family:var(--mono);font-size:11px;z-index:9999;max-width:320px;`;
+  el.innerHTML = `<div style="margin-bottom:10px;">${msg}</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn danger" style="padding:4px 12px;font-size:10px;" id="confirm-yes">Delete</button>
+      <button class="btn" style="padding:4px 12px;font-size:10px;" id="confirm-no">Cancel</button>
+    </div>`;
+  document.body.appendChild(el);
+  document.getElementById('confirm-yes').onclick = () => { el.remove(); onYes(); };
+  document.getElementById('confirm-no').onclick = () => el.remove();
+  setTimeout(() => { if (el.parentNode) el.remove(); }, 8000);
+}
+
+// Edit timer def - open modal pre-filled
+let editingTimerIdx = null;
+let editingTimerType = null;
+
+async function editTimerDef(idx, type) {
+  editingTimerIdx = idx;
+  editingTimerType = type;
+  const storeKey = type === 'buff' ? 'buffTimers' : 'debuffTimers';
+  const defs = await ipcRenderer.invoke('store-get', storeKey) || [];
+  const def = defs[idx];
+  if (!def) return;
+  if (type === 'buff') {
+    document.getElementById('buff-name').value = def.name;
+    document.getElementById('buff-pattern').value = def.triggerPattern;
+    document.getElementById('buff-duration').value = def.durationSeconds;
+    document.getElementById('buff-expire-alert').checked = !!def.expireAlert;
+    document.getElementById('buff-is-group-spell').checked = !!def.isGroupSpell;
+    if (def.spellFades && document.getElementById('buff-fades-text')) {
+      document.getElementById('buff-fadetext-hint').style.display = 'block';
+      document.getElementById('buff-fades-text').textContent = def.spellFades;
+    }
+    showBuffModal();
+  } else {
+    document.getElementById('debuff-name').value = def.name;
+    document.getElementById('debuff-castname').value = def.castName && def.castName !== def.name ? def.castName : '';
+    document.getElementById('debuff-pattern').value = def.triggerPattern;
+    document.getElementById('debuff-duration').value = def.durationSeconds;
+    if (def.spellFades && document.getElementById('debuff-fades-text')) {
+      document.getElementById('debuff-fadetext-hint').style.display = 'block';
+      document.getElementById('debuff-fades-text').textContent = def.spellFades;
+    }
+    showDebuffModal();
+  }
+}
+
+// Override saveBuffDef / saveDebuffDef to handle edits
+const _origSaveBuffDef = saveBuffDef;
+saveBuffDef = async function() {
+  if (editingTimerIdx === null) { await _origSaveBuffDef(); return; }
+  const name = document.getElementById('buff-name').value.trim();
+  const pattern = document.getElementById('buff-pattern').value.trim();
+  const duration = parseInt(document.getElementById('buff-duration').value);
+  const expireAlert = document.getElementById('buff-expire-alert').checked;
+  const isGroupSpell = document.getElementById('buff-is-group-spell').checked;
+  if (!name || !pattern || isNaN(duration)) { showToast('Fill in all fields'); return; }
+  try { new RegExp(pattern, 'i'); } catch(e) { showToast('Invalid pattern: ' + e.message); return; }
+  const defs = await ipcRenderer.invoke('store-get', 'buffTimers') || [];
+  const spellFades = document.getElementById('buff-fades-text') ? document.getElementById('buff-fades-text').textContent : '';
+  if (defs[editingTimerIdx]) {
+    defs[editingTimerIdx] = { ...defs[editingTimerIdx], name, triggerPattern: pattern, durationSeconds: duration, expireAlert, isGroupSpell, spellFades };
+  }
+  await ipcRenderer.invoke('store-set', 'buffTimers', defs);
+  editingTimerIdx = null; editingTimerType = null;
+  renderBuffDefs(); hideBuffModal(); showToast('Buff timer updated');
+};
+
+const _origSaveDebuffDef = saveDebuffDef;
+saveDebuffDef = async function() {
+  if (editingTimerIdx === null) { await _origSaveDebuffDef(); return; }
+  const name = document.getElementById('debuff-name').value.trim();
+  const castName = (document.getElementById('debuff-castname').value.trim()) || name;
+  const pattern = document.getElementById('debuff-pattern').value.trim();
+  const duration = parseInt(document.getElementById('debuff-duration').value);
+  if (!name || !pattern || isNaN(duration)) { showToast('Fill in all fields'); return; }
+  try { new RegExp(pattern, 'i'); } catch(e) { showToast('Invalid pattern: ' + e.message); return; }
+  const defs = await ipcRenderer.invoke('store-get', 'debuffTimers') || [];
+  const spellFades = document.getElementById('debuff-fades-text') ? document.getElementById('debuff-fades-text').textContent : '';
+  if (defs[editingTimerIdx]) {
+    defs[editingTimerIdx] = { ...defs[editingTimerIdx], name, castName, triggerPattern: pattern, durationSeconds: duration, spellFades };
+  }
+  await ipcRenderer.invoke('store-set', 'debuffTimers', defs);
+  editingTimerIdx = null; editingTimerType = null;
+  renderDebuffDefs(); hideDebuffModal(); showToast('Debuff timer updated');
+};
+
+// Also clear editingTimerIdx when cancel is clicked
+const _origHideBuffModal = hideBuffModal;
+hideBuffModal = function() { editingTimerIdx = null; editingTimerType = null; _origHideBuffModal(); };
+const _origHideDebuffModal = hideDebuffModal;
+hideDebuffModal = function() { editingTimerIdx = null; editingTimerType = null; _origHideDebuffModal(); };
+
+// ── Drag and Drop for Timer Defs ───────────────────────────────────────────────
+let dragSrcIdx = null;
+let dragSrcType = null;
+
+function timerDefDragStart(event) {
+  dragSrcIdx  = parseInt(event.currentTarget.dataset.idx);
+  dragSrcType = event.currentTarget.dataset.type;
+  event.currentTarget.classList.add('dragging');
+  event.dataTransfer.effectAllowed = 'move';
+}
+
+function timerDefDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  const target = event.currentTarget;
+  const rect = target.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  target.classList.remove('drag-over-top', 'drag-over-bottom');
+  target.classList.add(event.clientY < midY ? 'drag-over-top' : 'drag-over-bottom');
+}
+
+function timerDefDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over-top', 'drag-over-bottom');
+}
+
+async function timerDefDrop(event, type) {
+  event.preventDefault();
+  event.stopPropagation();
+  const target = event.currentTarget;
+  target.classList.remove('drag-over-top', 'drag-over-bottom', 'dragging');
+  if (dragSrcIdx === null || dragSrcType !== type) return;
+  const destIdx = parseInt(target.dataset.idx);
+  const destGroup = target.dataset.group;
+  if (dragSrcIdx === destIdx) return;
+  const storeKey = type === 'buff' ? 'buffTimers' : 'debuffTimers';
+  const defs = await ipcRenderer.invoke('store-get', storeKey) || [];
+  const [moved] = defs.splice(dragSrcIdx, 1);
+  moved.group = destGroup;
+  // Insert before or after dest
+  const newDestIdx = defs.indexOf(defs.find((d, i) => {
+    // find the def that was at destIdx before splice
+    return i === (dragSrcIdx < destIdx ? destIdx - 1 : destIdx);
+  }));
+  const insertAt = newDestIdx >= 0 ? newDestIdx : defs.length;
+  defs.splice(insertAt, 0, moved);
+  await ipcRenderer.invoke('store-set', storeKey, defs);
+  dragSrcIdx = null;
+  type === 'buff' ? renderBuffDefs() : renderDebuffDefs();
+}
+
+function groupDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  event.currentTarget.classList.add('drag-over');
+}
+
+function groupDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+
+async function groupDrop(event, type, targetGroup) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.classList.remove('drag-over');
+  if (dragSrcIdx === null || dragSrcType !== type) return;
+  const storeKey = type === 'buff' ? 'buffTimers' : 'debuffTimers';
+  const defs = await ipcRenderer.invoke('store-get', storeKey) || [];
+  if (defs[dragSrcIdx]) { defs[dragSrcIdx].group = targetGroup; }
+  await ipcRenderer.invoke('store-set', storeKey, defs);
+  dragSrcIdx = null;
+  type === 'buff' ? renderBuffDefs() : renderDebuffDefs();
+  showToast('Moved to ' + targetGroup);
+}
+
+// ── Loot Bidding ──────────────────────────────────────────────────────────────
+let activeLootItems = {};
+// { [itemName]: { bids:[{bidder,status,amount}], closingAt, closingDuration, isLastCall, overrideWinner, overrideAmount } }
+let activeRandomItems = {};
+// { [max]: { itemName, max, rolls:[{player,roll}] } }
+let lootConfig = {};
+
+function lootStatusIndex(status) {
+  const list = (lootConfig.bidStatuses || 'mem, app, alt').split(',').map(s => s.trim().toLowerCase());
+  const idx = list.indexOf((status || '').toLowerCase());
+  return idx === -1 ? 999 : idx;
+}
+
+function computeLootWinner(bids) {
+  if (!bids || !bids.length) return null;
+  return bids.reduce((best, bid) => {
+    if (!best) return bid;
+    const bp = lootStatusIndex(best.status), np = lootStatusIndex(bid.status);
+    if (np < bp) return bid;
+    if (np > bp) return best;
+    return bid.amount > best.amount ? bid : best;
+  }, null);
+}
+
+function computeLootShadow(bids, winner) {
+  // Highest-amount bid from a lower-priority tier that numerically beats the winner
+  if (!winner || !bids) return null;
+  const winPri = lootStatusIndex(winner.status);
+  return bids.reduce((best, bid) => {
+    if (lootStatusIndex(bid.status) <= winPri) return best;
+    if (bid.amount <= winner.amount) return best;
+    return (!best || bid.amount > best.amount) ? bid : best;
+  }, null);
+}
+
+function renderLootPanel() {
+  const panel = document.getElementById('panel-loot');
+  const bar   = document.getElementById('loot-items-bar');
+  const bidItems    = Object.entries(activeLootItems);
+  const randomItems = Object.values(activeRandomItems);
+  if (!bidItems.length && !randomItems.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'flex';
+
+  const randomCells = randomItems.map(({ itemName, rolls }) => {
+    const sorted = [...rolls].sort((a, b) => b.roll - a.roll);
+    const leader = sorted[0];
+    const leaderHtml = leader
+      ? `<div style="display:flex;align-items:baseline;gap:4px;">
+           <span class="loot-winner-name">${leader.player}</span>
+           <span class="loot-winner-amount">${leader.roll}</span>
+         </div>`
+      : `<div class="loot-no-bids">No rolls yet</div>`;
+    const countHtml = rolls.length > 1
+      ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">${rolls.length} rolled</div>` : '';
+    return `<div class="loot-cell">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div class="loot-item-name" style="flex:1;">${itemName}</div>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--accent4);letter-spacing:1px;">RANDOM</span>
+      </div>
+      ${leaderHtml}${countHtml}
+    </div>`;
+  }).join('');
+
+  bar.innerHTML = randomCells + bidItems.map(([name, state]) => {
+    const winner = state.overrideWinner
+      ? { bidder: state.overrideWinner, amount: state.overrideAmount, status: null }
+      : computeLootWinner(state.bids);
+    const shadow = state.overrideWinner ? null : computeLootShadow(state.bids, winner);
+    const isClosing = state.isLastCall || !!state.closingAt;
+
+    // Winner row
+    let winnerHtml;
+    if (winner) {
+      const statusClass = (winner.status || '').toLowerCase();
+      const badge = winner.status
+        ? `<span class="loot-status-badge ${statusClass}">${winner.status}</span>` : '';
+      winnerHtml = `<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
+        <span class="loot-winner-name">${winner.bidder}</span>${badge}
+        <span class="loot-winner-amount">${winner.amount} dkp</span>
+      </div>`;
+    } else {
+      winnerHtml = `<div class="loot-no-bids">No bids yet</div>`;
+    }
+
+    // Shadow bid
+    const shadowHtml = shadow
+      ? `<div class="loot-shadow">▲ ${shadow.status} ${shadow.amount} — ${shadow.bidder}</div>` : '';
+
+    // Countdown
+    let countdownHtml = '';
+    if (state.isLastCall) {
+      countdownHtml = `<span class="loot-countdown">LAST CALL</span>`;
+    } else if (state.closingAt) {
+      const sec = Math.max(0, Math.ceil((state.closingAt - Date.now()) / 1000));
+      const pct = state.closingDuration ? Math.round(sec / state.closingDuration * 100) : 0;
+      countdownHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+        <div style="flex:1;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:var(--accent2);border-radius:2px;"></div>
+        </div>
+        <span class="loot-countdown">${sec}s</span>
+      </div>`;
+    }
+
+    return `<div class="loot-cell${isClosing ? ' closing' : ''}">
+      <div class="loot-item-name">${name}</div>
+      ${winnerHtml}${shadowHtml}${countdownHtml}
+    </div>`;
+  }).join('');
+}
+
+
+async function loadLootConfig() {
+  lootConfig = await ipcRenderer.invoke('store-get', 'lootConfig') || {};
+  document.getElementById('loot-enabled').checked         = !!lootConfig.enabled;
+  document.getElementById('loot-bids-open-kw').value      = lootConfig.bidsOpenKeyword || 'BIDS OPEN';
+  document.getElementById('loot-bid-statuses').value      = lootConfig.bidStatuses     || 'mem, app, alt';
+  document.getElementById('loot-closing-kw').value        = lootConfig.closingKeyword  || 'CLOSING IN';
+  document.getElementById('loot-sold-kw').value           = lootConfig.soldKeyword     || 'SOLD!';
+  document.getElementById('loot-bids-open-sep').value     = lootConfig.bidsOpenSeparator || ',';
+  document.getElementById('loot-item-delimiter').value    = lootConfig.itemDelimiter   || ' // ';
+}
+
+async function saveLootConfig() {
+  lootConfig = {
+    enabled:          document.getElementById('loot-enabled').checked,
+    bidsOpenKeyword:  document.getElementById('loot-bids-open-kw').value.trim()   || 'BIDS OPEN',
+    bidStatuses:      document.getElementById('loot-bid-statuses').value.trim()   || 'mem, app, alt',
+    closingKeyword:   document.getElementById('loot-closing-kw').value.trim()     || 'CLOSING IN',
+    soldKeyword:      document.getElementById('loot-sold-kw').value.trim()        || 'SOLD!',
+    bidsOpenSeparator: document.getElementById('loot-bids-open-sep').value.trim() || ',',
+    itemDelimiter:    document.getElementById('loot-item-delimiter').value        || ' // ',
+  };
+  await ipcRenderer.invoke('store-set', 'lootConfig', lootConfig);
+  showToast('Loot settings saved');
+}
+
+ipcRenderer.on('loot-bids-open', (e, { items }) => {
+  items.forEach(name => {
+    if (!activeLootItems[name]) {
+      activeLootItems[name] = { bids: [], closingAt: null, closingDuration: null, isLastCall: false, overrideWinner: null, overrideAmount: 0 };
+    }
+  });
+  renderLootPanel();
+});
+
+ipcRenderer.on('loot-bid', (e, { itemName, bidder, status, amount }) => {
+  if (!activeLootItems[itemName]) return;
+  const state = activeLootItems[itemName];
+  // Update existing bid from same bidder, or add new
+  state.bids = state.bids.filter(b => b.bidder.toLowerCase() !== bidder.toLowerCase());
+  state.bids.push({ bidder, status, amount });
+  renderLootPanel();
+});
+
+ipcRenderer.on('loot-closing', (e, { countdown, isLastCall, updates }) => {
+  updates.forEach(({ itemName, winner, amount }) => {
+    if (!activeLootItems[itemName]) {
+      activeLootItems[itemName] = { bids: [], closingAt: null, closingDuration: null, isLastCall: false, overrideWinner: null, overrideAmount: 0 };
+    }
+    const state = activeLootItems[itemName];
+    state.overrideWinner = winner;
+    state.overrideAmount = amount;
+    if (isLastCall) {
+      state.isLastCall  = true;
+      state.closingAt   = null;
+    } else {
+      state.closingAt      = Date.now() + countdown * 1000;
+      state.closingDuration = countdown;
+      state.isLastCall     = false;
+    }
+  });
+  renderLootPanel();
+});
+
+ipcRenderer.on('loot-sold', () => {
+  activeLootItems = {};
+  renderLootPanel();
+});
+
+function clearBiddingPanel() {
+  activeLootItems = {};
+  activeRandomItems = {};
+  renderLootPanel();
+}
+
+ipcRenderer.on('loot-random-open', (e, { itemName, max }) => {
+  activeRandomItems[max] = { itemName, max, rolls: [] };
+  renderLootPanel();
+});
+
+ipcRenderer.on('loot-roll', (e, { player, max, roll }) => {
+  if (!activeRandomItems[max]) return;
+  const item = activeRandomItems[max];
+  item.rolls = item.rolls.filter(r => r.player.toLowerCase() !== player.toLowerCase());
+  item.rolls.push({ player, roll });
+  renderLootPanel();
+});
+
+ipcRenderer.on('loot-random-close', (e, { max }) => {
+  delete activeRandomItems[max];
+  renderLootPanel();
+});
+
+// ── Resizable Panels ──────────────────────────────────────────────────────────
+function initResizablePanels() {
+  const container    = document.getElementById('dashboard-container');
+  const panelCd      = document.getElementById('panel-cooldowns');
+  const panelMiddle  = document.getElementById('panel-middle');
+  const panelDps     = document.getElementById('panel-dps');
+  const panelBuffs   = document.getElementById('panel-buffs');
+  const panelDebuffs = document.getElementById('panel-debuffs');
+  const dragRow1     = document.getElementById('drag-row1');
+  const dragRow2     = document.getElementById('drag-row2');
+  const dragCol      = document.getElementById('drag-col');
+
+  if (!container) return;
+
+  // Restore saved sizes (DPS panel intentionally excluded — always flex:1)
+  const saved = JSON.parse(localStorage.getItem('panelSizes2') || '{}');
+  if (saved.cdH      && panelCd)      { panelCd.style.flex      = '0 0 ' + saved.cdH;      panelCd.style.height      = saved.cdH; }
+  if (saved.middleH  && panelMiddle)  { panelMiddle.style.flex   = '0 0 ' + saved.middleH;  panelMiddle.style.height   = saved.middleH; }
+  if (saved.buffsW   && panelBuffs)   { panelBuffs.style.flex    = '0 0 ' + saved.buffsW;   panelBuffs.style.width     = saved.buffsW; }
+  if (saved.debuffsW && panelDebuffs) { panelDebuffs.style.flex  = '0 0 ' + saved.debuffsW; panelDebuffs.style.width   = saved.debuffsW; }
+
+  function saveSizes() {
+    localStorage.setItem('panelSizes2', JSON.stringify({
+      cdH:      panelCd ? panelCd.style.height : '',
+      middleH:  panelMiddle ? panelMiddle.style.height : '',
+      buffsW:   panelBuffs ? panelBuffs.style.width : '',
+      debuffsW: panelDebuffs ? panelDebuffs.style.width : '',
+    }));
+  }
+
+  // Generic drag factory
+  function makeDrag(handle, cursor, onMove) {
+    if (!handle) return;
+    let dragging = false, startX = 0, startY = 0, startA = 0, startB = 0;
+    handle.addEventListener('mousedown', (e) => {
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      const [a, b] = onMove.starts();
+      startA = a; startB = b;
+      handle.classList.add('dragging');
+      document.body.style.cursor = cursor;
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      onMove.move(e.clientX - startX, e.clientY - startY, startA, startB);
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      saveSizes();
+    });
+  }
+
+  // Row 1 handle: cooldowns ↔ middle
+  makeDrag(dragRow1, 'row-resize', {
+    starts: () => [panelCd.offsetHeight, panelMiddle.offsetHeight],
+    move: (dx, dy, startA, startB) => {
+      const minH = 44, total = startA + startB;
+      const newA = Math.max(minH, Math.min(total - minH, startA + dy));
+      const newB = total - newA;
+      panelCd.style.flex     = '0 0 ' + newA + 'px'; panelCd.style.height     = newA + 'px';
+      panelMiddle.style.flex = '0 0 ' + newB + 'px'; panelMiddle.style.height  = newB + 'px';
+    }
+  });
+
+  // Row 2 handle: middle ↔ DPS
+  makeDrag(dragRow2, 'row-resize', {
+    starts: () => [panelMiddle.offsetHeight, panelDps.offsetHeight],
+    move: (dx, dy, startA, startB) => {
+      const minH = 80, total = startA + startB;
+      const newA = Math.max(minH, Math.min(total - minH, startA + dy));
+      const newB = total - newA;
+      panelMiddle.style.flex = '0 0 ' + newA + 'px'; panelMiddle.style.height = newA + 'px';
+      panelDps.style.flex    = '0 0 ' + newB + 'px'; panelDps.style.height    = newB + 'px';
+    }
+  });
+
+  // Col handle: buffs ↔ debuffs
+  makeDrag(dragCol, 'col-resize', {
+    starts: () => [panelBuffs.offsetWidth, panelDebuffs.offsetWidth],
+    move: (dx, dy, startA, startB) => {
+      const minW = 150, total = startA + startB;
+      const newA = Math.max(minW, Math.min(total - minW, startA + dx));
+      const newB = total - newA;
+      panelBuffs.style.flex   = '0 0 ' + newA + 'px'; panelBuffs.style.width   = newA + 'px';
+      panelDebuffs.style.flex = '0 0 ' + newB + 'px'; panelDebuffs.style.width = newB + 'px';
+    }
+  });
+}
+</script>
+</body>
+</html>
