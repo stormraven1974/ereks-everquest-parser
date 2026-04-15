@@ -42,7 +42,7 @@ At least one of these should be installed for audio triggers to work.
 ## Install & Run
 
 ```bash
-git clone https://github.com/your-username/ereks-everquest-parser.git
+git clone https://github.com/stormraven1974/ereks-everquest-parser.git
 cd ereks-everquest-parser
 npm install
 npm start
