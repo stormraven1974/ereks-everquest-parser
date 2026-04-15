@@ -96,6 +96,32 @@ npm start
 | Flurry       | `flurries`               | Flurry       |
 | You died     | `You have been slain`    | You died     |
 
+## Importing Timers
+
+The repo includes a `timers.json` file with a ready-to-use set of buff timers, debuff
+timers, and raid event timers tuned for Beastlord play in Planes of Power / Luclin content.
+
+**What's included:**
+
+- **20 buff timers** — Beastlord pet buffs (Spirit of Snow/Storm/Flame, Sha's Ferocity,
+  Omakin's Alacrity), group regen (Spiritual Radiance/Purity, Chloroplast), stat buffs
+  (Spiritual Strength/Brawn, Talisman of Altuna/Tnarg, Furious Strength, Stamina,
+  Dexterity), haste (Savagery, Alacrity), and utility (Spirit of Wolf, Spirit Sight)
+- **7 debuff timers** — Sha's Lethargy, Drowsy (slows), DoT tracking (Envenomed Breath,
+  Venom of the Snake, Sicken), Engulfing Roots, Incapacitate
+- **3 raid event timers** — Lord Inquisitor Seru (Torturing Winds, 49s), Emperor
+  Ssraeshza tank-hit rage mechanic (60s), Fling (49s)
+
+**To import:**
+
+1. Open the app and go to the **Setup** tab
+2. Click **Import Timers**
+3. Navigate to the repo directory and select `timers.json`
+4. Existing timers with matching IDs will be skipped; new ones are merged in
+
+> **Note:** Raid timers are global (not per-character). Buff/debuff timers are global
+> definitions — which ones are *active* is saved per character profile.
+
 ## Build AppImage (optional)
 
 ```bash

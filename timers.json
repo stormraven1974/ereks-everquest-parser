@@ -1,0 +1,321 @@
+{
+  "buffTimers": [
+    {
+      "id": "1774400998687",
+      "name": "Savagery",
+      "triggerPattern": "\\] (.+?)'s lips curl into a feral snarl as they descend into savagery",
+      "durationSeconds": 390,
+      "expireAlert": true,
+      "spellFades": "The savagery fades.",
+      "enabled": true,
+      "group": "Haste / Attack Buffs",
+      "isGroupSpell": false
+    },
+    {
+      "id": "1774400955908",
+      "name": "Alacrity",
+      "triggerPattern": "\\] (.+?) feels much faster\\.",
+      "durationSeconds": 660,
+      "expireAlert": true,
+      "spellFades": "Your speed returns to normal.",
+      "enabled": true,
+      "group": "Haste / Attack Buffs",
+      "isGroupSpell": false
+    },
+    {
+      "id": "1774318686032",
+      "name": "Omakin's Alacrity",
+      "triggerPattern": "\\] (.+?) begins to move with the speed of Omakin",
+      "durationSeconds": 1050,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Pet Buffs"
+    },
+    {
+      "id": "1774401143845",
+      "name": "Spirit of Snow",
+      "triggerPattern": "\\] (.+?) is imbued with the spirit of snow\\.",
+      "durationSeconds": 2880,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Pet Buffs"
+    },
+    {
+      "id": "1774401127002",
+      "name": "Spirit of the Storm",
+      "triggerPattern": "\\] (.+?) is imbued with the spirit of an ancient storm\\.",
+      "durationSeconds": 2880,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Pet Buffs"
+    },
+    {
+      "id": "1774318755433",
+      "name": "Spirit of Flame",
+      "triggerPattern": "\\] (.+?) is imbued with the spirit of flames",
+      "durationSeconds": 2880,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Pet Buffs"
+    },
+    {
+      "id": "1774401027803",
+      "name": "Sha's Ferocity",
+      "triggerPattern": "\\] (.+?) growls with the ferocity of Sha\\.",
+      "durationSeconds": 1050,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Pet Buffs",
+      "isGroupSpell": false
+    },
+    {
+      "id": "1774401192563",
+      "name": "Spiritual Radiance",
+      "triggerPattern": "\\] (.+?) is enveloped by an aura of spiritual radiance\\.",
+      "durationSeconds": 2700,
+      "expireAlert": true,
+      "spellFades": "The aura of radiance fades.",
+      "enabled": true,
+      "group": "Regen",
+      "isGroupSpell": true
+    },
+    {
+      "id": "1774322929164",
+      "name": "Chloroplast",
+      "triggerPattern": "\\] (.+?) begins to regenerate\\.",
+      "durationSeconds": 1230,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Regen",
+      "isGroupSpell": true
+    },
+    {
+      "id": "1774401039608",
+      "name": "Spiritual Purity",
+      "triggerPattern": "\\] (.+?) is enveloped by an aura of spiritual purity\\.",
+      "durationSeconds": 2700,
+      "expireAlert": true,
+      "spellFades": "The aura of purity fades.",
+      "enabled": true,
+      "group": "Regen",
+      "isGroupSpell": true
+    },
+    {
+      "id": "1774400976823",
+      "name": "Spiritual Strength",
+      "triggerPattern": "\\] (.+?) has been filled with spiritual strength\\.",
+      "durationSeconds": 4320,
+      "expireAlert": true,
+      "spellFades": "Your spiritual strength fades.",
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774323005031",
+      "name": "Spiritual Brawn",
+      "triggerPattern": "\\] (.+?) has been filled with spiritual brawn\\.",
+      "durationSeconds": 4320,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774401057736",
+      "name": "Talisman of Altuna",
+      "triggerPattern": "\\] (.+?) looks tougher\\.",
+      "durationSeconds": 4320,
+      "expireAlert": true,
+      "spellFades": "Your hit points fade.",
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774322952611",
+      "name": "Furious Strength",
+      "triggerPattern": "\\] (.+?) looks stronger\\.",
+      "durationSeconds": 3240,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774322972810",
+      "name": "Talisman of Tnarg",
+      "triggerPattern": "\\] (.+?) looks tougher\\.",
+      "durationSeconds": 4320,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774322849224",
+      "name": "Stamina",
+      "triggerPattern": "\\] (.+?) looks robust\\.",
+      "durationSeconds": 3780,
+      "expireAlert": true,
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774320736868",
+      "name": "Dexterity",
+      "triggerPattern": "\\] (.+?) looks dexterous",
+      "durationSeconds": 3780,
+      "expireAlert": false,
+      "enabled": true,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1774401116350",
+      "name": "Deftness",
+      "triggerPattern": "\\] (.+?) looks dexterous\\.",
+      "durationSeconds": 3240,
+      "expireAlert": true,
+      "spellFades": "Your dexterity fades.",
+      "enabled": false,
+      "group": "Stat Buffs"
+    },
+    {
+      "id": "1775755693437",
+      "name": "Spirit of Wolf",
+      "triggerPattern": "\\] (.+?) is surrounded by a brief lupine aura\\.",
+      "durationSeconds": 2160,
+      "expireAlert": true,
+      "isGroupSpell": false,
+      "spellFades": "The spirit of wolf leaves you.",
+      "enabled": true
+    },
+    {
+      "id": "1775755850650",
+      "name": "Spirit Sight",
+      "triggerPattern": "\\] (.+?) 's eyes tingle\\.",
+      "durationSeconds": 1620,
+      "expireAlert": true,
+      "isGroupSpell": false,
+      "spellFades": "Your eyes stop tingling.",
+      "enabled": true
+    }
+  ],
+  "debuffTimers": [
+    {
+      "id": "1774324121039",
+      "name": "Sha's Lethargy",
+      "triggerPattern": "\\] (.+?) feels lethargic\\.",
+      "durationSeconds": 210,
+      "spellFades": "",
+      "enabled": true,
+      "group": "Slows",
+      "castName": "Sha's Lethargy"
+    },
+    {
+      "id": "1774324147870",
+      "name": "Envenomed Breath",
+      "triggerPattern": "\\] (.+?) has been poisoned\\.",
+      "durationSeconds": 42,
+      "spellFades": "",
+      "enabled": true,
+      "group": "DoT spells"
+    },
+    {
+      "id": "1774324218039",
+      "name": "Drowsy",
+      "triggerPattern": "\\] (.+?) yawns\\.",
+      "durationSeconds": 210,
+      "spellFades": "",
+      "enabled": true,
+      "group": "Slows"
+    },
+    {
+      "id": "1774324324573",
+      "name": "Engulfing Roots",
+      "triggerPattern": "\\] (.+?) is entwined by roots\\.",
+      "durationSeconds": 180,
+      "spellFades": "",
+      "enabled": true
+    },
+    {
+      "id": "1774401177409",
+      "name": "Venom of the Snake",
+      "triggerPattern": "\\] (.+?) has been poisoned\\.",
+      "durationSeconds": 42,
+      "spellFades": "",
+      "enabled": true,
+      "group": "DoT spells",
+      "castName": "Venom of the Snake"
+    },
+    {
+      "id": "1774357548373",
+      "name": "Sicken",
+      "triggerPattern": "\\] (.+?) sweats and shivers, looking feverish\\.",
+      "durationSeconds": 126,
+      "spellFades": "",
+      "enabled": true,
+      "group": "DoT spells"
+    },
+    {
+      "id": "1774401078159",
+      "name": "Incapacitate",
+      "triggerPattern": "\\] (.+?) looks frail\\.",
+      "durationSeconds": 390,
+      "spellFades": "",
+      "enabled": true
+    }
+  ],
+  "buffTimerGroups": [
+    "General",
+    "Haste / Attack Buffs",
+    "Pet Buffs",
+    "Regen",
+    "Stat Buffs"
+  ],
+  "debuffTimerGroups": [
+    "DoT spells",
+    "General",
+    "Slows"
+  ],
+  "raidTimers": [
+    {
+      "id": "seru_torturing_winds",
+      "name": "Lord Inquisitor Seru",
+      "aoeTrigger": "stricken by torturing winds",
+      "interval": 49,
+      "warningLeadTime": 10,
+      "deathPattern": "Lord Inquisitor Seru has been slain"
+    },
+    {
+      "id": "1774637715750",
+      "name": "Emperor Ssraeshza (Rage)",
+      "aoeTrigger": "Emperor Ssraeshza\\s+hit .+ non-melee",
+      "interval": 60,
+      "warningLeadTime": 10,
+      "deathPattern": "Emperor Ssraeshza  has been slain"
+    },
+    {
+      "id": "1774673097516",
+      "name": "Fling",
+      "aoeTrigger": "is knocked into the air by a massive force",
+      "interval": 49,
+      "warningLeadTime": 5,
+      "deathPattern": "Aten Ha Ra has been slain"
+    }
+  ],
+  "discOverrides": {
+    "disc_beastial_rage": {
+      "detect": "A bestial fury consumes you",
+      "cooldown": 1800
+    }
+  },
+  "enabledDiscs": [
+    "disc_beastial_rage"
+  ],
+  "cooldownSettings": {
+    "paragonEnabled": true,
+    "paragonDuration": 900,
+    "mgbEnabled": true,
+    "mgbDuration": 540,
+    "discEnabled": false,
+    "discDuration": 1800,
+    "discName": "Discipline"
+  },
+  "exportedAt": "2026-04-15T00:00:00.000Z"
+}

@@ -7,6 +7,24 @@ const { exec } = require('child_process');
 
 const store = new Store();
 
+// ── One-time migration from old userData path (when app was named 'eq-parser') ─
+(function migrateOldStore() {
+  if (store.get('_migrated_from_eq_parser')) return;
+  const oldPath = path.join(app.getPath('home'), '.config', 'eq-parser', 'config.json');
+  if (!fs.existsSync(oldPath)) return;
+  try {
+    const old = JSON.parse(fs.readFileSync(oldPath, 'utf8'));
+    // Import keys from old store that don't already exist in the new store
+    for (const [k, v] of Object.entries(old)) {
+      if (store.get(k) === undefined) store.set(k, v);
+    }
+    store.set('_migrated_from_eq_parser', true);
+    console.log('Migrated settings from old eq-parser config.');
+  } catch (e) {
+    console.error('Migration from old config failed:', e.message);
+  }
+})();
+
 // ── Profile helpers ────────────────────────────────────────────────────────────
 function profileKeyFromPath(logPath) {
   if (!logPath) return 'default';
@@ -93,6 +111,12 @@ ipcMain.on('start-watching', (event, logPath) => {
   if (logWatcher) { logWatcher.close(); logWatcher = null; }
   lastFileSize = 0;
   if (!fs.existsSync(logPath)) { event.reply('watch-error', 'File not found: ' + logPath); return; }
+  // Track known log paths for the character switcher dropdown
+  const knownLogs = store.get('knownLogPaths', []);
+  if (!knownLogs.includes(logPath)) {
+    knownLogs.push(logPath);
+    store.set('knownLogPaths', knownLogs);
+  }
   lastFileSize = fs.statSync(logPath).size;
   logWatcher = chokidar.watch(logPath, { usePolling: true, interval: 500, persistent: true });
   logWatcher.on('change', (filePath) => {
@@ -606,7 +630,7 @@ function startRaidTimer(def, event) {
 function parseRaidTimers(line, event) {
   const defs = store.get('raidTimers', []);
   for (const def of defs) {
-    if (def.deathPattern && line.toLowerCase().includes(def.deathPattern.toLowerCase())) {
+    if (def.deathPattern && (() => { try { return new RegExp(def.deathPattern, 'i').test(line); } catch(e) { return line.toLowerCase().includes(def.deathPattern.toLowerCase()); } })()) {
       if (raidTimerState[def.id]) {
         clearTimeout(raidTimerState[def.id].warningTimeout);
         clearTimeout(raidTimerState[def.id].repeatTimeout);
@@ -615,7 +639,7 @@ function parseRaidTimers(line, event) {
       event.reply('raid-timer-stopped', { id: def.id });
       continue;
     }
-    if (def.aoeTrigger && line.toLowerCase().includes(def.aoeTrigger.toLowerCase())) {
+    if (def.aoeTrigger && (() => { try { return new RegExp(def.aoeTrigger, 'i').test(line); } catch(e) { return line.toLowerCase().includes(def.aoeTrigger.toLowerCase()); } })()) {
       startRaidTimer(def, event);
     }
   }
@@ -885,6 +909,7 @@ ipcMain.handle('set-profile', (event, data) => {
   store.set(`profiles.${key}`, { ...existing, ...data });
 });
 ipcMain.handle('get-all-profile-keys', () => Object.keys(store.get('profiles', {})));
+ipcMain.handle('get-known-logs', () => store.get('knownLogPaths', []));
 ipcMain.handle('store-delete', (event, key) => store.delete(key));
 
 // Export / Import JSON
