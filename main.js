@@ -71,6 +71,7 @@ if (!store.get('raidTimers')) {
 
 let mainWindow;
 let logWatcher = null;
+let traderWatchers = {};
 let lastFileSize = 0;
 let combatData = {};
 let combatActive = false;
@@ -99,6 +100,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+  initTraderWatchers();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
@@ -1149,3 +1151,145 @@ ipcMain.on('open-pqdi', (event, classId) => {
 
 ipcMain.handle('minimize-window', () => mainWindow.minimize());
 ipcMain.handle('close-window', () => mainWindow.close());
+
+// ── Trader ────────────────────────────────────────────────────────────────────
+
+function parseTraderInventory(content) {
+  const items = {};
+  const lines = content.split('\n');
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split('\t');
+    if (cols.length < 4) continue;
+    const loc   = (cols[0] || '').trim();
+    const name  = (cols[1] || '').trim();
+    const count = parseInt(cols[3]) || 0;
+    if (!/^General[2-8]-Slot\d+$/i.test(loc)) continue;
+    if (!name || name === 'Empty' || count <= 0) continue;
+    items[name] = (items[name] || 0) + count;
+  }
+  return items;
+}
+
+function parsePriceIni(content) {
+  const prices = {};
+  for (const line of content.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('[')) continue;
+    const eq = t.indexOf('=');
+    if (eq === -1) continue;
+    const name = t.slice(0, eq).trim();
+    const val  = parseInt(t.slice(eq + 1).trim());
+    if (name && !isNaN(val)) prices[name] = val;
+  }
+  return prices;
+}
+
+function findPriceIniPath(eqDir, charName) {
+  try {
+    const files = fs.readdirSync(eqDir);
+    const match = files.find(f =>
+      f.toLowerCase().startsWith('bzr_' + charName.toLowerCase() + '_') && f.endsWith('.ini')
+    );
+    return match ? path.join(eqDir, match) : null;
+  } catch (e) { return null; }
+}
+
+function diffInventory(prev, curr) {
+  const sold = [];
+  for (const [name, prevCount] of Object.entries(prev)) {
+    const currCount = curr[name] || 0;
+    if (currCount < prevCount) sold.push({ name, qtySold: prevCount - currCount });
+  }
+  return sold;
+}
+
+function broadcastTraderData(charName, eqDir) {
+  if (!mainWindow) return;
+  const invPath = path.join(eqDir, `${charName}-Inventory.txt`);
+  if (!fs.existsSync(invPath)) return;
+  try {
+    const curr    = parseTraderInventory(fs.readFileSync(invPath, 'utf8'));
+    const iniPath = findPriceIniPath(eqDir, charName);
+    const prices  = iniPath ? parsePriceIni(fs.readFileSync(iniPath, 'utf8')) : {};
+    const items   = Object.entries(curr)
+      .map(([name, count]) => ({ name, count, price: prices[name] !== undefined ? prices[name] : -1 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const sales = store.get(`traderSales.${charName}`, []);
+    mainWindow.webContents.send('trader-data', { charName, items, sales });
+  } catch (e) { console.error('broadcastTraderData error:', e); }
+}
+
+function startTraderWatcher(trader) {
+  const { name, eqDir } = trader;
+  if (traderWatchers[name]) { traderWatchers[name].close(); delete traderWatchers[name]; }
+  const invPath = path.join(eqDir, `${name}-Inventory.txt`);
+  if (!fs.existsSync(invPath)) { console.warn(`Trader inventory not found: ${invPath}`); return; }
+
+  const snapKey = `traderSnapshot.${name}`;
+  if (!store.get(snapKey)) {
+    store.set(snapKey, parseTraderInventory(fs.readFileSync(invPath, 'utf8')));
+  }
+
+  const watcher = chokidar.watch(invPath, { usePolling: true, interval: 3000, persistent: true });
+  watcher.on('change', () => {
+    try {
+      const content = fs.readFileSync(invPath, 'utf8');
+      const curr    = parseTraderInventory(content);
+      const prev    = store.get(snapKey, {});
+      const iniPath = findPriceIniPath(eqDir, name);
+      const prices  = iniPath ? parsePriceIni(fs.readFileSync(iniPath, 'utf8')) : {};
+      const sold    = diffInventory(prev, curr);
+      if (sold.length > 0) {
+        const salesKey  = `traderSales.${name}`;
+        const timestamp = Date.now();
+        const newSales  = sold.map(s => ({
+          name: s.name, qtySold: s.qtySold,
+          priceEach: prices[s.name] || 0,
+          total: (prices[s.name] || 0) * s.qtySold,
+          soldAt: timestamp,
+        }));
+        store.set(salesKey, [...store.get(salesKey, []), ...newSales]);
+      }
+      store.set(snapKey, curr);
+      broadcastTraderData(name, eqDir);
+    } catch (e) { console.error('Trader watcher error:', e); }
+  });
+  traderWatchers[name] = watcher;
+}
+
+function initTraderWatchers() {
+  store.get('traders', []).forEach(t => startTraderWatcher(t));
+}
+
+ipcMain.handle('get-traders', () => store.get('traders', []));
+
+ipcMain.handle('set-traders', (event, traders) => {
+  const old = store.get('traders', []);
+  old.filter(t => !traders.find(n => n.name === t.name)).forEach(t => {
+    if (traderWatchers[t.name]) { traderWatchers[t.name].close(); delete traderWatchers[t.name]; }
+  });
+  traders.filter(t => !old.find(o => o.name === t.name)).forEach(t => startTraderWatcher(t));
+  store.set('traders', traders);
+  return { success: true };
+});
+
+ipcMain.handle('get-trader-data', (event, charName) => {
+  const trader = store.get('traders', []).find(t => t.name === charName);
+  if (!trader) return null;
+  const invPath = path.join(trader.eqDir, `${charName}-Inventory.txt`);
+  const iniPath = findPriceIniPath(trader.eqDir, charName);
+  let items = [];
+  if (fs.existsSync(invPath)) {
+    const curr   = parseTraderInventory(fs.readFileSync(invPath, 'utf8'));
+    const prices = iniPath ? parsePriceIni(fs.readFileSync(iniPath, 'utf8')) : {};
+    items = Object.entries(curr)
+      .map(([name, count]) => ({ name, count, price: prices[name] !== undefined ? prices[name] : -1 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return { items, sales: store.get(`traderSales.${charName}`, []) };
+});
+
+ipcMain.handle('clear-trader-sales', (event, charName) => {
+  store.delete(`traderSales.${charName}`);
+  return { success: true };
+});

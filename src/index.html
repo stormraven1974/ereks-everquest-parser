@@ -927,6 +927,52 @@
     0% { background: rgba(0,212,255,0.3); }
     100% { background: transparent; }
   }
+
+  /* ── Trader Tab ── */
+  .trader-col-hdr {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .trader-item-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-bottom: 1px solid rgba(30,42,74,0.6);
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+  .trader-item-row:hover { background: var(--bg3); }
+  .trader-item-row.unpriced { opacity: 0.4; }
+  .trader-item-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .trader-item-qty   { width: 36px;  text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
+  .trader-item-price { width: 90px;  text-align: right; font-family: var(--mono); font-size: 11px; color: var(--accent);   flex-shrink: 0; }
+  .trader-item-total { width: 90px;  text-align: right; font-family: var(--mono); font-size: 11px; color: var(--accent4);  flex-shrink: 0; }
+  .trader-sold-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-bottom: 1px solid rgba(30,42,74,0.6);
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+  .trader-sold-row:hover { background: var(--bg3); }
+  .trader-sold-earned { width: 80px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--accent3); flex-shrink: 0; }
+  .trader-sold-when   { width: 74px; text-align: right; font-family: var(--mono); font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -945,6 +991,7 @@
   <div class="nav-tab" data-tab="timers">Timers</div>
   <div class="nav-tab" data-tab="raid">Raid</div>
   <div class="nav-tab" data-tab="loot">Loot</div>
+  <div class="nav-tab" data-tab="trader">Trader</div>
   <div class="nav-tab" data-tab="log">Log</div>
 </div>
 
@@ -1440,6 +1487,91 @@
           <div><span style="color:var(--accent4);">Countdown: </span> &nbsp;Balthemal tells the guild, '<span style="color:var(--accent);">CLOSING IN</span> 15s! Item (Winner - 125 dkp) // ...'</div>
           <div><span style="color:var(--accent4);">Sold:      </span> &nbsp;Balthemal tells the guild, '<span style="color:var(--accent);">SOLD!</span> Item (Winner - 125 dkp) // ...'</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRADER TAB ── -->
+  <div class="tab-panel" id="tab-trader">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- Top bar: trader selector + manage button -->
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);">
+        <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent4);">TRADER</div>
+        <select id="trader-select" style="max-width:180px;padding:4px 8px;font-size:11px;" onchange="onTraderSelect(this.value)">
+          <option value="">— No traders configured —</option>
+        </select>
+        <div style="flex:1;"></div>
+        <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="showTraderModal()">Manage Traders</button>
+      </div>
+
+      <!-- Two-column body -->
+      <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+        <!-- Left: For Sale -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);">For Sale</span>
+            <span id="trader-count-label" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);"></span>
+            <div style="flex:1;"></div>
+            <span id="trader-value-label" style="font-family:var(--mono);font-size:10px;color:var(--accent4);"></span>
+          </div>
+          <div class="trader-col-hdr">
+            <span style="flex:1;">Item</span>
+            <span style="width:36px;text-align:right;">Qty</span>
+            <span style="width:90px;text-align:right;">Price Ea</span>
+            <span style="width:90px;text-align:right;">Total</span>
+          </div>
+          <div id="trader-for-sale" style="flex:1;overflow-y:auto;">
+            <div class="empty-state">No trader selected</div>
+          </div>
+        </div>
+
+        <!-- Right: Sold -->
+        <div style="width:360px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:6px 14px;background:var(--bg3);border-bottom:1px solid var(--border);">
+            <span style="font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);">Sold</span>
+            <span id="trader-sold-total" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);"></span>
+            <div style="flex:1;"></div>
+            <button class="btn danger" style="padding:2px 8px;font-size:9px;" onclick="clearTraderSales()">Clear</button>
+          </div>
+          <div class="trader-col-hdr">
+            <span style="flex:1;">Item</span>
+            <span style="width:36px;text-align:right;">Qty</span>
+            <span style="width:80px;text-align:right;">Earned</span>
+            <span style="width:74px;text-align:right;">When</span>
+          </div>
+          <div id="trader-sold" style="flex:1;overflow-y:auto;">
+            <div class="empty-state" style="font-size:10px;padding:20px;">No sales recorded yet</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRADER MODAL ── -->
+  <div id="trader-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent4);border-radius:8px;padding:24px;width:480px;max-height:85vh;overflow-y:auto;">
+      <div class="section-title" style="color:var(--accent4);">Manage Traders</div>
+      <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:12px;">Trader inventory files are watched continuously, regardless of which character you are logged into.</div>
+      <div id="trader-list-modal" style="margin-bottom:20px;"></div>
+      <div class="section-title" style="font-size:9px;color:var(--text-dim);margin-bottom:10px;">Add Trader Character</div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">CHARACTER NAME</div>
+        <input type="text" id="new-trader-name" placeholder="e.g. Stormraven" style="max-width:240px;"
+          onkeydown="if(event.key==='Enter')addTrader();"/>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">EQ DIRECTORY</div>
+        <input type="text" id="new-trader-dir" placeholder="/home/paul/Games/everquest"
+          onkeydown="if(event.key==='Enter')addTrader();"/>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Directory containing <span style="color:var(--accent);font-family:var(--mono);">CharName-Inventory.txt</span></div>
+        <div id="new-trader-err" style="font-size:10px;color:var(--danger);margin-top:4px;display:none;font-family:var(--mono);"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn success" onclick="addTrader()">Add</button>
+        <button class="btn" onclick="hideTraderModal()">Close</button>
       </div>
     </div>
   </div>
@@ -3175,7 +3307,213 @@ function showToast(msg, duration=2500) {
   setTimeout(() => toast.remove(), duration);
 }
 
-init();
+// ── Trader ────────────────────────────────────────────────────────────────────
+let traderList = [];
+let currentTrader = null;
+
+function formatCopper(copper) {
+  if (copper == null || copper < 0) return '—';
+  if (copper === 0) return '—';
+  const pp = Math.floor(copper / 1000);
+  const rem = copper % 1000;
+  const gp = Math.floor(rem / 100);
+  const rem2 = rem % 100;
+  const sp = Math.floor(rem2 / 10);
+  const cp = rem2 % 10;
+  const parts = [];
+  if (pp) parts.push(pp + 'p');
+  if (gp) parts.push(gp + 'g');
+  if (sp) parts.push(sp + 's');
+  if (cp) parts.push(cp + 'c');
+  return parts.length ? parts.join(' ') : '0c';
+}
+
+function formatSaleTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const h = d.getHours().toString().padStart(2, '0');
+  const m = d.getMinutes().toString().padStart(2, '0');
+  if (d.toDateString() === now.toDateString()) return h + ':' + m;
+  const mo  = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return mo + '/' + day + ' ' + h + ':' + m;
+}
+
+async function initTraderTab() {
+  traderList = await ipcRenderer.invoke('get-traders') || [];
+  renderTraderSelect();
+  if (traderList.length > 0) {
+    currentTrader = traderList[0].name;
+    document.getElementById('trader-select').value = currentTrader;
+    await loadTraderData(currentTrader);
+  }
+}
+
+function renderTraderSelect() {
+  const sel = document.getElementById('trader-select');
+  sel.innerHTML = '';
+  if (traderList.length === 0) {
+    sel.innerHTML = '<option value="">— No traders configured —</option>';
+    return;
+  }
+  traderList.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.name;
+    opt.textContent = t.name;
+    if (t.name === currentTrader) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function onTraderSelect(name) {
+  currentTrader = name || null;
+  if (currentTrader) await loadTraderData(currentTrader);
+}
+
+async function loadTraderData(charName) {
+  const data = await ipcRenderer.invoke('get-trader-data', charName);
+  if (!data) return;
+  renderForSale(data.items);
+  renderSold(data.sales);
+}
+
+function renderForSale(items) {
+  const el         = document.getElementById('trader-for-sale');
+  const countLabel = document.getElementById('trader-count-label');
+  const valueLabel = document.getElementById('trader-value-label');
+  if (!items || items.length === 0) {
+    el.innerHTML = '<div class="empty-state">No items in trader satchels</div>';
+    countLabel.textContent = '';
+    valueLabel.textContent = '';
+    return;
+  }
+  let totalValue = 0, listedCount = 0;
+  items.forEach(item => {
+    if (item.price > 0) { totalValue += item.price * item.count; listedCount++; }
+  });
+  const unpriced = items.length - listedCount;
+  countLabel.textContent = items.length + ' item' + (items.length !== 1 ? 's' : '') +
+    (unpriced > 0 ? ' · ' + unpriced + ' unpriced' : '');
+  valueLabel.textContent = totalValue > 0 ? 'Listed value: ' + formatCopper(totalValue) : '';
+  el.innerHTML = items.map(item => {
+    const isUnpriced = item.price <= 0;
+    const priceStr = formatCopper(item.price);
+    const totalStr = item.price > 0 ? formatCopper(item.price * item.count) : '—';
+    return `<div class="trader-item-row${isUnpriced ? ' unpriced' : ''}">` +
+      `<span class="trader-item-name">${item.name}</span>` +
+      `<span class="trader-item-qty">${item.count}</span>` +
+      `<span class="trader-item-price">${priceStr}</span>` +
+      `<span class="trader-item-total">${totalStr}</span>` +
+      `</div>`;
+  }).join('');
+}
+
+function renderSold(sales) {
+  const el         = document.getElementById('trader-sold');
+  const totalLabel = document.getElementById('trader-sold-total');
+  if (!sales || sales.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="font-size:10px;padding:20px;">No sales recorded yet</div>';
+    totalLabel.textContent = '';
+    return;
+  }
+  const totalEarned = sales.reduce((sum, s) => sum + (s.total || 0), 0);
+  totalLabel.textContent = formatCopper(totalEarned) + ' earned';
+  el.innerHTML = [...sales].reverse().map(s => {
+    return `<div class="trader-sold-row">` +
+      `<span class="trader-item-name">${s.name}</span>` +
+      `<span class="trader-item-qty">${s.qtySold}</span>` +
+      `<span class="trader-sold-earned">${s.total > 0 ? formatCopper(s.total) : '—'}</span>` +
+      `<span class="trader-sold-when">${formatSaleTime(s.soldAt)}</span>` +
+      `</div>`;
+  }).join('');
+}
+
+async function clearTraderSales() {
+  if (!currentTrader) return;
+  await ipcRenderer.invoke('clear-trader-sales', currentTrader);
+  renderSold([]);
+  document.getElementById('trader-sold-total').textContent = '';
+}
+
+function showTraderModal() {
+  renderTraderListModal();
+  // Pre-fill eq dir from current log path
+  const logPath = document.getElementById('log-path-input').value.trim();
+  if (logPath) {
+    const parts = logPath.replace(/\\/g, '/').split('/');
+    parts.pop();
+    document.getElementById('new-trader-dir').value = parts.join('/');
+  }
+  document.getElementById('trader-modal').style.display = 'flex';
+}
+
+function hideTraderModal() {
+  document.getElementById('trader-modal').style.display = 'none';
+  document.getElementById('new-trader-name').value = '';
+  document.getElementById('new-trader-err').style.display = 'none';
+}
+
+function renderTraderListModal() {
+  const el = document.getElementById('trader-list-modal');
+  if (traderList.length === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);padding:4px 0 12px;">No traders configured yet.</div>';
+    return;
+  }
+  el.innerHTML = traderList.map(t =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:5px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;">` +
+      `<span style="font-family:var(--mono);font-size:12px;font-weight:600;width:120px;flex-shrink:0;">${t.name}</span>` +
+      `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.eqDir}</span>` +
+      `<button class="btn danger" style="padding:2px 8px;font-size:9px;" onclick="removeTrader('${t.name}')">Remove</button>` +
+    `</div>`
+  ).join('');
+}
+
+async function addTrader() {
+  const name   = document.getElementById('new-trader-name').value.trim();
+  const eqDir  = document.getElementById('new-trader-dir').value.trim();
+  const errEl  = document.getElementById('new-trader-err');
+  errEl.style.display = 'none';
+  if (!name)  { errEl.textContent = 'Character name is required.'; errEl.style.display = ''; return; }
+  if (!eqDir) { errEl.textContent = 'EQ directory is required.';  errEl.style.display = ''; return; }
+  if (traderList.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    errEl.textContent = name + ' is already configured as a trader.';
+    errEl.style.display = '';
+    return;
+  }
+  traderList = [...traderList, { name, eqDir }];
+  await ipcRenderer.invoke('set-traders', traderList);
+  document.getElementById('new-trader-name').value = '';
+  currentTrader = name;
+  renderTraderSelect();
+  renderTraderListModal();
+  await loadTraderData(name);
+}
+
+async function removeTrader(name) {
+  traderList = traderList.filter(t => t.name !== name);
+  await ipcRenderer.invoke('set-traders', traderList);
+  renderTraderListModal();
+  if (currentTrader === name) {
+    currentTrader = traderList.length > 0 ? traderList[0].name : null;
+  }
+  renderTraderSelect();
+  if (currentTrader) {
+    await loadTraderData(currentTrader);
+  } else {
+    renderForSale([]);
+    renderSold([]);
+  }
+}
+
+// Live updates pushed from the trader watcher
+ipcRenderer.on('trader-data', (event, { charName, items, sales }) => {
+  if (charName === currentTrader) {
+    renderForSale(items);
+    renderSold(sales);
+  }
+});
+
+init().then(() => initTraderTab());
 initResizablePanels();
 
 // ── Timer Group Management ─────────────────────────────────────────────────────
