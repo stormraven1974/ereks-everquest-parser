@@ -693,7 +693,20 @@ function parseLootMessages(line, event) {
     const idx = msgUp.lastIndexOf(bidsOpenKw);
     const itemsPart = msg.substring(0, idx).replace(/[\s\-]+$/, '').replace(new RegExp(escapeRegex(bidsOpenSep) + '\\s*$'), '').trim();
     const items = itemsPart.split(bidsOpenSep).map(s => s.trim()).filter(Boolean);
-    if (items.length) event.reply('loot-bids-open', { items });
+    if (items.length) {
+      event.reply('loot-bids-open', { items });
+      // Voice alert for any character whose desired loot is up for bid
+      const itemsLower = items.map(i => i.toLowerCase());
+      const allProfiles = store.get('profiles', {});
+      for (const [, profileData] of Object.entries(allProfiles)) {
+        const desired = profileData.desiredLoot || [];
+        const match = desired.find(d => itemsLower.includes(d.name.toLowerCase()));
+        if (match) {
+          const charName = profileData.charName || '';
+          speakText('Desired loot for ' + (charName || 'your character'));
+        }
+      }
+    }
     return;
   }
 
@@ -1151,6 +1164,120 @@ ipcMain.on('open-pqdi', (event, classId) => {
 
 ipcMain.handle('minimize-window', () => mainWindow.minimize());
 ipcMain.handle('close-window', () => mainWindow.close());
+
+// ── Equipment & Desired Loot ──────────────────────────────────────────────────
+
+function pqdiGet(url) {
+  const https = require('https');
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 EQ-Parser/1.0' } }, (res) => {
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        return resolve(pqdiGet(res.headers.location));
+      }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+  });
+}
+
+async function fetchEffectName(id) {
+  if (!id || id <= 0) return null;
+  try {
+    const json = await pqdiGet(`https://www.pqdi.cc/api/v1/spell/${id}`);
+    const s = JSON.parse(json);
+    return (s && s.name) ? s.name : null;
+  } catch (e) { return null; }
+}
+
+ipcMain.handle('fetch-item', async (event, itemId, force) => {
+  const cacheKey = `itemCache.${itemId}`;
+  const cached = store.get(cacheKey);
+  if (cached && !force) return cached;
+  try {
+    const json = await pqdiGet(`https://www.pqdi.cc/api/v1/item/${itemId}`);
+    const d = JSON.parse(json);
+    if (!d || !d.Name) return null;
+
+    const [focusName, wornName, clickName, procName] = await Promise.all([
+      fetchEffectName(d.focuseffect),
+      fetchEffectName(d.worneffect),
+      fetchEffectName(d.clickeffect),
+      fetchEffectName(d.proceffect),
+    ]);
+
+    const item = {
+      id:     d.id,     name:   d.Name,
+      ac:     d.ac     || 0,  hp:    d.hp    || 0,
+      mana:   d.mana   || 0,  astr:  d.astr  || 0,
+      adex:   d.adex   || 0,  asta:  d.asta  || 0,
+      aint:   d.aint   || 0,  awis:  d.awis  || 0,
+      aagi:   d.aagi   || 0,  acha:  d.acha  || 0,
+      cr:     d.cr     || 0,  dr:    d.dr    || 0,
+      fr:     d.fr     || 0,  mr:    d.mr    || 0,
+      pr:     d.pr     || 0,  damage: d.damage || 0,
+      delay:  d.delay  || 0,  slots: d.slots  || 0,
+      magic:  d.magic  || 0,
+      icon:   d.icon   || 0,
+      effects: {
+        focus: focusName,
+        worn:  wornName,
+        click: clickName,
+        proc:  procName,
+      },
+    };
+    store.set(cacheKey, item);
+    return item;
+  } catch (e) {
+    console.error('fetch-item error:', e);
+    return null;
+  }
+});
+
+ipcMain.handle('search-items', async (event, name) => {
+  try {
+    const json = await pqdiGet(`https://www.pqdi.cc/api/v1/items?name=${encodeURIComponent(name)}`);
+    const data = JSON.parse(json);
+    return data.items || [];
+  } catch (e) {
+    console.error('search-items error:', e);
+    return [];
+  }
+});
+
+ipcMain.handle('load-equipment-file', async () => {
+  const logPath = store.get('logPath', '');
+  if (!logPath) return { error: 'No log file configured' };
+  const dir  = path.dirname(logPath);
+  const base = path.basename(logPath, '.txt');
+  const m    = base.match(/^eqlog_([^_]+)/i);
+  if (!m) return { error: 'Could not derive character name from log path' };
+  const invPath = path.join(dir, m[1] + '-Inventory.txt');
+  try {
+    const content = fs.readFileSync(invPath, 'utf8');
+    const lines = content.split('\n');
+    const equipSlots = new Set(['Ear','Head','Face','Neck','Shoulders','Arms','Back','Wrist','Range','Hands','Primary','Secondary','Fingers','Chest','Legs','Feet','Waist','Ammo']);
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split('\t');
+      if (cols.length < 4) continue;
+      const slot = (cols[0] || '').trim();
+      const name = (cols[1] || '').trim();
+      const id   = parseInt(cols[2]) || 0;
+      if (!equipSlots.has(slot) || !name || name === 'Empty' || id === 0) continue;
+      items.push({ slot, name, id });
+    }
+    return { items, invPath };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle('get-equipment',    ()           => pGet('equipment',   []));
+ipcMain.handle('set-equipment',    (event, val) => pSet('equipment',   val));
+ipcMain.handle('get-desired-loot', ()           => pGet('desiredLoot', []));
+ipcMain.handle('set-desired-loot', (event, val) => pSet('desiredLoot', val));
 
 // ── Trader ────────────────────────────────────────────────────────────────────
 

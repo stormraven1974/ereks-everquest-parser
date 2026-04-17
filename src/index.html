@@ -860,6 +860,38 @@
   /* ── Loot Tab ── */
   .loot-setup-wrap { padding: 24px; overflow-y: auto; flex: 1; }
 
+  /* ── Gear Slots ── */
+  .gear-slot-section { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; }
+  .gear-slot-header { font-family: var(--mono); font-size: 9px; color: var(--accent4); letter-spacing: 1px; margin-bottom: 5px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .gear-equipped-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .gear-slot-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); min-width: 58px; flex-shrink: 0; }
+  .gear-slot-label.desired { color: var(--accent2); }
+  .gear-item-name { font-size: 11px; color: var(--text); }
+  .gear-empty { font-size: 11px; color: var(--text-dim); font-style: italic; }
+  .gear-desired-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .gear-desired-name { font-size: 11px; color: var(--accent); cursor: default; flex: 1; position: relative; }
+  .gear-desired-name:hover { text-decoration: underline dotted; }
+  .gear-remove-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+  .gear-remove-btn:hover { color: #e74c3c; }
+  .gear-search-result { display: flex; align-items: center; gap: 8px; padding: 5px 10px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .gear-search-result:last-child { border-bottom: none; }
+  .gear-search-result:hover { background: var(--bg2); }
+  .gear-search-id { font-family: var(--mono); font-size: 9px; color: var(--text-dim); min-width: 44px; }
+
+  /* ── Item Compare Tooltip ── */
+  .item-compare-tooltip {
+    position: fixed; z-index: 9999; pointer-events: none; display: none;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px 12px; min-width: 260px; max-width: 360px;
+  }
+  .item-compare-tooltip.visible { display: block; }
+  .item-compare-header { font-family: var(--mono); font-size: 10px; color: var(--accent); margin-bottom: 8px; font-weight: bold; }
+  .item-compare-stat { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; line-height: 1.7; }
+  .stat-label { color: var(--text-dim); }
+  .stat-better { color: #4caf50; font-weight: bold; }
+  .stat-worse  { color: #e74c3c; font-weight: bold; }
+  .stat-same   { color: var(--text-dim); }
+
   /* ── Timers Tab groups ── */
   .timer-def-group { margin: 0 6px 6px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
   .timer-def-group-hdr {
@@ -1479,6 +1511,26 @@
         <button class="btn success" onclick="saveLootConfig()">Save Settings</button>
       </div>
 
+      <!-- ── Equipment & Desired Loot ── -->
+      <div class="form-section" style="margin-top:16px;">
+        <div class="section-title">Equipment &amp; Desired Loot</div>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Per-character. Load your <em>CharacterName</em>-Inventory.txt to auto-populate current gear. Add desired items to receive voice alerts when they're put up for bid.</p>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="loadEquipmentFile(true)">Refresh Equipment</button>
+          <span id="gear-load-status" style="font-size:10px;color:var(--text-dim);"></span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <input type="text" id="desired-loot-search" placeholder="Search item to add to desired loot…" style="max-width:260px;" onkeydown="if(event.key==='Enter')searchDesiredLoot()"/>
+          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="searchDesiredLoot()">Search</button>
+          <span id="desired-loot-search-status" style="font-size:10px;color:var(--text-dim);"></span>
+        </div>
+        <div id="desired-loot-search-results" style="display:none;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
+
+        <div id="gear-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      </div>
+
       <div class="form-section" style="margin-top:16px;">
         <div class="section-title">Example Message Formats</div>
         <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:2;">
@@ -1686,6 +1738,7 @@ async function init() {
   renderActiveBuffs();
   renderActiveDebuffs();
   await loadLootConfig();
+  await initGear();
   startBuffTick();
 }
 
@@ -1762,6 +1815,8 @@ async function startWatching() {
     updateDiscSection(profile.charClass || '', profile.enabledDiscs || []);
     buildAaDefs(cdSettings, profile.enabledDiscs || [], profile.charClass || ''); renderAAPanel();
     renderBuffDefs(); renderDebuffDefs();
+    await ipcRenderer.invoke('store-set', 'logPath', path);
+    await initGear();
   }
   ipcRenderer.send('start-watching', path);
 }
@@ -4033,6 +4088,282 @@ function initResizablePanels() {
     }
   });
 }
+
+// ── Equipment & Desired Loot ──────────────────────────────────────────────────
+
+const EQ_SLOT_ORDER = [
+  { key: 'Ear',       bits: 2 | 16,         label: 'EAR' },
+  { key: 'Head',      bits: 4,              label: 'HEAD' },
+  { key: 'Face',      bits: 8,              label: 'FACE' },
+  { key: 'Neck',      bits: 32,             label: 'NECK' },
+  { key: 'Shoulders', bits: 64,             label: 'SHOULDERS' },
+  { key: 'Arms',      bits: 128,            label: 'ARMS' },
+  { key: 'Back',      bits: 256,            label: 'BACK' },
+  { key: 'Wrist',     bits: 512 | 1024,     label: 'WRIST' },
+  { key: 'Range',     bits: 2048,           label: 'RANGE' },
+  { key: 'Hands',     bits: 4096,           label: 'HANDS' },
+  { key: 'Primary',   bits: 8192,           label: 'PRIMARY' },
+  { key: 'Secondary', bits: 16384,          label: 'SECONDARY' },
+  { key: 'Fingers',   bits: 32768 | 65536,  label: 'FINGERS' },
+  { key: 'Chest',     bits: 131072,         label: 'CHEST' },
+  { key: 'Legs',      bits: 262144,         label: 'LEGS' },
+  { key: 'Feet',      bits: 524288,         label: 'FEET' },
+  { key: 'Waist',     bits: 1048576,        label: 'WAIST' },
+  { key: 'Ammo',      bits: 2097152,        label: 'AMMO' },
+];
+
+const COMPARE_STATS = [
+  { key: 'ac',     label: 'AC'   },
+  { key: 'hp',     label: 'HP'   },
+  { key: 'mana',   label: 'Mana' },
+  { key: 'astr',   label: 'STR'  },
+  { key: 'adex',   label: 'DEX'  },
+  { key: 'asta',   label: 'STA'  },
+  { key: 'aint',   label: 'INT'  },
+  { key: 'awis',   label: 'WIS'  },
+  { key: 'aagi',   label: 'AGI'  },
+  { key: 'acha',   label: 'CHA'  },
+  { key: 'mr',     label: 'MR'   },
+  { key: 'cr',     label: 'CR'   },
+  { key: 'fr',     label: 'FR'   },
+  { key: 'dr',     label: 'DR'   },
+  { key: 'pr',     label: 'PR'   },
+  { key: 'damage', label: 'DMG'  },
+  { key: 'delay',  label: 'DLY',  lowerBetter: true },
+];
+
+let gearEquipment   = [];  // [{slot, name, id}]
+let gearDesiredLoot = [];  // [{name, id}]
+let gearItemCache   = {};  // id → itemData
+
+async function initGear() {
+  gearDesiredLoot = await ipcRenderer.invoke('get-desired-loot') || [];
+  // Always reload equipment from the inventory file; fall back to stored data if file not found
+  const result = await ipcRenderer.invoke('load-equipment-file');
+  if (result && result.items) {
+    gearEquipment = result.items;
+    await ipcRenderer.invoke('set-equipment', gearEquipment);
+    const statusEl = document.getElementById('gear-load-status');
+    const fileName = result.invPath ? result.invPath.split('/').pop().split('\\').pop() : '';
+    if (statusEl) statusEl.textContent = `${fileName} — ${gearEquipment.length} item${gearEquipment.length !== 1 ? 's' : ''}`;
+  } else {
+    gearEquipment = await ipcRenderer.invoke('get-equipment') || [];
+    const statusEl = document.getElementById('gear-load-status');
+    if (statusEl && result && result.error) statusEl.textContent = result.error;
+  }
+  const ids = [
+    ...gearEquipment.filter(e => e.id).map(e => e.id),
+    ...gearDesiredLoot.filter(d => d.id).map(d => d.id),
+  ];
+  await Promise.all([...new Set(ids)].map(id => fetchItemData(id)));
+  renderGearSlots();
+}
+
+async function fetchItemData(id, force = false) {
+  if (!id) return null;
+  if (!force && gearItemCache[id]) return gearItemCache[id];
+  const data = await ipcRenderer.invoke('fetch-item', id, force);
+  if (data) gearItemCache[id] = data;
+  return data;
+}
+
+async function loadEquipmentFile(force = false) {
+  const statusEl = document.getElementById('gear-load-status');
+  if (statusEl) statusEl.textContent = force ? 'Refreshing…' : 'Loading…';
+  const result = await ipcRenderer.invoke('load-equipment-file');
+  if (result && result.error) {
+    if (statusEl) statusEl.textContent = result.error;
+    return;
+  }
+  const items = (result && result.items) || [];
+  if (statusEl) statusEl.textContent = 'Fetching item data…';
+  await Promise.all([...new Set(items.map(i => i.id))].map(id => fetchItemData(id, force)));
+  gearEquipment = items;
+  await ipcRenderer.invoke('set-equipment', items);
+  const fileName = result.invPath ? result.invPath.split('/').pop().split('\\').pop() : '';
+  if (statusEl) statusEl.textContent = `${fileName} — ${items.length} item${items.length !== 1 ? 's' : ''}`;
+  renderGearSlots();
+}
+
+async function searchDesiredLoot() {
+  const query = document.getElementById('desired-loot-search').value.trim();
+  if (!query) return;
+  const statusEl  = document.getElementById('desired-loot-search-status');
+  const resultsEl = document.getElementById('desired-loot-search-results');
+  statusEl.textContent = 'Searching…';
+  resultsEl.style.display = 'none';
+  resultsEl.innerHTML = '';
+  const results = await ipcRenderer.invoke('search-items', query);
+  if (!results.length) { statusEl.textContent = 'No results'; return; }
+  statusEl.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
+  resultsEl.innerHTML = results.slice(0, 20).map(r => {
+    const safeName = r.name.replace(/'/g, '&#39;').replace(/`/g, '&#96;');
+    return `<div class="gear-search-result" onclick="addDesiredLootById(${r.id}, '${r.name.replace(/'/g, "\\'").replace(/`/g, "\\`")}')">
+      <span class="gear-search-id">#${r.id}</span>
+      <span style="font-size:11px;">${safeName}</span>
+    </div>`;
+  }).join('');
+  resultsEl.style.display = 'block';
+}
+
+async function addDesiredLootById(id, name) {
+  document.getElementById('desired-loot-search-results').style.display = 'none';
+  document.getElementById('desired-loot-search').value = '';
+  document.getElementById('desired-loot-search-status').textContent = '';
+  if (gearDesiredLoot.find(d => d.id === id)) return;
+  const itemData = await fetchItemData(id);
+  if (!itemData) return;
+  gearDesiredLoot.push({ name: itemData.name, id });
+  await ipcRenderer.invoke('set-desired-loot', gearDesiredLoot);
+  renderGearSlots();
+}
+
+async function removeDesiredLoot(id) {
+  gearDesiredLoot = gearDesiredLoot.filter(d => d.id !== id);
+  await ipcRenderer.invoke('set-desired-loot', gearDesiredLoot);
+  renderGearSlots();
+}
+
+function renderGearSlots() {
+  const container = document.getElementById('gear-slots');
+  if (!container) return;
+  container.innerHTML = EQ_SLOT_ORDER.map(slot => {
+    const equipped = gearEquipment.filter(e => e.slot === slot.key);
+    const desired  = gearDesiredLoot.filter(d => {
+      const data = gearItemCache[d.id];
+      return data && (data.slots & slot.bits) !== 0;
+    });
+    if (!equipped.length && !desired.length) {
+      return `<div class="gear-slot-section">
+        <div class="gear-slot-header">${slot.label}</div>
+        <div class="gear-equipped-row"><span class="gear-slot-label">EQUIPPED</span><span class="gear-empty">empty</span></div>
+      </div>`;
+    }
+    const equippedHtml = equipped.length
+      ? equipped.map(e => `<div class="gear-equipped-row">
+          <span class="gear-slot-label">EQUIPPED</span>
+          <span class="gear-item-name">${e.name}</span>
+        </div>`).join('')
+      : `<div class="gear-equipped-row"><span class="gear-slot-label">EQUIPPED</span><span class="gear-empty">empty</span></div>`;
+    const desiredHtml = desired.map((d, i) => {
+      const safeName = (d.name || '').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
+      return `<div class="gear-desired-row">
+        <span class="gear-slot-label desired">${i === 0 ? 'DESIRED' : ''}</span>
+        <span class="gear-desired-name"
+              onmouseenter="showItemCompare(event,${d.id},'${slot.key}')"
+              onmouseleave="hideItemCompare()">${safeName}</span>
+        <button class="gear-remove-btn" onclick="removeDesiredLoot(${d.id})">×</button>
+      </div>`;
+    }).join('');
+    return `<div class="gear-slot-section">
+      <div class="gear-slot-header">${slot.label}</div>
+      ${equippedHtml}
+      ${desiredHtml}
+    </div>`;
+  }).join('');
+}
+
+function buildCompareSection(equippedData, desiredData) {
+  const EFFECT_LABELS = { focus: 'Focus', worn: 'Worn', click: 'Click', proc: 'Proc' };
+  const mkIcon = (item) => (item && item.icon)
+    ? `<img src="https://www.pqdi.cc/static/icons/item_${item.icon}.png" style="width:28px;height:28px;image-rendering:pixelated;flex-shrink:0;" onerror="this.style.display='none'">`
+    : '';
+
+  const equippedIconHtml = equippedData ? mkIcon(equippedData) : '';
+  const desiredIconHtml  = mkIcon(desiredData);
+  const arrowHtml = `<span style="color:var(--text-dim);margin:0 4px;font-size:14px;">→</span>`;
+  const vsLabel = equippedData
+    ? `<span style="color:var(--text-dim);font-weight:normal;"> vs ${equippedData.name}</span>`
+    : `<span style="color:var(--text-dim);font-weight:normal;"> (empty slot)</span>`;
+
+  const oldDmg = equippedData ? (equippedData.damage || 0) : 0;
+  const oldDly = equippedData ? (equippedData.delay  || 0) : 0;
+  const newDmg = desiredData.damage || 0;
+  const newDly = desiredData.delay  || 0;
+  let ratioHtml = '';
+  if ((newDmg && newDly) || (oldDmg && oldDly)) {
+    const oldRatio = oldDly ? (oldDmg / oldDly) : 0;
+    const newRatio = newDly ? (newDmg / newDly) : 0;
+    const rDelta   = newRatio - oldRatio;
+    let rDeltaHtml = '';
+    if (rDelta > 0.001)       rDeltaHtml = ` <span class="stat-better">(+${rDelta.toFixed(3)})</span>`;
+    else if (rDelta < -0.001) rDeltaHtml = ` <span class="stat-worse">(${rDelta.toFixed(3)})</span>`;
+    ratioHtml = `<div class="item-compare-stat"><span class="stat-label">Ratio</span><span>${newRatio.toFixed(3)}${rDeltaHtml}</span></div>`;
+  }
+
+  const relevant = COMPARE_STATS.filter(s => (equippedData && equippedData[s.key]) || desiredData[s.key]);
+  const statRows = relevant.map(s => {
+    const curr   = equippedData ? (equippedData[s.key] || 0) : 0;
+    const next   = desiredData[s.key] || 0;
+    const delta  = next - curr;
+    const better = s.lowerBetter ? delta < 0 : delta > 0;
+    const worse  = s.lowerBetter ? delta > 0 : delta < 0;
+    let dHtml = '';
+    if (better)     dHtml = ` <span class="stat-better">(${delta > 0 ? '+' : ''}${delta})</span>`;
+    else if (worse) dHtml = ` <span class="stat-worse">(${delta > 0 ? '+' : ''}${delta})</span>`;
+    const row = `<div class="item-compare-stat"><span class="stat-label">${s.label}</span><span>${next}${dHtml}</span></div>`;
+    return s.key === 'delay' ? row + ratioHtml : row;
+  });
+
+  const oldEffects = (equippedData && equippedData.effects) || {};
+  const newEffects = desiredData.effects || {};
+  const effectKeys = [...new Set([...Object.keys(oldEffects), ...Object.keys(newEffects)])]
+    .filter(k => oldEffects[k] || newEffects[k]);
+  const effectsHtml = effectKeys.map(k => {
+    const oldE = oldEffects[k] || null;
+    const newE = newEffects[k] || null;
+    let effectVal;
+    if (newE && oldE && newE === oldE)
+      effectVal = `<span style="color:var(--text-dim);">${newE}</span>`;
+    else if (newE && !oldE)
+      effectVal = `<span class="stat-better">${newE} (new)</span>`;
+    else if (!newE && oldE)
+      effectVal = `<span style="color:var(--text-dim);">none</span> <span class="stat-worse">(−${oldE})</span>`;
+    else
+      effectVal = `<span>${newE}</span> <span class="stat-worse">(was: ${oldE})</span>`;
+    return `<div class="item-compare-stat"><span class="stat-label">${EFFECT_LABELS[k]}</span>${effectVal}</div>`;
+  }).join('');
+
+  const hasStats = relevant.length || ratioHtml;
+  const statEffectDivider = (hasStats && effectKeys.length)
+    ? `<div style="border-top:1px solid var(--border);margin:5px 0;"></div>` : '';
+  const iconsHtml = `<div style="display:flex;align-items:center;gap:2px;margin-bottom:5px;">${equippedIconHtml}${arrowHtml}${desiredIconHtml}</div>`;
+
+  return `${iconsHtml}<div class="item-compare-header">${desiredData.name}${vsLabel}</div>${statRows.join('')}${statEffectDivider}${effectsHtml}`;
+}
+
+function showItemCompare(event, desiredId, slotKey) {
+  const tooltip     = document.getElementById('item-compare-tooltip');
+  const desiredData = gearItemCache[desiredId];
+  if (!tooltip || !desiredData) return;
+
+  const equippedEntries = gearEquipment.filter(e => e.slot === slotKey);
+  const equippedItems   = equippedEntries.length
+    ? equippedEntries.map(e => gearItemCache[e.id] || null)
+    : [null];
+
+  const sections = equippedItems.map(eqData => buildCompareSection(eqData, desiredData));
+  const slotDivider = `<div style="border-top:2px solid var(--border);margin:8px 0;"></div>`;
+
+  tooltip.innerHTML = sections.join(slotDivider);
+
+  // Measure actual size before positioning to avoid going off-screen
+  tooltip.style.left = '0px';
+  tooltip.style.top  = '-9999px';
+  tooltip.classList.add('visible');
+  const tw = tooltip.offsetWidth  + 8;
+  const th = tooltip.offsetHeight + 8;
+  const x  = (event.clientX + 14 + tw > window.innerWidth)  ? event.clientX - tw : event.clientX + 14;
+  const y  = (event.clientY + 14 + th > window.innerHeight)  ? event.clientY - th : event.clientY + 14;
+  tooltip.style.left = Math.max(4, x) + 'px';
+  tooltip.style.top  = Math.max(4, y) + 'px';
+}
+
+function hideItemCompare() {
+  const tooltip = document.getElementById('item-compare-tooltip');
+  if (tooltip) tooltip.classList.remove('visible');
+}
 </script>
+<div id="item-compare-tooltip" class="item-compare-tooltip"></div>
 </body>
 </html>
