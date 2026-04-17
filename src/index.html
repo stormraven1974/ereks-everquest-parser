@@ -51,11 +51,13 @@
   #titlebar .title {
     font-family: var(--mono);
     font-size: 13px;
-    color: var(--accent);
+    color: var(--text-dim);
     letter-spacing: 3px;
     text-transform: uppercase;
   }
-  #titlebar .title span { color: var(--accent2); }
+  #titlebar .title .title-app { color: var(--accent); }
+  #titlebar .title .title-sep { color: var(--border); margin: 0 6px; }
+  #titlebar .title .title-char { color: var(--accent2); transition: opacity 0.3s; }
   .win-btns {
     display: flex;
     gap: 6px;
@@ -1010,7 +1012,7 @@
 <body>
 
 <div id="titlebar">
-  <div class="title">EREK'S<span>//</span>EQ PARSER</div>
+  <div class="title"><span class="title-app">EQ PARSER</span><span class="title-sep" id="title-sep" style="display:none">·</span><span class="title-char" id="title-char-name"></span></div>
   <div class="win-btns">
     <button class="win-btn min" onclick="ipcRenderer.invoke('minimize-window')"></button>
     <button class="win-btn close" onclick="ipcRenderer.invoke('close-window')"></button>
@@ -1145,6 +1147,12 @@
           <input type="checkbox" id="cooldown-frenzy" class="toggle"/>
           <label style="font-size:12px;width:160px;">Frenzy of Spirit</label>
           <input type="number" id="cooldown-frenzy-dur" placeholder="600" style="max-width:70px;" title="Cooldown in seconds"/>
+          <span style="font-size:10px;color:var(--text-dim);">sec</span>
+        </div>
+        <div id="aa-row-savagery" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="checkbox" id="cooldown-savagery" class="toggle"/>
+          <label style="font-size:12px;width:160px;">Savagery</label>
+          <input type="number" id="cooldown-savagery-dur" placeholder="180" style="max-width:70px;" title="Cooldown in seconds"/>
           <span style="font-size:10px;color:var(--text-dim);">sec</span>
         </div>
         <div id="aa-no-class-msg" style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:4px 0;">Select a class above to see available AA abilities.</div>
@@ -1715,6 +1723,8 @@ async function init() {
   document.getElementById('cooldown-mgb-dur').value = cdSettings.mgbDuration || 4320;
   document.getElementById('cooldown-frenzy').checked = !!cdSettings.frenzyEnabled;
   document.getElementById('cooldown-frenzy-dur').value = cdSettings.frenzyDuration || 600;
+  document.getElementById('cooldown-savagery').checked = !!cdSettings.savageryEnabled;
+  document.getElementById('cooldown-savagery-dur').value = cdSettings.savageryDuration || 180;
   document.getElementById('announce-skillups').checked = !!profile.announceSkillups;
   document.getElementById('rampage-change-enabled').checked = !!profile.rampageChangeEnabled;
 
@@ -1740,6 +1750,7 @@ async function init() {
   await loadLootConfig();
   await initGear();
   startBuffTick();
+  if (logPath) startWatching();
 }
 
 // ── Tab Navigation ────────────────────────────────────────────────────────────
@@ -1751,6 +1762,19 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
   });
 });
+
+function updateTitleChar(name) {
+  const sep  = document.getElementById('title-sep');
+  const char = document.getElementById('title-char-name');
+  if (name) {
+    char.textContent = name.toUpperCase();
+    sep.style.display  = 'inline';
+    char.style.opacity = '1';
+  } else {
+    char.textContent   = '';
+    sep.style.display  = 'none';
+  }
+}
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
 function charNameFromPath(logPath) {
@@ -1811,6 +1835,8 @@ async function startWatching() {
     document.getElementById('cooldown-mgb-dur').value = cdSettings.mgbDuration || 4320;
     document.getElementById('cooldown-frenzy').checked = !!cdSettings.frenzyEnabled;
     document.getElementById('cooldown-frenzy-dur').value = cdSettings.frenzyDuration || 600;
+    document.getElementById('cooldown-savagery').checked = !!cdSettings.savageryEnabled;
+    document.getElementById('cooldown-savagery-dur').value = cdSettings.savageryDuration || 180;
     discOverrides = profile.discOverrides || {};
     updateDiscSection(profile.charClass || '', profile.enabledDiscs || []);
     buildAaDefs(cdSettings, profile.enabledDiscs || [], profile.charClass || ''); renderAAPanel();
@@ -1834,8 +1860,10 @@ function getCdSettings() {
     paragonDuration: parseInt(document.getElementById('cooldown-paragon-dur').value) || 900,
     mgbEnabled:      document.getElementById('cooldown-mgb').checked,
     mgbDuration:     parseInt(document.getElementById('cooldown-mgb-dur').value) || 4320,
-    frenzyEnabled:   document.getElementById('cooldown-frenzy').checked,
-    frenzyDuration:  parseInt(document.getElementById('cooldown-frenzy-dur').value) || 600,
+    frenzyEnabled:    document.getElementById('cooldown-frenzy').checked,
+    frenzyDuration:   parseInt(document.getElementById('cooldown-frenzy-dur').value) || 600,
+    savageryEnabled:  document.getElementById('cooldown-savagery').checked,
+    savageryDuration: parseInt(document.getElementById('cooldown-savagery-dur').value) || 180,
   };
 }
 
@@ -1891,6 +1919,7 @@ ipcRenderer.on('watch-started', (e, path) => {
   document.getElementById('log-path-display').textContent = path;
   ipcRenderer.invoke('store-set', 'logPath', path);
   populateCharDropdown();
+  updateTitleChar(charName || charNameFromPath(path));
 });
 
 ipcRenderer.on('watch-error', (e, msg) => {
@@ -2138,7 +2167,8 @@ function buildAaDefs(cdSettings, enabledDiscs, charClass) {
   aaDefs = [];
   if (cdSettings.paragonEnabled) aaDefs.push({ id: 'paragon', name: 'Paragon of Spirit', duration: cdSettings.paragonDuration || 900 });
   if (cdSettings.mgbEnabled)     aaDefs.push({ id: 'mgb',     name: 'Mass Group Buff',   duration: cdSettings.mgbDuration    || 4320 });
-  if (cdSettings.frenzyEnabled)  aaDefs.push({ id: 'frenzy',  name: 'Frenzy of Spirit',  duration: cdSettings.frenzyDuration  || 600 });
+  if (cdSettings.frenzyEnabled)   aaDefs.push({ id: 'frenzy',   name: 'Frenzy of Spirit', duration: cdSettings.frenzyDuration   || 600 });
+  if (cdSettings.savageryEnabled) aaDefs.push({ id: 'savagery', name: 'Savagery',          duration: cdSettings.savageryDuration || 180 });
   const classDefs = DISC_DEFS[charClass] || [];
   (enabledDiscs || []).forEach(discId => {
     const def = classDefs.find(d => d.id === discId);
@@ -2155,19 +2185,22 @@ const AA_MGB_NO_CLASSES   = new Set(['Rogue', 'Monk', 'Bard', 'Warrior', 'Berser
 function updateAaSection(charClass) {
   const paragonRow = document.getElementById('aa-row-paragon');
   const mgbRow     = document.getElementById('aa-row-mgb');
-  const frenzyRow  = document.getElementById('aa-row-frenzy');
-  const noClassMsg = document.getElementById('aa-no-class-msg');
-  const showParagon = charClass && AA_PARAGON_CLASSES.has(charClass);
-  const showMgb     = charClass && !AA_MGB_NO_CLASSES.has(charClass);
-  const showFrenzy  = charClass && AA_PARAGON_CLASSES.has(charClass); // Beastlord only
-  if (paragonRow) paragonRow.style.display = showParagon ? 'flex' : 'none';
-  if (mgbRow)     mgbRow.style.display     = showMgb     ? 'flex' : 'none';
-  if (frenzyRow)  frenzyRow.style.display  = showFrenzy  ? 'flex' : 'none';
-  if (noClassMsg) noClassMsg.style.display = (!showParagon && !showMgb && !showFrenzy) ? 'block' : 'none';
-  // Uncheck hidden rows so they don't accidentally save as enabled
-  if (!showParagon && document.getElementById('cooldown-paragon')) document.getElementById('cooldown-paragon').checked = false;
-  if (!showMgb     && document.getElementById('cooldown-mgb'))     document.getElementById('cooldown-mgb').checked     = false;
-  if (!showFrenzy  && document.getElementById('cooldown-frenzy'))  document.getElementById('cooldown-frenzy').checked  = false;
+  const frenzyRow   = document.getElementById('aa-row-frenzy');
+  const savageryRow = document.getElementById('aa-row-savagery');
+  const noClassMsg  = document.getElementById('aa-no-class-msg');
+  const showParagon  = charClass && AA_PARAGON_CLASSES.has(charClass);
+  const showMgb      = charClass && !AA_MGB_NO_CLASSES.has(charClass);
+  const showFrenzy   = charClass && AA_PARAGON_CLASSES.has(charClass); // Beastlord only
+  const showSavagery = charClass && AA_PARAGON_CLASSES.has(charClass); // Beastlord only
+  if (paragonRow)  paragonRow.style.display  = showParagon  ? 'flex' : 'none';
+  if (mgbRow)      mgbRow.style.display      = showMgb      ? 'flex' : 'none';
+  if (frenzyRow)   frenzyRow.style.display   = showFrenzy   ? 'flex' : 'none';
+  if (savageryRow) savageryRow.style.display  = showSavagery ? 'flex' : 'none';
+  if (noClassMsg)  noClassMsg.style.display  = (!showParagon && !showMgb && !showFrenzy && !showSavagery) ? 'block' : 'none';
+  if (!showParagon  && document.getElementById('cooldown-paragon'))  document.getElementById('cooldown-paragon').checked  = false;
+  if (!showMgb      && document.getElementById('cooldown-mgb'))      document.getElementById('cooldown-mgb').checked      = false;
+  if (!showFrenzy   && document.getElementById('cooldown-frenzy'))   document.getElementById('cooldown-frenzy').checked   = false;
+  if (!showSavagery && document.getElementById('cooldown-savagery')) document.getElementById('cooldown-savagery').checked = false;
 }
 
 function updateDiscSection(charClass, enabledDiscs) {
@@ -3326,8 +3359,10 @@ async function importTimers() {
       document.getElementById('cooldown-paragon-dur').value  = cdSettings.paragonDuration || 900;
       document.getElementById('cooldown-mgb').checked        = !!cdSettings.mgbEnabled;
       document.getElementById('cooldown-mgb-dur').value      = cdSettings.mgbDuration    || 4320;
-      document.getElementById('cooldown-frenzy').checked     = !!cdSettings.frenzyEnabled;
-      document.getElementById('cooldown-frenzy-dur').value   = cdSettings.frenzyDuration  || 600;
+      document.getElementById('cooldown-frenzy').checked      = !!cdSettings.frenzyEnabled;
+      document.getElementById('cooldown-frenzy-dur').value    = cdSettings.frenzyDuration   || 600;
+      document.getElementById('cooldown-savagery').checked    = !!cdSettings.savageryEnabled;
+      document.getElementById('cooldown-savagery-dur').value  = cdSettings.savageryDuration || 180;
     }
     if (result.hasDiscs) {
       discOverrides = profile.discOverrides || {};

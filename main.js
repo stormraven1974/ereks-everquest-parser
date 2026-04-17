@@ -606,6 +606,14 @@ function parseCooldowns(line, event) {
     }
   }
 
+  // Savagery (Beastlord) — self-cast only
+  if (settings.savageryEnabled) {
+    if (/Your lips curl into a feral snarl as you descend into savagery/i.test(line)) {
+      const dur = (settings.savageryDuration || 180);
+      startCooldown('savagery', 'Savagery', dur, event);
+    }
+  }
+
 }
 
 // Discipline cooldown detection - reads triggers saved to profile at settings-save time
