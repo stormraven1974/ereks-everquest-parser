@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron . --no-sandbox --disable-gpu-sandbox",
     "start-gpu": "electron .",
-    "build": "electron-builder --linux AppImage"
+    "build": "electron-builder --linux AppImage",
+    "screenshot": "node scripts/screenshot.js"
   },
   "keywords": [
     "everquest",
@@ -23,7 +24,8 @@
   },
   "devDependencies": {
     "electron": "^28.0.0",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.0.0",
+    "playwright": "^1.59.1"
   },
   "build": {
     "appId": "com.ereks.everquest.parser",
