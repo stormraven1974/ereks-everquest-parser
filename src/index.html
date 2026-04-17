@@ -1685,9 +1685,12 @@
           <div id="fight-detail" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
 
             <!-- Header -->
-            <div style="flex-shrink:0;padding:14px 18px 10px;border-bottom:1px solid var(--border);">
-              <div id="fight-detail-name" style="font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;"></div>
-              <div id="fight-detail-meta" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;"></div>
+            <div style="flex-shrink:0;padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;">
+              <div style="flex:1;">
+                <div id="fight-detail-name" style="font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;"></div>
+                <div id="fight-detail-meta" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;"></div>
+              </div>
+              <button class="btn danger" style="padding:3px 10px;font-size:9px;flex-shrink:0;" onclick="dismissFight()" title="Remove and add to Never Record list">Not a Boss</button>
             </div>
 
             <!-- Participant list -->
@@ -4547,11 +4550,12 @@ function selectFight(id) {
 
 function buildGuildLines(fight) {
   const top = fight.participants.slice(0, 10);
+  const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
   const dmgStr = top.map(p => `${p.name}:${fmtDmg(p.dmg)}`).join(' ');
-  const line = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)} | ${dmgStr}`;
+  const line = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)} | ${fmtDmg(totalDmg)} total | ${dmgStr}`;
   if (line.length <= 255) return [line];
   // Split: header on line 1, damage in chunks on subsequent lines
-  const header = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)}`;
+  const header = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)} | ${fmtDmg(totalDmg)} total`;
   const lines = [header];
   let current = '/gu ';
   for (const p of top) {
@@ -4574,8 +4578,8 @@ async function postFightToGuild() {
   const { exec } = require('child_process');
 
   // Find EQ window
-  exec("wmctrl -l | grep -i 'everquest\\|eqgame'", (err, stdout) => {
-    const winLine = stdout.trim().split('\n').find(l => /everquest|eqgame/i.test(l));
+  exec("wmctrl -l | grep -i 'everquest\\|eqgame\\|Client1'", (err, stdout) => {
+    const winLine = stdout.trim().split('\n').find(l => /everquest|eqgame|Client1/i.test(l));
     const winId = winLine ? winLine.split(/\s+/)[0] : null;
 
     lines.forEach((line, i) => {
@@ -4588,6 +4592,24 @@ async function postFightToGuild() {
     });
     showToast(`Sending ${lines.length} line${lines.length > 1 ? 's' : ''} to guild chat`);
   });
+}
+
+async function dismissFight() {
+  const fight = bossFightList.find(f => f.id === selectedFightId);
+  if (!fight) return;
+  // Add to never list
+  const settings = await ipcRenderer.invoke('get-boss-fight-settings');
+  const never = (settings.never || []).filter(n => n.toLowerCase() !== fight.bossName.toLowerCase());
+  never.push(fight.bossName);
+  await ipcRenderer.invoke('set-boss-fight-settings', { ...settings, never });
+  document.getElementById('boss-never-list').value = never.join('\n');
+  // Remove from list and persist
+  bossFightList = bossFightList.filter(f => f.id !== selectedFightId);
+  selectedFightId = null;
+  ipcRenderer.invoke('store-set', 'bossFightsHistory', bossFightList.slice(0, 5));
+  renderFightList();
+  document.getElementById('fight-detail-empty').style.display = 'flex';
+  document.getElementById('fight-detail').style.display = 'none';
 }
 
 async function clearBossFights() {
