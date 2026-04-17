@@ -89,7 +89,7 @@ let lastRampageTarget = null; // tracks current rampage target for change detect
 let bossFights = store.get('bossFightsHistory', []);
 let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{}, petOwners:{} }
 let pendingSummon = null;      // { owner, timestamp } — waiting for next unknown attacker
-const BOSS_DMG_THRESHOLD = 30000;
+const BOSS_DMG_THRESHOLD = 40000;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
