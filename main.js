@@ -87,7 +87,7 @@ let lastRampageTarget = null; // tracks current rampage target for change detect
 
 // Boss fight tracking — last 5 persisted to store, rest in-memory only
 let bossFights = store.get('bossFightsHistory', []);
-let activeFight = null;        // { bossName, startTime, players:{}, petOwners:{} }
+let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{}, petOwners:{} }
 let pendingSummon = null;      // { owner, timestamp } — waiting for next unknown attacker
 const BOSS_DMG_THRESHOLD = 30000;
 
@@ -331,28 +331,21 @@ function parseBossFight(line, event) {
 
     if (!isBossTarget(target)) break;
 
+    const fkey = target.toLowerCase();
+    if (!activeFights[fkey]) activeFights[fkey] = { bossName: target, startTime: ts, players: {}, petOwners: {} };
+    const fight = activeFights[fkey];
+
     // Resolve pet owner if this attacker is a pending summon
     if (pendingSummon && (ts - pendingSummon.timestamp) < 15000) {
-      const knownPlayers = activeFight ? Object.keys(activeFight.players) : [];
-      if (!knownPlayers.includes(attacker)) {
-        if (!activeFight) activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
-        activeFight.petOwners[attacker] = pendingSummon.owner;
+      if (!Object.keys(fight.players).includes(attacker)) {
+        fight.petOwners[attacker] = pendingSummon.owner;
         pendingSummon = null;
       }
     }
 
-    // Start or continue active fight
-    if (!activeFight) {
-      activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
-    } else if (activeFight.bossName !== target) {
-      // Different target — finalize current fight before starting new one
-      finalizeFight(event);
-      activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
-    }
-
-    const key = activeFight.petOwners[attacker] || attacker;
-    if (!activeFight.players[key]) activeFight.players[key] = 0;
-    activeFight.players[key] += dmg;
+    const key = fight.petOwners[attacker] || attacker;
+    if (!fight.players[key]) fight.players[key] = 0;
+    fight.players[key] += dmg;
     break;
   }
 
@@ -365,18 +358,18 @@ function parseBossFight(line, event) {
   for (const re of slainPatterns) {
     const m = line.match(re);
     if (!m) continue;
-    const name = m[1].trim();
-    if (activeFight && activeFight.bossName.toLowerCase() === name.toLowerCase()) {
-      finalizeFight(event);
+    const name = (m[1] || m[2] || m[3] || '').trim();
+    const fkey = name.toLowerCase();
+    if (activeFights[fkey]) {
+      finalizeFight(activeFights[fkey], event);
+      delete activeFights[fkey];
     }
     break;
   }
 }
 
-function finalizeFight(event) {
-  if (!activeFight) return;
-  const fight = activeFight;
-  activeFight = null;
+function finalizeFight(fight, event) {
+  if (!fight) return;
 
   const totalDmg = Object.values(fight.players).reduce((s, v) => s + v, 0);
   const settings = store.get('bossFightSettings', {});
@@ -1576,7 +1569,7 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
   const tsRe    = /^\[(.+?)\]/;
 
   const completed = [];
-  let cur = null; // { bossName, startMs, players:{} }
+  const active = {}; // target (lowercase) → { bossName, startMs, lastMs, players:{} }
 
   const lines = fs.readFileSync(logPath, 'utf8').split('\n');
   for (const line of lines) {
@@ -1590,27 +1583,27 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
       if (!isMob && qualifies(target)) {
         const tsM = line.match(tsRe);
         const ts  = tsM ? new Date(tsM[1]).getTime() : Date.now();
-        if (!cur || cur.bossName !== target) {
-          if (cur) completed.push(cur);
-          cur = { bossName: target, startMs: ts, lastMs: ts, players: {} };
-        }
-        cur.lastMs = ts;
-        cur.players[attacker] = (cur.players[attacker] || 0) + dmg;
+        const key = target.toLowerCase();
+        if (!active[key]) active[key] = { bossName: target, startMs: ts, lastMs: ts, players: {} };
+        active[key].lastMs = ts;
+        active[key].players[attacker] = (active[key].players[attacker] || 0) + dmg;
       }
       continue;
     }
 
-    // Slain line
+    // Slain line — finalize that target's fight
     const sm = line.match(slainRe);
     if (sm) {
       const name = (sm[1] || sm[2] || sm[3] || '').trim();
-      if (cur && cur.bossName.toLowerCase() === name.toLowerCase()) {
-        completed.push(cur);
-        cur = null;
+      const key  = name.toLowerCase();
+      if (active[key]) {
+        completed.push(active[key]);
+        delete active[key];
       }
     }
   }
-  if (cur) completed.push(cur);
+  // Any fights still open (no slain line found) — push them too
+  Object.values(active).forEach(f => completed.push(f));
 
   // Filter by threshold / always list and build records
   const records = completed
