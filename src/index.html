@@ -1026,6 +1026,7 @@
   <div class="nav-tab" data-tab="raid">Raid</div>
   <div class="nav-tab" data-tab="loot">Loot</div>
   <div class="nav-tab" data-tab="trader">Trader</div>
+  <div class="nav-tab" data-tab="fights">Fights</div>
   <div class="nav-tab" data-tab="log">Log</div>
 </div>
 
@@ -1167,6 +1168,23 @@
       </div>
 
       <div class="form-section" style="margin-top:32px;">
+        <div class="section-title">Boss Fights</div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:12px;">
+          Fights where player damage to a single named target exceeds 30,000 are auto-recorded. Names starting with "a " or "an " are excluded. Use the lists below to override.
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:10px;color:var(--accent3);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Always Record</div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">One name per line. Recorded even if under threshold.</div>
+            <textarea id="boss-always-list" rows="6" placeholder="Lord Inquisitor Seru&#10;Vulak`Aerr"></textarea>
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:10px;color:var(--danger);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Never Record</div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">One name per line. Excluded even if over threshold.</div>
+            <textarea id="boss-never-list" rows="6" placeholder="a grimling guard&#10;an onyx warden"></textarea>
+          </div>
+        </div>
+
         <div class="section-title">Actions</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
           <button class="btn success" onclick="saveSettings()">Save Settings</button>
@@ -1636,6 +1654,58 @@
     </div>
   </div>
 
+  <!-- ── FIGHTS TAB ── -->
+  <div class="tab-panel" id="tab-fights">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- Top bar -->
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);">
+        <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent);">BOSS FIGHTS</div>
+        <div style="flex:1;"></div>
+        <button class="btn danger" style="padding:3px 12px;font-size:10px;" onclick="clearBossFights()">Clear All</button>
+      </div>
+
+      <!-- Two-column body -->
+      <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+        <!-- Left: fight list -->
+        <div style="width:260px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+          <div id="fights-list" style="flex:1;overflow-y:auto;">
+            <div class="empty-state">No boss fights recorded yet</div>
+          </div>
+        </div>
+
+        <!-- Right: fight detail -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+          <div id="fight-detail-empty" style="flex:1;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">Select a fight to view details</span>
+          </div>
+
+          <div id="fight-detail" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+            <!-- Header -->
+            <div style="flex-shrink:0;padding:14px 18px 10px;border-bottom:1px solid var(--border);">
+              <div id="fight-detail-name" style="font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;"></div>
+              <div id="fight-detail-meta" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;"></div>
+            </div>
+
+            <!-- Participant list -->
+            <div id="fight-detail-participants" style="flex:1;overflow-y:auto;padding:10px 18px;"></div>
+
+            <!-- Post to guild -->
+            <div style="flex-shrink:0;border-top:1px solid var(--border);padding:12px 18px;">
+              <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Preview</div>
+              <div id="fight-guild-preview" style="font-family:var(--mono);font-size:11px;color:var(--accent2);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:10px;white-space:pre-wrap;word-break:break-all;min-height:32px;"></div>
+              <button class="btn success" style="width:100%;" onclick="postFightToGuild()">Post to Guild</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOG TAB ── -->
   <div class="tab-panel" id="tab-log">
     <div class="log-wrap">
@@ -1749,6 +1819,7 @@ async function init() {
   renderActiveDebuffs();
   await loadLootConfig();
   await initGear();
+  await loadBossFightSettings();
   startBuffTick();
   if (logPath) startWatching();
 }
@@ -1899,6 +1970,7 @@ function saveSettings() {
   });
   buildAaDefs(cdSettings, enabledDiscs, charClass);
   renderAAPanel();
+  saveBossFightSettings();
   showToast('Settings saved');
 }
 
@@ -4398,6 +4470,141 @@ function hideItemCompare() {
   const tooltip = document.getElementById('item-compare-tooltip');
   if (tooltip) tooltip.classList.remove('visible');
 }
+
+// ── Boss Fights ───────────────────────────────────────────────────────────────
+let bossFightList = [];
+let selectedFightId = null;
+
+function fmtDmg(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'm';
+  if (n >= 1000)    return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function fmtElapsed(s) {
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return m > 0 ? `${m}m${r}s` : `${r}s`;
+}
+
+function renderFightList() {
+  const el = document.getElementById('fights-list');
+  if (!bossFightList.length) {
+    el.innerHTML = '<div class="empty-state">No boss fights recorded yet</div>';
+    return;
+  }
+  el.innerHTML = bossFightList.map(f => {
+    const d = new Date(f.date);
+    const when = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const active = f.id === selectedFightId ? 'background:var(--bg3);border-left:2px solid var(--accent);' : 'border-left:2px solid transparent;';
+    return `<div onclick="selectFight(${f.id})" style="cursor:pointer;padding:8px 12px;${active}border-bottom:1px solid var(--border);">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.bossName}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px;">${fmtElapsed(f.elapsed)} &nbsp;·&nbsp; ${when}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectFight(id) {
+  selectedFightId = id;
+  renderFightList();
+  const fight = bossFightList.find(f => f.id === id);
+  if (!fight) return;
+
+  document.getElementById('fight-detail-empty').style.display = 'none';
+  const detail = document.getElementById('fight-detail');
+  detail.style.display = 'flex';
+
+  document.getElementById('fight-detail-name').textContent = fight.bossName;
+  const d = new Date(fight.date);
+  document.getElementById('fight-detail-meta').textContent =
+    `${fmtElapsed(fight.elapsed)}  ·  ${fight.participants.length} combatants  ·  ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+  const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
+  const rows = fight.participants.slice(0, 20).map((p, i) => {
+    const pct = totalDmg > 0 ? Math.round((p.dmg / totalDmg) * 100) : 0;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);width:18px;">#${i+1}</span>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;">${p.name}</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent2);">${p.dmg.toLocaleString()}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);width:34px;text-align:right;">${pct}%</span>
+    </div>`;
+  }).join('');
+  document.getElementById('fight-detail-participants').innerHTML = rows;
+
+  document.getElementById('fight-guild-preview').textContent = buildGuildLines(fight).join('\n');
+}
+
+function buildGuildLines(fight) {
+  const top = fight.participants.slice(0, 10);
+  const dmgStr = top.map(p => `${p.name}:${fmtDmg(p.dmg)}`).join(' ');
+  const line = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)} | ${dmgStr}`;
+  if (line.length <= 255) return [line];
+  // Split: header on line 1, damage in chunks on subsequent lines
+  const header = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)}`;
+  const lines = [header];
+  let current = '/gu ';
+  for (const p of top) {
+    const token = `${p.name}:${fmtDmg(p.dmg)} `;
+    if ((current + token).length > 254) {
+      lines.push(current.trimEnd());
+      current = '/gu ' + token;
+    } else {
+      current += token;
+    }
+  }
+  if (current.trim() !== '/gu') lines.push(current.trimEnd());
+  return lines;
+}
+
+async function postFightToGuild() {
+  const fight = bossFightList.find(f => f.id === selectedFightId);
+  if (!fight) return;
+  const lines = buildGuildLines(fight);
+  const { exec } = require('child_process');
+
+  // Find EQ window
+  exec("wmctrl -l | grep -i 'everquest\\|eqgame'", (err, stdout) => {
+    const winLine = stdout.trim().split('\n').find(l => /everquest|eqgame/i.test(l));
+    const winId = winLine ? winLine.split(/\s+/)[0] : null;
+
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        const cmd = winId
+          ? `wmctrl -ia ${winId} && xdotool key Return type --clearmodifiers "${line.replace(/"/g, '\\"')}" key Return`
+          : `xdotool key Return type --clearmodifiers "${line.replace(/"/g, '\\"')}" key Return`;
+        exec(cmd, e => { if (e) showToast('xdotool error — is EQ focused?', 3000); });
+      }, i * 700);
+    });
+    showToast(`Sending ${lines.length} line${lines.length > 1 ? 's' : ''} to guild chat`);
+  });
+}
+
+async function clearBossFights() {
+  bossFightList = [];
+  selectedFightId = null;
+  await ipcRenderer.invoke('clear-boss-fights');
+  renderFightList();
+  document.getElementById('fight-detail-empty').style.display = 'flex';
+  document.getElementById('fight-detail').style.display = 'none';
+}
+
+async function loadBossFightSettings() {
+  const s = await ipcRenderer.invoke('get-boss-fight-settings');
+  document.getElementById('boss-always-list').value = (s.always || []).join('\n');
+  document.getElementById('boss-never-list').value  = (s.never  || []).join('\n');
+}
+
+function saveBossFightSettings() {
+  const always = document.getElementById('boss-always-list').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const never  = document.getElementById('boss-never-list').value.split('\n').map(s => s.trim()).filter(Boolean);
+  ipcRenderer.invoke('set-boss-fight-settings', { always, never });
+}
+
+ipcRenderer.on('boss-fight-recorded', (e, fight) => {
+  bossFightList.unshift(fight);
+  renderFightList();
+  showToast(`Boss fight recorded: ${fight.bossName}`);
+});
 </script>
 <div id="item-compare-tooltip" class="item-compare-tooltip"></div>
 </body>

@@ -85,6 +85,12 @@ let raidTimerState = {}; // { [id]: { warningTimeout, repeatTimeout, event } }
 let pendingRoller  = null; // player name buffered from "**A Magic Die is rolled by X."
 let lastRampageTarget = null; // tracks current rampage target for change detection
 
+// Boss fight tracking (in-memory, cleared on app restart)
+let bossFights = [];           // completed fights
+let activeFight = null;        // { bossName, startTime, players:{}, petOwners:{} }
+let pendingSummon = null;      // { owner, timestamp } — waiting for next unknown attacker
+const BOSS_DMG_THRESHOLD = 30000;
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900, height: 800, minWidth: 700, minHeight: 600,
@@ -173,6 +179,7 @@ function processLine(line, event) {
   parseLootMessages(line, event);
   parseTell(line, event);
   parseZone(line, event);
+  parseBossFight(line, event);
 }
 
 function checkTriggers(line, event) {
@@ -279,6 +286,120 @@ function buildCombatSummary() {
     players,
     enemies,
   };
+}
+
+// ── Boss Fight Tracking ────────────────────────────────────────────────────────
+
+function isBossTarget(name) {
+  if (!name || !name.trim()) return false;
+  // Generic mobs start with lowercase article — never a boss
+  if (/^an? /i.test(name) && /^[a-z]/.test(name.replace(/^an? /i, ''))) return false;
+  const settings = store.get('bossFightSettings', {});
+  const neverList = (settings.never || []).map(n => n.toLowerCase());
+  if (neverList.includes(name.toLowerCase())) return false;
+  return true;
+}
+
+function parseBossFight(line, event) {
+  const ts = Date.now();
+
+  // Pet summon association — Mage and Necro variants
+  const summonM = line.match(/\] (.+?) (?:summons a (?:swirling orb of elements|howling spirit)|animates an undead servant)\./i);
+  if (summonM) {
+    pendingSummon = { owner: summonM[1].trim(), timestamp: ts };
+    return;
+  }
+
+  // Damage dealt BY a player/pet TO a named target
+  // Reuse the two outgoing hit patterns from parseCombat
+  const hitPatterns = [
+    /\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of damage/i,
+    /\] (.+?) hit (?!YOU)(.+?) for (\d+) points? of non-melee damage/i,
+  ];
+
+  for (const re of hitPatterns) {
+    const m = line.match(re);
+    if (!m) continue;
+    const attacker = m[1].trim();
+    const target   = m[2].trim();
+    const dmg      = parseInt(m[3]);
+    if (isNaN(dmg) || dmg <= 0) break;
+
+    // Skip if attacker looks like a mob (multi-word + single-word target = mob hitting player)
+    const isMobAttacker = /\s/.test(attacker) && !/warder/i.test(attacker) && !/\s/.test(target);
+    if (isMobAttacker) break;
+
+    if (!isBossTarget(target)) break;
+
+    // Resolve pet owner if this attacker is a pending summon
+    if (pendingSummon && (ts - pendingSummon.timestamp) < 15000) {
+      const knownPlayers = activeFight ? Object.keys(activeFight.players) : [];
+      if (!knownPlayers.includes(attacker)) {
+        if (!activeFight) activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
+        activeFight.petOwners[attacker] = pendingSummon.owner;
+        pendingSummon = null;
+      }
+    }
+
+    // Start or continue active fight
+    if (!activeFight) {
+      activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
+    } else if (activeFight.bossName !== target) {
+      // Different target — finalize current fight before starting new one
+      finalizeFight(event);
+      activeFight = { bossName: target, startTime: ts, players: {}, petOwners: {} };
+    }
+
+    const key = activeFight.petOwners[attacker] || attacker;
+    if (!activeFight.players[key]) activeFight.players[key] = 0;
+    activeFight.players[key] += dmg;
+    break;
+  }
+
+  // Boss slain lines
+  const slainPatterns = [
+    /\] (.+?) has been slain by/i,
+    /\] You have slain (.+?)!/i,
+    /\] (.+?) was slain by/i,
+  ];
+  for (const re of slainPatterns) {
+    const m = line.match(re);
+    if (!m) continue;
+    const name = m[1].trim();
+    if (activeFight && activeFight.bossName.toLowerCase() === name.toLowerCase()) {
+      finalizeFight(event);
+    }
+    break;
+  }
+}
+
+function finalizeFight(event) {
+  if (!activeFight) return;
+  const fight = activeFight;
+  activeFight = null;
+
+  const totalDmg = Object.values(fight.players).reduce((s, v) => s + v, 0);
+  const settings = store.get('bossFightSettings', {});
+  const alwaysList = (settings.always || []).map(n => n.toLowerCase());
+  const isAlways = alwaysList.includes(fight.bossName.toLowerCase());
+
+  if (!isAlways && totalDmg < BOSS_DMG_THRESHOLD) return;
+
+  const elapsed = Math.max(1, Math.round((Date.now() - fight.startTime) / 1000));
+  const participants = Object.entries(fight.players)
+    .map(([name, dmg]) => ({ name, dmg }))
+    .sort((a, b) => b.dmg - a.dmg);
+
+  const record = {
+    id: Date.now(),
+    bossName: fight.bossName,
+    date: new Date().toISOString(),
+    elapsed,
+    participants,
+  };
+
+  bossFights.unshift(record);
+  if (event) event.reply('boss-fight-recorded', record);
 }
 
 // Buff Timers - with AA Spell Extend, recipient capture, group buff deduplication
@@ -1428,3 +1549,9 @@ ipcMain.handle('clear-trader-sales', (event, charName) => {
   store.delete(`traderSales.${charName}`);
   return { success: true };
 });
+
+// ── Boss Fight IPC ─────────────────────────────────────────────────────────────
+ipcMain.handle('get-boss-fights',          ()           => bossFights);
+ipcMain.handle('get-boss-fight-settings',  ()           => store.get('bossFightSettings', { always: [], never: [] }));
+ipcMain.handle('set-boss-fight-settings',  (e, val)     => store.set('bossFightSettings', val));
+ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; });
