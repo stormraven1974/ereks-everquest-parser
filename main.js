@@ -85,8 +85,8 @@ let raidTimerState = {}; // { [id]: { warningTimeout, repeatTimeout, event } }
 let pendingRoller  = null; // player name buffered from "**A Magic Die is rolled by X."
 let lastRampageTarget = null; // tracks current rampage target for change detection
 
-// Boss fight tracking (in-memory, cleared on app restart)
-let bossFights = [];           // completed fights
+// Boss fight tracking — last 5 persisted to store, rest in-memory only
+let bossFights = store.get('bossFightsHistory', []);
 let activeFight = null;        // { bossName, startTime, players:{}, petOwners:{} }
 let pendingSummon = null;      // { owner, timestamp } — waiting for next unknown attacker
 const BOSS_DMG_THRESHOLD = 30000;
@@ -399,6 +399,7 @@ function finalizeFight(event) {
   };
 
   bossFights.unshift(record);
+  store.set('bossFightsHistory', bossFights.slice(0, 5));
   if (event) event.reply('boss-fight-recorded', record);
 }
 
@@ -1554,4 +1555,82 @@ ipcMain.handle('clear-trader-sales', (event, charName) => {
 ipcMain.handle('get-boss-fights',          ()           => bossFights);
 ipcMain.handle('get-boss-fight-settings',  ()           => store.get('bossFightSettings', { always: [], never: [] }));
 ipcMain.handle('set-boss-fight-settings',  (e, val)     => store.set('bossFightSettings', val));
-ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; });
+ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; store.delete('bossFightsHistory'); });
+
+ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
+  if (!logPath || !fs.existsSync(logPath)) return { seeded: 0 };
+
+  const settings   = store.get('bossFightSettings', {});
+  const alwaysList = (settings.always || []).map(n => n.toLowerCase());
+  const neverList  = (settings.never  || []).map(n => n.toLowerCase());
+
+  function qualifies(name) {
+    if (!name) return false;
+    if (/^an? /i.test(name) && /^[a-z]/.test(name.replace(/^an? /i, ''))) return false;
+    if (neverList.includes(name.toLowerCase())) return false;
+    return true;
+  }
+
+  const hitRe   = /\[.+?\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of (?:non-melee )?damage/i;
+  const slainRe = /\[.+?\] (?:(.+?) has been slain by|You have slain (.+?)!|(.+?) was slain by)/i;
+  const tsRe    = /^\[(.+?)\]/;
+
+  const completed = [];
+  let cur = null; // { bossName, startMs, players:{} }
+
+  const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+  for (const line of lines) {
+    // Hit line
+    const hm = line.match(hitRe);
+    if (hm) {
+      const attacker = hm[1].trim();
+      const target   = hm[2].trim();
+      const dmg      = parseInt(hm[3]);
+      const isMob    = /\s/.test(attacker) && !/warder/i.test(attacker) && !/\s/.test(target);
+      if (!isMob && qualifies(target)) {
+        const tsM = line.match(tsRe);
+        const ts  = tsM ? new Date(tsM[1]).getTime() : Date.now();
+        if (!cur || cur.bossName !== target) {
+          if (cur) completed.push(cur);
+          cur = { bossName: target, startMs: ts, lastMs: ts, players: {} };
+        }
+        cur.lastMs = ts;
+        cur.players[attacker] = (cur.players[attacker] || 0) + dmg;
+      }
+      continue;
+    }
+
+    // Slain line
+    const sm = line.match(slainRe);
+    if (sm) {
+      const name = (sm[1] || sm[2] || sm[3] || '').trim();
+      if (cur && cur.bossName.toLowerCase() === name.toLowerCase()) {
+        completed.push(cur);
+        cur = null;
+      }
+    }
+  }
+  if (cur) completed.push(cur);
+
+  // Filter by threshold / always list and build records
+  const records = completed
+    .filter(f => {
+      const total = Object.values(f.players).reduce((s, v) => s + v, 0);
+      return alwaysList.includes(f.bossName.toLowerCase()) || total >= BOSS_DMG_THRESHOLD;
+    })
+    .map(f => ({
+      id: f.startMs,
+      bossName: f.bossName,
+      date: new Date(f.lastMs).toISOString(),
+      elapsed: Math.max(1, Math.round((f.lastMs - f.startMs) / 1000)),
+      participants: Object.entries(f.players)
+        .map(([name, dmg]) => ({ name, dmg }))
+        .sort((a, b) => b.dmg - a.dmg),
+    }))
+    .slice(-5)
+    .reverse();
+
+  bossFights = records;
+  store.set('bossFightsHistory', bossFights);
+  return { seeded: records.length };
+});

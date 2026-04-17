@@ -1820,6 +1820,17 @@ async function init() {
   await loadLootConfig();
   await initGear();
   await loadBossFightSettings();
+  // Seed fights from log if store is empty and we have a log path
+  if (logPath && !bossFightList.length) {
+    const result = await ipcRenderer.invoke('seed-boss-fights-from-log', logPath);
+    if (result.seeded) {
+      bossFightList = await ipcRenderer.invoke('get-boss-fights');
+      renderFightList();
+    }
+  } else {
+    bossFightList = await ipcRenderer.invoke('get-boss-fights');
+    renderFightList();
+  }
   startBuffTick();
   if (logPath) startWatching();
 }
@@ -4580,9 +4591,9 @@ async function postFightToGuild() {
 }
 
 async function clearBossFights() {
+  await ipcRenderer.invoke('clear-boss-fights');
   bossFightList = [];
   selectedFightId = null;
-  await ipcRenderer.invoke('clear-boss-fights');
   renderFightList();
   document.getElementById('fight-detail-empty').style.display = 'flex';
   document.getElementById('fight-detail').style.display = 'none';
