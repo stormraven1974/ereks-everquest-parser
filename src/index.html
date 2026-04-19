@@ -1027,6 +1027,7 @@
   <div class="nav-tab" data-tab="loot">Loot</div>
   <div class="nav-tab" data-tab="trader">Trader</div>
   <div class="nav-tab" data-tab="fights">Fights</div>
+  <div class="nav-tab" data-tab="mobs">Mobs</div>
   <div class="nav-tab" data-tab="log">Log</div>
 </div>
 
@@ -1090,6 +1091,26 @@
             <option value="Shaman">Shaman</option>
             <option value="Warrior">Warrior</option>
             <option value="Wizard">Wizard</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Race</label>
+          <select id="char-race" style="max-width:200px;">
+            <option value="">— Select race —</option>
+            <option value="BAR">Barbarian</option>
+            <option value="DEF">Dark Elf</option>
+            <option value="DWF">Dwarf</option>
+            <option value="ERU">Erudite</option>
+            <option value="GNO">Gnome</option>
+            <option value="HEF">Half Elf</option>
+            <option value="HFL">Halfling</option>
+            <option value="HIE">High Elf</option>
+            <option value="HUM">Human</option>
+            <option value="IKS">Iksar</option>
+            <option value="OGR">Ogre</option>
+            <option value="TRL">Troll</option>
+            <option value="VAH">Vah Shir</option>
+            <option value="ELF">Wood Elf</option>
           </select>
         </div>
         <div class="field-row">
@@ -1709,6 +1730,157 @@
     </div>
   </div>
 
+  <!-- ── MOBS TAB ── -->
+  <div class="tab-panel" id="tab-mobs">
+    <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- Top bar -->
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);">
+        <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent);">BOSS MOB INFORMATION</div>
+        <div style="flex:1;"></div>
+        <button class="btn success" style="padding:3px 12px;font-size:10px;" onclick="showBossMobModal(null)">+ Add</button>
+      </div>
+
+      <!-- Two-column body -->
+      <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+        <!-- Left: mob list -->
+        <div style="width:220px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+          <div id="mobs-list" style="flex:1;overflow-y:auto;">
+            <div class="empty-state">No boss mobs recorded</div>
+          </div>
+        </div>
+
+        <!-- Right: mob detail -->
+        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+          <div id="mob-detail-empty" style="flex:1;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">Select a mob to view details</span>
+          </div>
+
+          <div id="mob-detail" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+            <!-- Header -->
+            <div style="flex-shrink:0;padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;">
+              <div style="flex:1;">
+                <div id="mob-detail-name" style="font-family:var(--mono);font-size:14px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;"></div>
+                <div id="mob-detail-meta" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;line-height:1.8;"></div>
+                <div id="mob-detail-lastkilled" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px;"></div>
+              </div>
+              <button class="btn" style="padding:3px 10px;font-size:9px;flex-shrink:0;" onclick="fetchMobFromPqdi()" title="Pull data from PQDI.cc">PQDI</button>
+              <button class="btn" style="padding:3px 10px;font-size:9px;flex-shrink:0;" onclick="outputMobToRaid()" title="Send mob summary to guild chat">Guild</button>
+              <button class="btn" style="padding:3px 10px;font-size:9px;flex-shrink:0;" onclick="editSelectedBossMob()">Edit</button>
+              <button class="btn danger" style="padding:3px 10px;font-size:9px;flex-shrink:0;" onclick="deleteSelectedBossMob()">Delete</button>
+            </div>
+
+            <!-- PQDI fetch status / NPC picker (shown during/after fetch) -->
+            <div id="mob-npc-fetch" style="display:none;flex-shrink:0;padding:8px 18px;background:var(--bg3);border-bottom:1px solid var(--border);">
+              <div id="mob-npc-fetch-content"></div>
+            </div>
+
+            <!-- Detail body -->
+            <div id="mob-detail-body" style="flex:1;overflow-y:auto;padding:14px 18px;"></div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOSS MOB MODAL ── -->
+  <div id="boss-mob-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:24px;width:480px;max-height:80vh;overflow-y:auto;">
+      <div class="section-title" id="boss-mob-modal-title" style="margin-bottom:16px;">Add Boss Mob</div>
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">NAME</div>
+      <input type="text" id="mob-input-name" placeholder="e.g. Lord Inquisitor Seru" style="margin-bottom:12px;" />
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">HP (optional)</div>
+      <input type="text" id="mob-input-hp" placeholder="e.g. 500000" style="margin-bottom:12px;" />
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">ZONE (optional)</div>
+      <input type="text" id="mob-input-zone" placeholder="e.g. Sanctus Seru" list="mob-zone-datalist" style="margin-bottom:12px;" />
+      <datalist id="mob-zone-datalist"></datalist>
+
+      <div style="display:flex;gap:16px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);cursor:pointer;">
+          <input type="checkbox" id="mob-input-rampages" class="toggle" /> Rampages
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);cursor:pointer;">
+          <input type="checkbox" id="mob-input-flurries" class="toggle" /> Flurries
+        </label>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:8px;letter-spacing:1px;">AOE TIMERS</div>
+      <div id="mob-aoe-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+      <button class="btn" style="padding:3px 12px;font-size:10px;margin-bottom:16px;" onclick="addMobAoeRow()">+ Add AOE</button>
+
+      <div style="border-top:1px solid var(--border);margin-bottom:14px;"></div>
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:8px;letter-spacing:1px;">LOOT DROPS</div>
+      <div id="mob-loot-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:20px;"></div>
+      <div style="display:flex;gap:6px;margin-bottom:4px;">
+        <input type="text" id="mob-loot-search" placeholder="Search item name…" style="flex:1;font-size:10px;padding:4px 8px;" onkeydown="if(event.key==='Enter')searchMobLoot()"/>
+        <button class="btn" style="padding:3px 10px;font-size:10px;" onclick="searchMobLoot()">Search</button>
+      </div>
+      <div id="mob-loot-results" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:130px;overflow-y:auto;margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn success" onclick="saveBossMob()">Save</button>
+        <button class="btn" onclick="hideBossMobModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MOB → ADD TIMER MODAL ── -->
+  <div id="mob-timer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1200;align-items:center;justify-content:center;">
+    <div style="background:var(--bg2);border:1px solid var(--accent);border-radius:8px;padding:24px;width:440px;">
+      <div class="section-title" style="margin-bottom:16px;">Add to Timers</div>
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">NAME</div>
+      <input type="text" id="mob-timer-name" style="margin-bottom:12px;" />
+
+      <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">TYPE</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);cursor:pointer;"><input type="radio" name="mob-timer-type" value="buff" checked onchange="updateMobTimerFields()"> Buff Timer</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);cursor:pointer;"><input type="radio" name="mob-timer-type" value="debuff" onchange="updateMobTimerFields()"> Debuff Timer</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);cursor:pointer;"><input type="radio" name="mob-timer-type" value="raid" onchange="updateMobTimerFields()"> Raid AoE</label>
+      </div>
+
+      <div id="mob-timer-fetch-status" style="display:none;font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;"></div>
+
+      <div id="mob-timer-fields-duration">
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">TRIGGER PATTERN <span style="color:var(--accent4);">(EQ log text to match)</span></div>
+        <input type="text" id="mob-timer-pattern" placeholder='e.g. (.+?) is struck by Ancient Breath' style="margin-bottom:12px;font-family:var(--mono);font-size:11px;" />
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DURATION (seconds)</div>
+        <input type="number" id="mob-timer-duration" placeholder="e.g. 60" style="margin-bottom:8px;" />
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">SPELL FADES <span style="color:var(--accent4);">(optional — log text when it wears off)</span></div>
+        <input type="text" id="mob-timer-fades" placeholder="e.g. The ancient breath fades." style="margin-bottom:12px;font-family:var(--mono);font-size:11px;" />
+      </div>
+
+      <div id="mob-timer-fields-raid" style="display:none;">
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">AOE TRIGGER <span style="color:var(--accent4);">(text fragment from log)</span></div>
+        <input type="text" id="mob-timer-aoe-trigger" placeholder='e.g. struck by Ancient Breath' style="margin-bottom:12px;font-family:var(--mono);font-size:11px;" />
+        <div style="display:flex;gap:12px;margin-bottom:12px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">INTERVAL (seconds)</div>
+            <input type="number" id="mob-timer-interval" placeholder="e.g. 30" />
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">WARNING LEAD (seconds)</div>
+            <input type="number" id="mob-timer-warning" placeholder="e.g. 10" />
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">DEATH PATTERN <span style="color:var(--accent4);">(optional, resets timer)</span></div>
+        <input type="text" id="mob-timer-death" placeholder='e.g. Vulak`Aerr has been slain' style="margin-bottom:12px;font-family:var(--mono);font-size:11px;" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn success" onclick="saveMobTimer()">Add Timer</button>
+        <button class="btn" onclick="hideMobTimerModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOG TAB ── -->
   <div class="tab-panel" id="tab-log">
     <div class="log-wrap">
@@ -1751,6 +1923,8 @@ let activeBuffTimers = {};
 let activeDebuffTimers = {};
 let lastCombatSummary = null;
 let charName = '';
+let charClass = '';
+let charRace = '';
 let currentProfileKey = 'default';
 
 function profileKeyFromPath(logPath) {
@@ -1780,8 +1954,11 @@ async function init() {
   const profile = await ipcRenderer.invoke('get-profile') || {};
 
   charName = profile.charName || '';
-  document.getElementById('char-name').value = charName;
-  document.getElementById('char-class').value = profile.charClass || '';
+  charClass = profile.charClass || '';
+  charRace  = profile.charRace  || '';
+  document.getElementById('char-name').value  = charName;
+  document.getElementById('char-class').value = charClass;
+  document.getElementById('char-race').value  = charRace;
 
   document.getElementById('warder-name').value = profile.warderName || '';
 
@@ -1823,6 +2000,7 @@ async function init() {
   await loadLootConfig();
   await initGear();
   await loadBossFightSettings();
+  await loadBossMobInfo();
   // Seed fights from log if store is empty and we have a log path
   if (logPath && !bossFightList.length) {
     const result = await ipcRenderer.invoke('seed-boss-fights-from-log', logPath);
@@ -1906,8 +2084,11 @@ async function startWatching() {
     // Reload profile settings for new character
     const profile = await ipcRenderer.invoke('get-profile') || {};
     charName = profile.charName || '';
-    document.getElementById('char-name').value = charName;
-    document.getElementById('char-class').value = profile.charClass || '';
+    charClass = profile.charClass || '';
+    charRace  = profile.charRace  || '';
+    document.getElementById('char-name').value  = charName;
+    document.getElementById('char-class').value = charClass;
+    document.getElementById('char-race').value  = charRace;
     document.getElementById('warder-name').value = profile.warderName || '';
     document.getElementById('spell-extend-pct').value = profile.spellExtendPct || 0;
     document.getElementById('announce-skillups').checked = !!profile.announceSkillups;
@@ -1955,8 +2136,9 @@ function getCdSettings() {
 function saveSettings() {
   const path = document.getElementById('log-path-input').value.trim();
   charName = document.getElementById('char-name').value.trim();
+  charClass = document.getElementById('char-class').value;
+  charRace  = document.getElementById('char-race').value;
   const warderName = document.getElementById('warder-name').value.trim();
-  const charClass = document.getElementById('char-class').value;
   const spellExtend = parseInt(document.getElementById('spell-extend-pct').value) || 0;
   ipcRenderer.invoke('store-set', 'logPath', path);
 
@@ -1974,6 +2156,7 @@ function saveSettings() {
     charName,
     warderName,
     charClass,
+    charRace,
     spellExtendPct: spellExtend,
     cooldownSettings: cdSettings,
     announceSkillups: document.getElementById('announce-skillups').checked,
@@ -4212,6 +4395,44 @@ function initResizablePanels() {
 
 // ── Equipment & Desired Loot ──────────────────────────────────────────────────
 
+const ALL_CLASS_DEFS = [
+  { full: 'Warrior',     abbrev: 'WAR', bit: 1     },
+  { full: 'Cleric',      abbrev: 'CLR', bit: 2     },
+  { full: 'Paladin',     abbrev: 'PAL', bit: 4     },
+  { full: 'Ranger',      abbrev: 'RNG', bit: 8     },
+  { full: 'Shadowknight',abbrev: 'SHD', bit: 16    },
+  { full: 'Druid',       abbrev: 'DRU', bit: 32    },
+  { full: 'Monk',        abbrev: 'MNK', bit: 64    },
+  { full: 'Bard',        abbrev: 'BRD', bit: 128   },
+  { full: 'Rogue',       abbrev: 'ROG', bit: 256   },
+  { full: 'Shaman',      abbrev: 'SHM', bit: 512   },
+  { full: 'Necromancer', abbrev: 'NEC', bit: 1024  },
+  { full: 'Wizard',      abbrev: 'WIZ', bit: 2048  },
+  { full: 'Magician',    abbrev: 'MAG', bit: 4096  },
+  { full: 'Enchanter',   abbrev: 'ENC', bit: 8192  },
+  { full: 'Beastlord',   abbrev: 'BST', bit: 16384 },
+  { full: 'Berserker',   abbrev: 'BER', bit: 32768 },
+];
+const CLASS_BITS = Object.fromEntries(ALL_CLASS_DEFS.map(c => [c.full, c.bit]));
+
+const ALL_RACE_DEFS = [
+  { full: 'Human',    abbrev: 'HUM', bit: 1    },
+  { full: 'Barbarian',abbrev: 'BAR', bit: 2    },
+  { full: 'Erudite',  abbrev: 'ERU', bit: 4    },
+  { full: 'Wood Elf', abbrev: 'ELF', bit: 8    },
+  { full: 'High Elf', abbrev: 'HIE', bit: 16   },
+  { full: 'Dark Elf', abbrev: 'DEF', bit: 32   },
+  { full: 'Half Elf', abbrev: 'HEF', bit: 64   },
+  { full: 'Dwarf',    abbrev: 'DWF', bit: 128  },
+  { full: 'Troll',    abbrev: 'TRL', bit: 256  },
+  { full: 'Ogre',     abbrev: 'OGR', bit: 512  },
+  { full: 'Halfling', abbrev: 'HFL', bit: 1024 },
+  { full: 'Gnome',    abbrev: 'GNO', bit: 2048 },
+  { full: 'Iksar',    abbrev: 'IKS', bit: 4096 },
+  { full: 'Vah Shir', abbrev: 'VAH', bit: 8192 },
+];
+const RACE_BITS = Object.fromEntries(ALL_RACE_DEFS.map(r => [r.abbrev, r.bit]));
+
 const EQ_SLOT_ORDER = [
   { key: 'Ear',       bits: 2 | 16,         label: 'EAR' },
   { key: 'Head',      bits: 4,              label: 'HEAD' },
@@ -4448,9 +4669,30 @@ function buildCompareSection(equippedData, desiredData) {
   const hasStats = relevant.length || ratioHtml;
   const statEffectDivider = (hasStats && effectKeys.length)
     ? `<div style="border-top:1px solid var(--border);margin:5px 0;"></div>` : '';
+
+  // Classes / races usability rows
+  const mkUsabilityRow = (label, defs, bitmask, charVal, matchKey = 'full') => {
+    if (!bitmask) return '';
+    const allBits = defs.reduce((acc, d) => acc | d.bit, 0);
+    if (bitmask === allBits) return `<div class="item-compare-stat"><span class="stat-label">${label}</span><span style="color:var(--text-dim);">ALL</span></div>`;
+    const charBit = defs.find(d => d[matchKey] === charVal)?.bit || 0;
+    const tokens = defs.map(d => {
+      const canUse = (bitmask & d.bit) !== 0;
+      const isCurrent = charBit && d.bit === charBit;
+      if (isCurrent && canUse)  return `<span style="color:#4db36a;font-weight:bold;">${d.abbrev}</span>`;
+      if (isCurrent && !canUse) return `<span style="color:var(--accent2);font-weight:bold;">${d.abbrev}</span>`;
+      if (canUse)               return `<span style="color:var(--text-dim);">${d.abbrev}</span>`;
+      return '';
+    }).filter(Boolean);
+    return `<div class="item-compare-stat" style="align-items:flex-start;"><span class="stat-label">${label}</span><span style="line-height:1.7;">${tokens.join(' ')}</span></div>`;
+  };
+  const classRow = mkUsabilityRow('Class', ALL_CLASS_DEFS, desiredData.classes, charClass, 'full');
+  const raceRow  = mkUsabilityRow('Race',  ALL_RACE_DEFS,  desiredData.races,   charRace,  'abbrev');
+  const usabilityDivider = (classRow || raceRow) ? `<div style="border-top:1px solid var(--border);margin:5px 0;"></div>` : '';
+
   const iconsHtml = `<div style="display:flex;align-items:center;gap:2px;margin-bottom:5px;">${equippedIconHtml}${arrowHtml}${desiredIconHtml}</div>`;
 
-  return `${iconsHtml}<div class="item-compare-header">${desiredData.name}${vsLabel}</div>${statRows.join('')}${statEffectDivider}${effectsHtml}`;
+  return `${iconsHtml}<div class="item-compare-header">${desiredData.name}${vsLabel}</div>${statRows.join('')}${statEffectDivider}${effectsHtml}${usabilityDivider}${classRow}${raceRow}`;
 }
 
 function showItemCompare(event, desiredId, slotKey) {
@@ -4550,20 +4792,17 @@ function selectFight(id) {
 
 function buildGuildLines(fight) {
   const fmt = n => {
-    if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
-    if (n >= 1000)    return (n / 1000).toFixed(2) + 'K';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return Math.round(n / 1000) + 'K';
     return String(n);
   };
   const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
   const totalDps  = Math.round(totalDmg / Math.max(1, fight.elapsed));
-  let line = `/gu ${fight.bossName} in ${fight.elapsed}s, ${fmt(totalDmg)} @${totalDps},`;
+  let line = `/gu ${fight.bossName} ${fight.elapsed}s ${fmt(totalDmg)}@${totalDps}:`;
   for (let i = 0; i < fight.participants.length; i++) {
     const p = fight.participants[i];
     const displayName = (p.name === 'You' && charName) ? charName : p.name;
-    const activeElapsed = p.elapsed || fight.elapsed;
-    const dps = Math.round(p.dmg / Math.max(1, activeElapsed));
-    const sep = i > 0 ? ' |' : '';
-    const token = `${sep} ${i + 1}. ${displayName}=${fmt(p.dmg)}@${dps} in ${activeElapsed}s`;
+    const token = (i > 0 ? ', ' : ' ') + `${displayName} ${fmt(p.dmg)}`;
     if (line.length + token.length > 255) break;
     line += token;
   }
@@ -4573,21 +4812,9 @@ function buildGuildLines(fight) {
 async function postFightToGuild() {
   const fight = bossFightList.find(f => f.id === selectedFightId);
   if (!fight) return;
-  const lines = buildGuildLines(fight);
-  const { exec } = require('child_process');
-
-  // Find EQ window
-  exec("wmctrl -l | grep -i 'everquest\\|eqgame\\|Client1'", (err, stdout) => {
-    const winLine = stdout.trim().split('\n').find(l => /everquest|eqgame|Client1/i.test(l));
-    const winId = winLine ? winLine.split(/\s+/)[0] : null;
-
-    const line = lines[0];
-    const cmd = winId
-      ? `wmctrl -ia ${winId} && xdotool key Return type --clearmodifiers "${line.replace(/"/g, '\\"')}"`
-      : `xdotool key Return type --clearmodifiers "${line.replace(/"/g, '\\"')}"`;
-    exec(cmd, e => { if (e) showToast('xdotool error — is EQ focused?', 3000); });
-    showToast('Posted to guild chat');
-  });
+  const line = buildGuildLines(fight)[0];
+  sendLineToEQ(line);
+  showToast(`Posted to guild chat (${line.length} chars)`);
 }
 
 async function dismissFight() {
@@ -4633,7 +4860,685 @@ ipcRenderer.on('boss-fight-recorded', (e, fight) => {
   bossFightList.unshift(fight);
   renderFightList();
   showToast(`Boss fight recorded: ${fight.bossName}`);
+  // Update lastKilled on matching mob entry
+  const fName = fight.bossName.toLowerCase();
+  const mob = bossMobList.find(m => m.name.toLowerCase() === fName);
+  if (mob && fight.date) {
+    mob.lastKilled = fight.date;
+    ipcRenderer.invoke('store-set', 'bossMobInfo', bossMobList);
+    if (selectedMobId === mob.id) selectMob(mob.id);
+  }
 });
+
+// ── Boss Mob Information ──────────────────────────────────────────────────────
+let bossMobList = [];
+let selectedMobId = null;
+let editingMobId = null;
+let pendingMobLoot = [];   // loot items staged in the modal
+let mobZoneCollapsed = {}; // zone label → bool
+
+async function loadBossMobInfo() {
+  bossMobList = await ipcRenderer.invoke('store-get', 'bossMobInfo') || [];
+
+  // Seed lastKilled from fight history
+  const fights = await ipcRenderer.invoke('get-boss-fights') || [];
+  let updated = false;
+  fights.forEach(fight => {
+    const fName = fight.bossName.toLowerCase();
+    const mob = bossMobList.find(m => m.name.toLowerCase() === fName);
+    if (mob && fight.date) {
+      if (!mob.lastKilled || fight.date > mob.lastKilled) {
+        mob.lastKilled = fight.date;
+        updated = true;
+      }
+    }
+  });
+  if (updated) await ipcRenderer.invoke('store-set', 'bossMobInfo', bossMobList);
+
+  // Prefetch all loot item data into the shared gearItemCache
+  const lootIds = [...new Set(bossMobList.flatMap(m => (m.loot || []).map(l => l.id)))];
+  if (lootIds.length) await Promise.all(lootIds.map(id => fetchItemData(id)));
+
+  renderMobList();
+}
+
+function renderMobList() {
+  const el = document.getElementById('mobs-list');
+  if (!bossMobList.length) {
+    el.innerHTML = '<div class="empty-state">No boss mobs recorded</div>';
+    return;
+  }
+
+  // Group by zone
+  const groups = {};
+  bossMobList.forEach(m => {
+    const zone = m.zoneLongName || m.zone || 'Unknown';
+    if (!groups[zone]) groups[zone] = [];
+    groups[zone].push(m);
+  });
+
+  // Sort zone names alphabetically, Unknown last
+  const zoneKeys = Object.keys(groups).sort((a, b) => {
+    if (a === 'Unknown') return 1;
+    if (b === 'Unknown') return -1;
+    return a.localeCompare(b);
+  });
+
+  el.innerHTML = zoneKeys.map(zone => {
+    const mobs = groups[zone];
+    const collapsed = !!mobZoneCollapsed[zone];
+    const arrow = collapsed ? '▶' : '▼';
+    const mobsHtml = collapsed ? '' : mobs.map(m => {
+      const active = m.id === selectedMobId
+        ? 'background:var(--bg3);border-left:2px solid var(--accent);padding-left:10px;'
+        : 'border-left:2px solid transparent;padding-left:10px;';
+      return `<div onclick="selectMob('${m.id}')" style="padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;${active}">${m.name}</div>`;
+    }).join('');
+
+    return `<div>
+      <div onclick="toggleMobZone('${zone.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;position:sticky;top:0;z-index:1;">
+        <span style="font-size:8px;color:var(--text-dim);width:10px;">${arrow}</span>
+        <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--accent);flex:1;">${zone.toUpperCase()}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">${mobs.length}</span>
+      </div>
+      ${mobsHtml}
+    </div>`;
+  }).join('');
+}
+
+function toggleMobZone(zone) {
+  mobZoneCollapsed[zone] = !mobZoneCollapsed[zone];
+  renderMobList();
+}
+
+function selectMob(id) {
+  selectedMobId = id;
+  renderMobList();
+  const mob = bossMobList.find(m => m.id === id);
+  if (!mob) return;
+
+  document.getElementById('mob-detail-empty').style.display = 'none';
+  document.getElementById('mob-detail').style.display = 'flex';
+  document.getElementById('mob-npc-fetch').style.display = 'none';
+  document.getElementById('mob-detail-name').textContent = mob.name;
+
+  // Build meta line: HP · Level · Zone · Expansion
+  const metaParts = [];
+  if (mob.hp)        metaParts.push(`HP: ${Number(mob.hp).toLocaleString()}`);
+  if (mob.level)     metaParts.push(`Lv. ${mob.level}`);
+  if (mob.zoneLongName) metaParts.push(mob.zoneLongName);
+  else if (mob.zone) metaParts.push(mob.zone);
+  if (mob.expansion != null) {
+    const expNames = ['','Classic','Kunark','Velious','Luclin','PoP','LoY','LDoN','GoD','OoW','DoN'];
+    const expLabel = expNames[mob.expansion] || `Exp ${mob.expansion}`;
+    metaParts.push(expLabel);
+  }
+  document.getElementById('mob-detail-meta').textContent = metaParts.join(' · ');
+
+  // Resistance line (only shown if populated from PQDI)
+  const resParts = [];
+  if (mob.mr) resParts.push(`MR ${mob.mr}`);
+  if (mob.fr) resParts.push(`FR ${mob.fr}`);
+  if (mob.cr) resParts.push(`CR ${mob.cr}`);
+  if (mob.pr) resParts.push(`PR ${mob.pr}`);
+  if (mob.dr) resParts.push(`DR ${mob.dr}`);
+  const resEl = document.getElementById('mob-detail-lastkilled');
+  const resHtml = resParts.length ? `<span style="color:var(--accent2);">Resists: ${resParts.join(' · ')}</span>  ` : '';
+  const lkText = mob.lastKilled
+    ? (() => { const d = new Date(mob.lastKilled); return `Last killed: ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`; })()
+    : '';
+  resEl.innerHTML = resHtml + lkText;
+
+  const flags = [];
+  if (mob.rampages) flags.push('Rampages');
+  if (mob.flurries) flags.push('Flurries');
+
+  let html = '';
+
+  const hasSpecialAbilities = mob.specialAbilities && mob.specialAbilities.length;
+  const hasSpells = mob.spells && mob.spells.length;
+  const hasContent = flags.length || hasSpecialAbilities || hasSpells || (mob.aoes && mob.aoes.length) || (mob.loot && mob.loot.length);
+
+  if (flags.length) {
+    html += `<div style="margin-bottom:10px;">`;
+    flags.forEach(f => {
+      html += `<span style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--accent2);border-radius:3px;padding:2px 8px;margin-right:6px;color:var(--accent2);">${f}</span>`;
+    });
+    html += `</div>`;
+  }
+
+  if (hasSpecialAbilities) {
+    const HIGHLIGHT = new Set(['Summon','Rampage','Flurry','Enrage','AE Rampage','Bane','Strikethrough']);
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px;">SPECIAL ABILITIES</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">`;
+    mob.specialAbilities.forEach(a => {
+      const hi = HIGHLIGHT.has(a);
+      const safeA = a.replace(/</g,'&lt;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
+      const safeAJs = a.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;background:var(--bg3);border:1px solid ${hi ? 'var(--accent2)' : 'var(--border)'};border-radius:3px;padding:1px 4px 1px 7px;color:${hi ? 'var(--accent2)' : 'var(--text-dim)'};">
+        ${safeA}
+        <button class="btn" onclick="showMobTimerModal('${safeAJs}')" style="padding:0 4px;font-size:8px;line-height:14px;min-width:0;margin-left:2px;" title="Add to timers">+</button>
+      </span>`;
+    });
+    html += `</div>`;
+  }
+
+  if (hasSpells) {
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px;">SPELLS</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">`;
+    mob.spells.forEach(s => {
+      const safeName = s.name.replace(/</g,'&lt;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
+      const safeNameJs = s.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html += `<span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:9px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:1px 4px 1px 7px;color:var(--accent);">
+        <span style="cursor:pointer;" onclick="ipcRenderer.send('open-pqdi-url','https://www.pqdi.cc/spell/${s.id}')" title="View on PQDI">${safeName}</span>
+        <button class="btn" onclick="showMobTimerModal('${safeNameJs}', ${s.id})" style="padding:0 4px;font-size:8px;line-height:14px;min-width:0;margin-left:2px;" title="Add to timers">+</button>
+      </span>`;
+    });
+    html += `</div>`;
+  }
+
+  if (mob.aoes && mob.aoes.length) {
+    if (flags.length || hasSpecialAbilities || hasSpells) html += `<div style="border-top:1px solid var(--border);margin:10px 0;"></div>`;
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">AOE TIMERS</div>`;
+    mob.aoes.forEach((aoe, i) => {
+      html += `<div style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;margin-bottom:6px;">`;
+      html += `<div style="font-family:var(--mono);font-size:12px;color:var(--accent);">${i + 1}. ${aoe.name}</div>`;
+      html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:3px;">Interval: ${aoe.interval}s</div>`;
+      if (aoe.notes) html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px;">${aoe.notes}</div>`;
+      html += `</div>`;
+    });
+  } else if (!hasContent) {
+    html += `<div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">No data recorded yet — try the PQDI button.</div>`;
+  }
+
+  if (mob.loot && mob.loot.length) {
+    if (flags.length || hasSpecialAbilities || hasSpells || (mob.aoes && mob.aoes.length)) {
+      html += `<div style="border-top:1px solid var(--border);margin:12px 0;"></div>`;
+    }
+    html += `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;">LOOT DROPS</div>`;
+    mob.loot.forEach(item => {
+      const data = gearItemCache[item.id];
+      const isDesired = gearDesiredLoot && gearDesiredLoot.some(d => d.id === item.id);
+      const borderColor = isDesired ? '#b8860b' : 'var(--border)';
+      const bg = isDesired ? 'rgba(184,134,11,0.08)' : 'var(--bg3)';
+      const nameColor = isDesired ? '#f0c040' : 'var(--text)';
+      const iconHtml = (data && data.icon)
+        ? `<img src="https://www.pqdi.cc/static/icons/item_${data.icon}.png" style="width:22px;height:22px;image-rendering:pixelated;flex-shrink:0;" onerror="this.style.display='none'">`
+        : '';
+      const classBit = CLASS_BITS[charClass];
+      const raceBit  = RACE_BITS[charRace];
+      const classOk  = !data || !data.classes || !classBit || (data.classes & classBit) !== 0;
+      const raceOk   = !data || !data.races   || !raceBit  || (data.races   & raceBit)  !== 0;
+      const usable = classOk && raceOk;
+      const desiredBadge = isDesired
+        ? `<span style="font-family:var(--mono);font-size:9px;color:#f0c040;flex-shrink:0;">★ WANTED</span>`
+        : usable
+          ? `<button class="btn" onclick="wantMobLootItem(${item.id})" style="padding:1px 6px;font-size:9px;flex-shrink:0;" title="Add to wanted loot">+ Want</button>`
+          : `<button class="btn danger" disabled style="padding:1px 6px;font-size:9px;flex-shrink:0;opacity:0.7;cursor:default;" title="Not usable by ${charClass}">Not Usable</button>`;
+      const rateHtml = item.dropRate != null
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);flex-shrink:0;">${item.dropRate}%</span>`
+        : '';
+      const safeName = (item.name || '').replace(/</g, '&lt;').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:${bg};border:1px solid ${borderColor};border-radius:4px;margin-bottom:4px;cursor:default;"
+        onmouseenter="showMobItemTooltip(event,${item.id})"
+        onmouseleave="hideItemCompare()">
+        ${iconHtml}
+        <span style="font-family:var(--mono);font-size:11px;color:${nameColor};flex:1;min-width:0;">${safeName}</span>
+        ${desiredBadge}
+        ${rateHtml}
+      </div>`;
+    });
+  }
+
+  document.getElementById('mob-detail-body').innerHTML = html;
+}
+
+function showMobItemTooltip(event, itemId) {
+  const tooltip = document.getElementById('item-compare-tooltip');
+  const itemData = gearItemCache[itemId];
+  if (!tooltip || !itemData) return;
+
+  // Collect matching slot labels and all equipped items across those slots.
+  // If usability is unknown (no classes field in old cache), compare anyway.
+  const classBit = CLASS_BITS[charClass];
+  const raceBit  = RACE_BITS[charRace];
+  const classOk = !itemData.classes || !classBit || (itemData.classes & classBit) !== 0;
+  const raceOk  = !itemData.races   || !raceBit  || (itemData.races   & raceBit)  !== 0;
+  const usableByChar = classOk && raceOk;
+
+  const matchingSlots = EQ_SLOT_ORDER.filter(s => itemData.slots && (s.bits & itemData.slots));
+  const slotLabel = matchingSlots.length
+    ? `<div class="item-compare-stat"><span class="stat-label">Slot</span><span style="color:var(--text-dim);">${matchingSlots.map(s => s.label).join(', ')}</span></div>`
+    : '';
+
+  let sections;
+  if (usableByChar && matchingSlots.length) {
+    const equippedItems = matchingSlots.flatMap(s =>
+      gearEquipment.filter(e => e.slot === s.key).map(e => gearItemCache[e.id] || null)
+    );
+    const toCompare = equippedItems.length ? equippedItems : [null];
+    sections = toCompare.map(eq => buildCompareSection(eq, itemData));
+  } else {
+    sections = [buildCompareSection(null, itemData)];
+  }
+
+  const slotDivider = `<div style="border-top:2px solid var(--border);margin:8px 0;"></div>`;
+  tooltip.innerHTML = sections.join(slotDivider) + (slotLabel ? `<div style="border-top:1px solid var(--border);margin:5px 0;"></div>${slotLabel}` : '');
+  tooltip.style.left = '0px';
+  tooltip.style.top = '-9999px';
+  tooltip.classList.add('visible');
+  const tw = tooltip.offsetWidth + 8;
+  const th = tooltip.offsetHeight + 8;
+  const x = (event.clientX + 14 + tw > window.innerWidth) ? event.clientX - tw : event.clientX + 14;
+  const y = (event.clientY + 14 + th > window.innerHeight) ? event.clientY - th : event.clientY + 14;
+  tooltip.style.left = Math.max(4, x) + 'px';
+  tooltip.style.top  = Math.max(4, y) + 'px';
+}
+
+async function wantMobLootItem(itemId) {
+  if (gearDesiredLoot.find(d => d.id === itemId)) return;
+  const data = await fetchItemData(itemId);
+  if (!data) return;
+  gearDesiredLoot.push({ name: data.name, id: itemId });
+  await ipcRenderer.invoke('set-desired-loot', gearDesiredLoot);
+  renderGearSlots();
+  if (selectedMobId) selectMob(selectedMobId);
+}
+
+// ── Mob → Add Timer modal ─────────────────────────────────────────────────────
+async function showMobTimerModal(name, spellId = null) {
+  document.getElementById('mob-timer-name').value = name;
+  document.getElementById('mob-timer-pattern').value = '';
+  document.getElementById('mob-timer-aoe-trigger').value = '';
+  document.getElementById('mob-timer-duration').value = '';
+  document.getElementById('mob-timer-fades').value = '';
+  document.getElementById('mob-timer-interval').value = '';
+  document.getElementById('mob-timer-warning').value = '10';
+  document.getElementById('mob-timer-death').value = '';
+  document.querySelector('input[name="mob-timer-type"][value="debuff"]').checked = true;
+  updateMobTimerFields();
+
+  const statusEl = document.getElementById('mob-timer-fetch-status');
+  statusEl.style.display = 'none';
+  statusEl.textContent = '';
+
+  document.getElementById('mob-timer-modal').style.display = 'flex';
+
+  if (spellId) {
+    statusEl.textContent = 'Fetching spell data from PQDI…';
+    statusEl.style.display = 'block';
+    const spell = await ipcRenderer.invoke('fetch-spell-by-id', spellId);
+    if (spell && !spell.error) {
+      const castOnOther = spell.cast_on_other || '';
+      if (castOnOther) {
+        const escaped = castOnOther.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        document.getElementById('mob-timer-pattern').value = `\\] (.+?) ${escaped}`;
+        document.getElementById('mob-timer-aoe-trigger').value = castOnOther;
+      }
+      if (spell.durationSeconds > 0) {
+        document.getElementById('mob-timer-duration').value = spell.durationSeconds;
+      }
+      if (spell.spell_fades) {
+        document.getElementById('mob-timer-fades').value = spell.spell_fades;
+      }
+      statusEl.textContent = castOnOther
+        ? `Prefilled from PQDI — "${castOnOther}"`
+        : 'Spell found on PQDI but no cast_on_other text — fill in the trigger manually.';
+      statusEl.style.color = castOnOther ? 'var(--text-dim)' : 'var(--accent2)';
+    } else {
+      statusEl.textContent = (spell && spell.error) ? `PQDI: ${spell.error}` : 'Spell not found on PQDI — fill in fields manually.';
+      statusEl.style.color = 'var(--accent2)';
+    }
+  }
+
+  setTimeout(() => document.getElementById('mob-timer-pattern').focus(), 50);
+}
+
+function hideMobTimerModal() {
+  document.getElementById('mob-timer-modal').style.display = 'none';
+}
+
+function updateMobTimerFields() {
+  const type = document.querySelector('input[name="mob-timer-type"]:checked')?.value;
+  document.getElementById('mob-timer-fields-duration').style.display = type === 'raid' ? 'none' : 'block';
+  document.getElementById('mob-timer-fields-raid').style.display    = type === 'raid' ? 'block' : 'none';
+}
+
+async function saveMobTimer() {
+  const name = document.getElementById('mob-timer-name').value.trim();
+  if (!name) return;
+  const type = document.querySelector('input[name="mob-timer-type"]:checked')?.value;
+
+  if (type === 'raid') {
+    const aoeTrigger = document.getElementById('mob-timer-aoe-trigger').value.trim();
+    if (!aoeTrigger) { document.getElementById('mob-timer-aoe-trigger').focus(); return; }
+    const interval      = parseInt(document.getElementById('mob-timer-interval').value) || 60;
+    const warningLeadTime = parseInt(document.getElementById('mob-timer-warning').value) || 10;
+    const deathPattern  = document.getElementById('mob-timer-death').value.trim();
+    const timers = await ipcRenderer.invoke('store-get', 'raidTimers') || [];
+    timers.push({ id: String(Date.now()), name, aoeTrigger, interval, warningLeadTime, deathPattern: deathPattern || undefined });
+    await ipcRenderer.invoke('store-set', 'raidTimers', timers);
+  } else {
+    const triggerPattern = document.getElementById('mob-timer-pattern').value.trim();
+    if (!triggerPattern) { document.getElementById('mob-timer-pattern').focus(); return; }
+    const durationSeconds = parseInt(document.getElementById('mob-timer-duration').value) || 60;
+    const spellFades = document.getElementById('mob-timer-fades').value.trim();
+    const key = type === 'buff' ? 'buffTimers' : 'debuffTimers';
+    const timers = await ipcRenderer.invoke('store-get', key) || [];
+    const entry = { id: String(Date.now()), name, triggerPattern, durationSeconds, enabled: true };
+    if (type === 'buff') { entry.expireAlert = true; entry.isGroupSpell = false; }
+    if (spellFades) entry.spellFades = spellFades;
+    timers.push(entry);
+    await ipcRenderer.invoke('store-set', key, timers);
+  }
+
+  hideMobTimerModal();
+  showToast(`Timer "${name}" added`);
+}
+
+// ── PQDI fetch ────────────────────────────────────────────────────────────────
+let mobNpcCandidates = [];
+
+async function fetchMobFromPqdi() {
+  const mob = bossMobList.find(m => m.id === selectedMobId);
+  if (!mob) return;
+  const fetchDiv    = document.getElementById('mob-npc-fetch');
+  const contentDiv  = document.getElementById('mob-npc-fetch-content');
+  fetchDiv.style.display = 'block';
+  const safeMobName = mob.name.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Searching PQDI for "${safeMobName}"…</span>`;
+
+  try {
+    const candidates = await ipcRenderer.invoke('search-npc', mob.name);
+    if (!candidates.length) {
+      contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);">No NPC found on PQDI.cc for "${safeMobName}".</span>`;
+      return;
+    }
+
+    // Filter to only entries with HP set — avoid test/GM variants
+    const relevant = candidates.filter(c => c.hp > 0);
+    const pool = relevant.length ? relevant : candidates;
+
+    if (pool.length === 1) {
+      await applyNpcData(pool[0]);
+    } else {
+      mobNpcCandidates = pool;
+      const EXPANSION_NAMES = ['','Classic','Kunark','Velious','Luclin','PoP','LoY','LDoN','GoD','OoW','DoN'];
+      contentDiv.innerHTML =
+        `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:6px;">${pool.length} matches — pick one:</div>` +
+        pool.slice(0, 12).map((c, i) => {
+          const exp = EXPANSION_NAMES[c.expansion] || '';
+          const zone = c.long_name || c.zone || '';
+          const cName = (c.name || '').replace('#','').replace(/_/g,' ').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+          return `<div class="gear-search-result" onclick="selectNpcCandidate(${i})">
+            <span style="font-family:var(--mono);font-size:11px;">${cName}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-left:8px;">${zone}${exp ? ' · ' + exp : ''} · HP ${(c.hp||0).toLocaleString()} · Lv.${c.level}</span>
+          </div>`;
+        }).join('');
+    }
+  } catch (err) {
+    contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);">Error: ${String(err).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+  }
+}
+
+async function selectNpcCandidate(idx) {
+  await applyNpcData(mobNpcCandidates[idx]);
+}
+
+async function applyNpcData(npc) {
+  const mob = bossMobList.find(m => m.id === selectedMobId);
+  if (!mob) return;
+  const fetchDiv   = document.getElementById('mob-npc-fetch');
+  const contentDiv = document.getElementById('mob-npc-fetch-content');
+
+  try {
+    contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Fetching page data from PQDI…</span>`;
+
+    const result = await ipcRenderer.invoke('fetch-npc-drops', npc.id);
+    const drops            = result.drops           || [];
+    const htmlResists      = result.resists          || null;
+    const specialAbilities = result.specialAbilities || [];
+    const spells           = result.spells           || [];
+
+    contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Found ${drops.length} drops — fetching item data…</span>`;
+
+    if (drops.length) await Promise.all(drops.map(d => fetchItemData(d.id, true)));
+
+    // Update mob with PQDI data; only overwrite zone/name if PQDI actually has them
+    mob.npcId     = npc.id;
+    mob.hp        = npc.hp || mob.hp;
+    mob.level     = npc.level;
+    if (npc.zone)      mob.zone        = npc.zone;
+    if (npc.long_name) mob.zoneLongName = npc.long_name;
+    mob.expansion = npc.expansion != null ? npc.expansion : mob.expansion;
+
+    // Prefer HTML-scraped resists (full effective values) over API fields
+    const toResist = v => (v != null && v > 0) ? v : undefined;
+    mob.mr = toResist(htmlResists ? htmlResists.mr : (npc.mr ?? npc.MR));
+    mob.cr = toResist(htmlResists ? htmlResists.cr : (npc.cr ?? npc.CR));
+    mob.fr = toResist(htmlResists ? htmlResists.fr : (npc.fr ?? npc.FR));
+    mob.dr = toResist(htmlResists ? htmlResists.dr : (npc.dr ?? npc.DR));
+    mob.pr = toResist(htmlResists ? htmlResists.pr : (npc.pr ?? npc.PR));
+
+    mob.specialAbilities = specialAbilities;
+    mob.spells           = spells;
+    // Auto-detect flags from special abilities list
+    if (specialAbilities.some(a => /flurry/i.test(a))) mob.flurries  = true;
+    if (specialAbilities.some(a => /rampage/i.test(a))) mob.rampages = true;
+
+    mob.loot = drops.map(d => ({ id: d.id, name: d.name, dropRate: d.dropRate }));
+
+    await ipcRenderer.invoke('store-set', 'bossMobInfo', bossMobList);
+    fetchDiv.style.display = 'none';
+    selectMob(mob.id);
+    renderMobList();
+  } catch (err) {
+    contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--accent2);">Error: ${String(err).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+  }
+}
+
+function showBossMobModal(id) {
+  editingMobId = id;
+  const mob = id ? bossMobList.find(m => m.id === id) : null;
+  document.getElementById('boss-mob-modal-title').textContent = mob ? 'Edit Boss Mob' : 'Add Boss Mob';
+  document.getElementById('mob-input-name').value = mob ? mob.name : '';
+  document.getElementById('mob-input-hp').value = mob ? (mob.hp || '') : '';
+  document.getElementById('mob-input-zone').value = mob ? (mob.zoneLongName || mob.zone || '') : '';
+  document.getElementById('mob-input-rampages').checked = mob ? !!mob.rampages : false;
+  document.getElementById('mob-input-flurries').checked = mob ? !!mob.flurries : false;
+
+  // Populate zone datalist from existing mob zones
+  const knownZones = [...new Set(bossMobList
+    .map(m => m.zoneLongName || m.zone || '')
+    .filter(Boolean)
+  )].sort();
+  document.getElementById('mob-zone-datalist').innerHTML =
+    knownZones.map(z => `<option value="${z.replace(/"/g,'&quot;')}">`).join('');
+
+  const aoeList = document.getElementById('mob-aoe-list');
+  aoeList.innerHTML = '';
+  if (mob && mob.aoes) mob.aoes.forEach(aoe => addMobAoeRow(aoe));
+
+  pendingMobLoot = mob && mob.loot ? [...mob.loot] : [];
+  renderMobLootChips();
+  document.getElementById('mob-loot-search').value = '';
+  document.getElementById('mob-loot-results').style.display = 'none';
+  document.getElementById('mob-loot-results').innerHTML = '';
+
+  document.getElementById('boss-mob-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('mob-input-name').focus(), 50);
+}
+
+function hideBossMobModal() {
+  document.getElementById('boss-mob-modal').style.display = 'none';
+  document.getElementById('mob-loot-results').style.display = 'none';
+  editingMobId = null;
+  pendingMobLoot = [];
+}
+
+function renderMobLootChips() {
+  const el = document.getElementById('mob-loot-chips');
+  if (!pendingMobLoot.length) { el.innerHTML = ''; return; }
+  el.innerHTML = pendingMobLoot.map(item => {
+    const safeName = (item.name || '').replace(/</g, '&lt;').replace(/'/g, '&#39;');
+    return `<div style="display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:2px 4px 2px 6px;font-family:var(--mono);font-size:10px;">
+      ${safeName}
+      <button class="btn danger" style="padding:0 4px;font-size:9px;line-height:16px;min-width:0;" onclick="removeMobLootFromModal(${item.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+async function searchMobLoot() {
+  const q = document.getElementById('mob-loot-search').value.trim();
+  if (!q) return;
+  const resultsEl = document.getElementById('mob-loot-results');
+  resultsEl.innerHTML = '<div style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--text-dim);">Searching…</div>';
+  resultsEl.style.display = 'block';
+  const results = await ipcRenderer.invoke('search-items', q);
+  if (!results.length) {
+    resultsEl.innerHTML = '<div style="padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--text-dim);">No results.</div>';
+    return;
+  }
+  resultsEl.innerHTML = results.slice(0, 20).map(r => {
+    const safeName = r.name.replace(/'/g, '&#39;').replace(/`/g, '&#96;');
+    return `<div class="gear-search-result" onclick="addMobLootFromSearch(${r.id}, '${r.name.replace(/'/g, "\\'").replace(/`/g, "\\`")}')">
+      <span class="gear-search-id">#${r.id}</span>
+      <span style="font-size:11px;">${safeName}</span>
+    </div>`;
+  }).join('');
+}
+
+async function addMobLootFromSearch(id, name) {
+  document.getElementById('mob-loot-results').style.display = 'none';
+  document.getElementById('mob-loot-search').value = '';
+  if (pendingMobLoot.find(l => l.id === id)) return;
+  await fetchItemData(id);
+  pendingMobLoot.push({ id, name });
+  renderMobLootChips();
+}
+
+function removeMobLootFromModal(id) {
+  pendingMobLoot = pendingMobLoot.filter(l => l.id !== id);
+  renderMobLootChips();
+}
+
+function addMobAoeRow(aoe) {
+  const container = document.getElementById('mob-aoe-list');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input type="text" placeholder="AOE name" value="${aoe ? aoe.name : ''}" style="flex:2;font-size:10px;padding:4px 8px;" class="mob-aoe-name" />
+    <input type="number" placeholder="Interval (s)" value="${aoe ? aoe.interval : ''}" style="width:90px;font-size:10px;padding:4px 8px;" class="mob-aoe-interval" />
+    <input type="text" placeholder="Notes (optional)" value="${aoe ? (aoe.notes || '') : ''}" style="flex:2;font-size:10px;padding:4px 8px;" class="mob-aoe-notes" />
+    <button class="btn danger" style="padding:2px 8px;font-size:10px;" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+async function saveBossMob() {
+  const name = document.getElementById('mob-input-name').value.trim();
+  if (!name) return;
+
+  const hp = document.getElementById('mob-input-hp').value.trim();
+  const zoneInput = document.getElementById('mob-input-zone').value.trim();
+  const rampages = document.getElementById('mob-input-rampages').checked;
+  const flurries = document.getElementById('mob-input-flurries').checked;
+
+  const aoes = [];
+  document.querySelectorAll('#mob-aoe-list > div').forEach(row => {
+    const aName = row.querySelector('.mob-aoe-name').value.trim();
+    const aInterval = parseInt(row.querySelector('.mob-aoe-interval').value) || 0;
+    const aNotes = row.querySelector('.mob-aoe-notes').value.trim();
+    if (aName) aoes.push({ id: Date.now() + Math.random(), name: aName, interval: aInterval, notes: aNotes || undefined });
+  });
+
+  const loot = [...pendingMobLoot];
+
+  if (editingMobId) {
+    const idx = bossMobList.findIndex(m => m.id === editingMobId);
+    if (idx !== -1) {
+      const existing = bossMobList[idx];
+      bossMobList[idx] = { ...existing, name, hp: hp || undefined, zoneLongName: zoneInput || existing.zoneLongName, zone: existing.zone, rampages, flurries, aoes, loot };
+    }
+  } else {
+    bossMobList.push({ id: String(Date.now()), name, hp: hp || undefined, zoneLongName: zoneInput || undefined, rampages, flurries, aoes, loot });
+  }
+
+  bossMobList.sort((a, b) => a.name.localeCompare(b.name));
+  await ipcRenderer.invoke('store-set', 'bossMobInfo', bossMobList);
+  hideBossMobModal();
+  renderMobList();
+  const found = bossMobList.find(m => m.name === name);
+  if (found) { selectedMobId = found.id; selectMob(found.id); }
+}
+
+function editSelectedBossMob() {
+  if (selectedMobId) showBossMobModal(selectedMobId);
+}
+
+function outputMobToRaid() {
+  const mob = bossMobList.find(m => m.id === selectedMobId);
+  if (!mob) return;
+
+  const mobName = mob.name.replace(/\b([a-z])/g, c => c.toUpperCase());
+  const parts = [mobName + (mob.hp ? ` (${(mob.hp/1000).toFixed(0)}k hp)` : '')];
+
+  const resistPairs = [['MR', mob.mr], ['CR', mob.cr], ['FR', mob.fr], ['DR', mob.dr], ['PR', mob.pr]]
+    .filter(([, v]) => v > 0);
+  if (resistPairs.length) parts.push(resistPairs.map(([k, v]) => `${k}:${v}`).join(' '));
+
+  const flags = [];
+  if (mob.flurries) flags.push('Flurries');
+  if (mob.rampages) flags.push('Rampages');
+  if (flags.length) parts.push(flags.join('/'));
+
+  let line = '/gu ' + parts.join(' | ');
+  if (mob.spells && mob.spells.length) {
+    const base = line + ' | ';
+    let spellStr = '';
+    for (const s of mob.spells) {
+      const next = spellStr ? spellStr + ', ' + s.name : s.name;
+      if ((base + next).length > 255 - 3) { if (spellStr) spellStr += '...'; break; }
+      spellStr = next;
+    }
+    if (spellStr) line = base + spellStr;
+  }
+
+  sendLineToEQ(line);
+  showToast(`Sent to raid (${line.length} chars)`);
+}
+
+function sendLineToEQ(line) {
+  const { exec, execFile } = require('child_process');
+  exec("wmctrl -l | grep -iE 'everquest|eqgame|Client1'", (err, stdout) => {
+    const winLine = stdout && stdout.trim().split('\n').find(l => /everquest|eqgame|Client1/i.test(l));
+    const winId = winLine ? winLine.split(/\s+/)[0] : null;
+    const doType = () => {
+      // execFile bypasses the shell — backticks and $ in line are passed literally to xdotool
+      execFile('xdotool', ['key', 'Return', 'type', '--clearmodifiers', '--delay', '20', line], e => {
+        if (e) { showToast('xdotool error: ' + e.message, 4000); return; }
+        setTimeout(() => execFile('xdotool', ['key', 'Return'], e2 => {
+          if (e2) showToast('xdotool error: ' + e2.message, 4000);
+        }), 100);
+      });
+    };
+    if (winId) {
+      exec(`wmctrl -ia ${winId}`, () => setTimeout(doType, 150));
+    } else {
+      doType();
+    }
+  });
+}
+
+async function deleteSelectedBossMob() {
+  if (!selectedMobId) return;
+  bossMobList = bossMobList.filter(m => m.id !== selectedMobId);
+  selectedMobId = null;
+  await ipcRenderer.invoke('store-set', 'bossMobInfo', bossMobList);
+  renderMobList();
+  document.getElementById('mob-detail-empty').style.display = 'flex';
+  document.getElementById('mob-detail').style.display = 'none';
+}
 </script>
 <div id="item-compare-tooltip" class="item-compare-tooltip"></div>
 </body>

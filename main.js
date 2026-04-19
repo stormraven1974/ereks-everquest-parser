@@ -87,8 +87,12 @@ let lastRampageTarget = null; // tracks current rampage target for change detect
 
 // Boss fight tracking — last 5 persisted to store, rest in-memory only
 let bossFights = store.get('bossFightsHistory', []);
-let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{}, petOwners:{} }
-let pendingSummon = null;      // { owner, timestamp } — waiting for next unknown attacker
+let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{} }
+let pendingSummon = null;      // { owner } — set when a summon line is seen, cleared on first pet hit
+let petOwners = {};            // { petNameLower -> ownerName } — current session only (owners change)
+let knownPetNames = new Set(store.get('knownPetNames', [])); // pet names seen across all sessions
+let knownPlayers = new Set(store.get('knownPlayers', [])); // persisted across restarts
+let knownBosses  = new Set(store.get('knownBosses',  [])); // mobs that have crossed the damage threshold
 const BOSS_DMG_THRESHOLD = 40000;
 
 function createWindow() {
@@ -160,9 +164,36 @@ function parseCastStart(line) {
   }
 }
 
+// Pet owner tracking — Mage / Necro summons
+function parsePetSummon(line) {
+  const m = line.match(/\] (.+?) (?:summons a (?:swirling orb of elements|howling spirit)|animates an undead servant)\./i);
+  if (m) pendingSummon = { owner: m[1].trim() };
+}
+
+function resolvePetOwner(name) {
+  const key = name.toLowerCase();
+  if (petOwners[key]) return petOwners[key];
+  if (pendingSummon && !knownPlayers.has(key)) {
+    petOwners[key] = pendingSummon.owner;
+    pendingSummon = null;
+    if (!knownPetNames.has(key)) {
+      knownPetNames.add(key);
+      store.set('knownPetNames', [...knownPetNames]);
+    }
+    return petOwners[key];
+  }
+  if (knownPetNames.has(key)) return 'Unknown Pet';
+  if (!knownPlayers.has(key)) {
+    knownPlayers.add(key);
+    store.set('knownPlayers', [...knownPlayers]);
+  }
+  return name;
+}
+
 // Line Processing
 function processLine(line, event) {
   event.reply('log-line', line);
+  parsePetSummon(line);
   checkTriggers(line, event);
   parseCombat(line, event);
   parseCastStart(line);
@@ -228,8 +259,9 @@ function parseCombat(line, event) {
     const targetIsWarder = !!(target && /[`']s?\s+warder\b/i.test(target));
     const effectiveIncoming = pat.isIncoming || isMob || targetIsWarder;
     const bucket = effectiveIncoming ? combatData.enemies : combatData.players;
-    if (!bucket[attacker]) bucket[attacker] = { totalDmg: 0, spellDmg: 0, meleeDmg: 0, hits: 0 };
-    const p = bucket[attacker];
+    const effectiveAttacker = effectiveIncoming ? attacker : resolvePetOwner(attacker);
+    if (!bucket[effectiveAttacker]) bucket[effectiveAttacker] = { totalDmg: 0, spellDmg: 0, meleeDmg: 0, hits: 0 };
+    const p = bucket[effectiveAttacker];
     p.totalDmg += dmg; p.hits++;
     if (pat.type === 'spell') p.spellDmg += dmg; else p.meleeDmg += dmg;
     if (effectiveIncoming) combatData.enemyTotalDmg += dmg; else combatData.totalDmg += dmg;
@@ -303,13 +335,6 @@ function isBossTarget(name) {
 function parseBossFight(line, event) {
   const ts = Date.now();
 
-  // Pet summon association — Mage and Necro variants
-  const summonM = line.match(/\] (.+?) (?:summons a (?:swirling orb of elements|howling spirit)|animates an undead servant)\./i);
-  if (summonM) {
-    pendingSummon = { owner: summonM[1].trim(), timestamp: ts };
-    return;
-  }
-
   // Damage dealt BY a player/pet TO a named target
   // Reuse the two outgoing hit patterns from parseCombat
   const hitPatterns = [
@@ -332,18 +357,10 @@ function parseBossFight(line, event) {
     if (!isBossTarget(target)) break;
 
     const fkey = target.toLowerCase();
-    if (!activeFights[fkey]) activeFights[fkey] = { bossName: target, startTime: ts, players: {}, petOwners: {} };
+    if (!activeFights[fkey]) activeFights[fkey] = { bossName: target, startTime: ts, players: {} };
     const fight = activeFights[fkey];
 
-    // Resolve pet owner if this attacker is a pending summon
-    if (pendingSummon && (ts - pendingSummon.timestamp) < 15000) {
-      if (!Object.keys(fight.players).includes(attacker)) {
-        fight.petOwners[attacker] = pendingSummon.owner;
-        pendingSummon = null;
-      }
-    }
-
-    const key = fight.petOwners[attacker] || attacker;
+    const key = resolvePetOwner(attacker);
     if (!fight.players[key]) fight.players[key] = { dmg: 0, firstHit: ts };
     fight.players[key].dmg += dmg;
     break;
@@ -374,9 +391,15 @@ function finalizeFight(fight, event) {
   const totalDmg = Object.values(fight.players).reduce((s, v) => s + v.dmg, 0);
   const settings = store.get('bossFightSettings', {});
   const alwaysList = (settings.always || []).map(n => n.toLowerCase());
-  const isAlways = alwaysList.includes(fight.bossName.toLowerCase());
+  const bossKey = fight.bossName.toLowerCase();
+  const isAlways = alwaysList.includes(bossKey) || knownBosses.has(bossKey);
 
   if (!isAlways && totalDmg < BOSS_DMG_THRESHOLD) return;
+
+  if (!knownBosses.has(bossKey)) {
+    knownBosses.add(bossKey);
+    store.set('knownBosses', [...knownBosses]);
+  }
 
   const endTime = Date.now();
   const elapsed = Math.max(1, Math.round((endTime - fight.startTime) / 1000));
@@ -1285,6 +1308,10 @@ ipcMain.on('open-pqdi', (event, classId) => {
     : 'https://www.pqdi.cc/spells';
   shell.openExternal(url);
 });
+ipcMain.on('open-pqdi-url', (event, url) => {
+  const { shell } = require('electron');
+  if (url && url.startsWith('https://www.pqdi.cc/')) shell.openExternal(url);
+});
 
 ipcMain.handle('minimize-window', () => mainWindow.minimize());
 ipcMain.handle('close-window', () => mainWindow.close());
@@ -1341,8 +1368,8 @@ ipcMain.handle('fetch-item', async (event, itemId, force) => {
       cr:     d.cr     || 0,  dr:    d.dr    || 0,
       fr:     d.fr     || 0,  mr:    d.mr    || 0,
       pr:     d.pr     || 0,  damage: d.damage || 0,
-      delay:  d.delay  || 0,  slots: d.slots  || 0,
-      magic:  d.magic  || 0,
+      delay:  d.delay  || 0,  slots:   d.slots   || 0,
+      magic:  d.magic  || 0,  classes: d.classes || 0,  races: d.races || 0,
       icon:   d.icon   || 0,
       effects: {
         focus: focusName,
@@ -1367,6 +1394,76 @@ ipcMain.handle('search-items', async (event, name) => {
   } catch (e) {
     console.error('search-items error:', e);
     return [];
+  }
+});
+
+ipcMain.handle('search-npc', async (event, name) => {
+  try {
+    const json = await pqdiGet(`https://www.pqdi.cc/api/v1/npcs?name=${encodeURIComponent(name)}`);
+    const data = JSON.parse(json);
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error('search-npc error:', e);
+    return [];
+  }
+});
+
+ipcMain.handle('fetch-npc-drops', async (event, npcId) => {
+  try {
+    const html = await pqdiGet(`https://www.pqdi.cc/npc/${npcId}`);
+
+    // ── Drops ──────────────────────────────────────────────────────────────────
+    const drops = [];
+    const seen = new Set();
+    const itemRe = /href="\/item\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>\s*([\d.]+)%/g;
+    let m;
+    while ((m = itemRe.exec(html)) !== null) {
+      const id = parseInt(m[1]);
+      const name = m[2].trim();
+      const dropRate = parseFloat(m[3]);
+      if (!seen.has(id)) { seen.add(id); drops.push({ id, name, dropRate }); }
+    }
+    drops.sort((a, b) => b.dropRate - a.dropRate);
+
+    // ── Resists (scraped from the MR/CR/FR/DR/PR table on the page) ────────────
+    // Headers are <th>MR</th>…<th>PR</th>; values are <td>N</td> in the next row.
+    let resists = null;
+    const resistRe = /MR[\s\S]{0,60}?CR[\s\S]{0,60}?FR[\s\S]{0,60}?DR[\s\S]{0,60}?PR[\s\S]{0,800}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>/;
+    const rm = resistRe.exec(html);
+    if (rm) resists = { mr: +rm[1], cr: +rm[2], fr: +rm[3], dr: +rm[4], pr: +rm[5] };
+
+    // ── Special Abilities ──────────────────────────────────────────────────────
+    // Slice between "Special Abilities" and the next major section or end of page.
+    let specialAbilities = [];
+    const saIdx   = html.search(/Special\s+Abilities\s*:/i);
+    const spellMarker = html.search(/Can\s+cast\s+these\s+spells/i);
+    if (saIdx >= 0) {
+      const saEnd = spellMarker > saIdx ? spellMarker : Math.min(saIdx + 2000, html.length);
+      const saSrc = html.slice(saIdx, saEnd);
+      const saText = saSrc
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+        .replace(/&#\d+;/g,' ').replace(/\s+/g,' ')
+        .replace(/Special\s+Abilities\s*:/i, '')
+        .trim();
+      specialAbilities = saText.split(',').map(s => s.trim()).filter(s => s.length > 1);
+    }
+
+    // ── Spells ─────────────────────────────────────────────────────────────────
+    let spells = [];
+    if (spellMarker >= 0) {
+      const spellSrc = html.slice(spellMarker, spellMarker + 4000);
+      const spellLinkRe = /href="\/spell\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>/g;
+      let sm;
+      while ((sm = spellLinkRe.exec(spellSrc)) !== null) {
+        spells.push({ id: parseInt(sm[1]), name: sm[2].trim() });
+      }
+    }
+
+    return { drops, resists, specialAbilities, spells };
+  } catch (e) {
+    console.error('fetch-npc-drops error:', e);
+    return { drops: [], resists: null, specialAbilities: [], spells: [] };
   }
 });
 
