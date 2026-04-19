@@ -297,6 +297,22 @@
       "interval": 49,
       "warningLeadTime": 5,
       "deathPattern": "Aten Ha Ra has been slain"
+    },
+    {
+      "id": "ventani_freezing_breath",
+      "name": "Ventani the Warder",
+      "aoeTrigger": "slowed by the freezing blast",
+      "interval": 30,
+      "warningLeadTime": 10,
+      "deathPattern": "Ventani the Warder has been slain"
+    },
+    {
+      "id": "hraashna_stream_of_acid",
+      "name": "Hraashna the Warder",
+      "aoeTrigger": "body burns as the acid hits them",
+      "interval": 15,
+      "warningLeadTime": 5,
+      "deathPattern": "Hraashna the Warder has been slain"
     }
   ],
   "discOverrides": {

@@ -223,9 +223,9 @@ function parseCombat(line, event) {
     // Multi-word attacker + single-word target → mob hitting a player → enemy.
     // Multi-word attacker + multi-word target → pet/charmed mob hitting a mob → player.
     const isMob = !pat.isIncoming && attacker !== 'You' && /\s/.test(attacker)
-                  && !/warder/i.test(attacker) && (!target || !/\s/.test(target));
+                  && !/[`']s?\s+warder\b/i.test(attacker) && (!target || !/\s/.test(target));
     // Also incoming if target is a player's warder (e.g. "Vulak`Aerr hit Xikikaz`s warder")
-    const targetIsWarder = !!(target && /warder/i.test(target));
+    const targetIsWarder = !!(target && /[`']s?\s+warder\b/i.test(target));
     const effectiveIncoming = pat.isIncoming || isMob || targetIsWarder;
     const bucket = effectiveIncoming ? combatData.enemies : combatData.players;
     if (!bucket[attacker]) bucket[attacker] = { totalDmg: 0, spellDmg: 0, meleeDmg: 0, hits: 0 };
@@ -326,7 +326,7 @@ function parseBossFight(line, event) {
     if (isNaN(dmg) || dmg <= 0) break;
 
     // Skip if attacker looks like a mob (multi-word + single-word target = mob hitting player)
-    const isMobAttacker = /\s/.test(attacker) && !/warder/i.test(attacker) && !/\s/.test(target);
+    const isMobAttacker = /\s/.test(attacker) && !/[`']s?\s+warder\b/i.test(attacker) && !/\s/.test(target);
     if (isMobAttacker) break;
 
     if (!isBossTarget(target)) break;
@@ -344,8 +344,8 @@ function parseBossFight(line, event) {
     }
 
     const key = fight.petOwners[attacker] || attacker;
-    if (!fight.players[key]) fight.players[key] = 0;
-    fight.players[key] += dmg;
+    if (!fight.players[key]) fight.players[key] = { dmg: 0, firstHit: ts };
+    fight.players[key].dmg += dmg;
     break;
   }
 
@@ -371,16 +371,17 @@ function parseBossFight(line, event) {
 function finalizeFight(fight, event) {
   if (!fight) return;
 
-  const totalDmg = Object.values(fight.players).reduce((s, v) => s + v, 0);
+  const totalDmg = Object.values(fight.players).reduce((s, v) => s + v.dmg, 0);
   const settings = store.get('bossFightSettings', {});
   const alwaysList = (settings.always || []).map(n => n.toLowerCase());
   const isAlways = alwaysList.includes(fight.bossName.toLowerCase());
 
   if (!isAlways && totalDmg < BOSS_DMG_THRESHOLD) return;
 
-  const elapsed = Math.max(1, Math.round((Date.now() - fight.startTime) / 1000));
+  const endTime = Date.now();
+  const elapsed = Math.max(1, Math.round((endTime - fight.startTime) / 1000));
   const participants = Object.entries(fight.players)
-    .map(([name, dmg]) => ({ name, dmg }))
+    .map(([name, p]) => ({ name, dmg: p.dmg, elapsed: Math.max(1, Math.round((endTime - p.firstHit) / 1000)) }))
     .sort((a, b) => b.dmg - a.dmg);
 
   const record = {
@@ -1579,14 +1580,15 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
       const attacker = hm[1].trim();
       const target   = hm[2].trim();
       const dmg      = parseInt(hm[3]);
-      const isMob    = /\s/.test(attacker) && !/warder/i.test(attacker) && !/\s/.test(target);
+      const isMob    = /\s/.test(attacker) && !/[`']s?\s+warder\b/i.test(attacker) && !/\s/.test(target);
       if (!isMob && qualifies(target)) {
         const tsM = line.match(tsRe);
         const ts  = tsM ? new Date(tsM[1]).getTime() : Date.now();
         const key = target.toLowerCase();
         if (!active[key]) active[key] = { bossName: target, startMs: ts, lastMs: ts, players: {} };
         active[key].lastMs = ts;
-        active[key].players[attacker] = (active[key].players[attacker] || 0) + dmg;
+        if (!active[key].players[attacker]) active[key].players[attacker] = { dmg: 0, firstHit: ts };
+        active[key].players[attacker].dmg += dmg;
       }
       continue;
     }
@@ -1608,7 +1610,7 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
   // Filter by threshold / always list and build records
   const records = completed
     .filter(f => {
-      const total = Object.values(f.players).reduce((s, v) => s + v, 0);
+      const total = Object.values(f.players).reduce((s, v) => s + v.dmg, 0);
       return alwaysList.includes(f.bossName.toLowerCase()) || total >= BOSS_DMG_THRESHOLD;
     })
     .map(f => ({
@@ -1617,7 +1619,7 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
       date: new Date(f.lastMs).toISOString(),
       elapsed: Math.max(1, Math.round((f.lastMs - f.startMs) / 1000)),
       participants: Object.entries(f.players)
-        .map(([name, dmg]) => ({ name, dmg }))
+        .map(([name, p]) => ({ name, dmg: p.dmg, elapsed: Math.max(1, Math.round((f.lastMs - p.firstHit) / 1000)) }))
         .sort((a, b) => b.dmg - a.dmg),
     }))
     .slice(-5)

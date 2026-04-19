@@ -4549,10 +4549,21 @@ function selectFight(id) {
 }
 
 function buildGuildLines(fight) {
+  const fmt = n => {
+    if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+    if (n >= 1000)    return (n / 1000).toFixed(2) + 'K';
+    return String(n);
+  };
   const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
-  let line = `/gu ${fight.bossName} | ${fmtElapsed(fight.elapsed)} | ${fmtDmg(totalDmg)} total`;
-  for (const p of fight.participants) {
-    const token = ` ${p.name}:${fmtDmg(p.dmg)}`;
+  const totalDps  = Math.round(totalDmg / Math.max(1, fight.elapsed));
+  let line = `/gu ${fight.bossName} in ${fight.elapsed}s, ${fmt(totalDmg)} @${totalDps},`;
+  for (let i = 0; i < fight.participants.length; i++) {
+    const p = fight.participants[i];
+    const displayName = (p.name === 'You' && charName) ? charName : p.name;
+    const activeElapsed = p.elapsed || fight.elapsed;
+    const dps = Math.round(p.dmg / Math.max(1, activeElapsed));
+    const sep = i > 0 ? ' |' : '';
+    const token = `${sep} ${i + 1}. ${displayName}=${fmt(p.dmg)}@${dps} in ${activeElapsed}s`;
     if (line.length + token.length > 255) break;
     line += token;
   }
