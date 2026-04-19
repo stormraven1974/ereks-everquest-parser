@@ -1,7 +1,7 @@
 # Erek's Everquest Parser
 
-A native Linux EverQuest log parser with DPS meter, buff timers, and audio triggers.
-Built with Electron — no Wine required.
+A native Linux EverQuest log parser with DPS meter, buff/debuff timers, boss mob tracker,
+loot wishlist, and audio triggers. Built with Electron — no Wine required.
 
 ## Prerequisites
 
@@ -13,8 +13,15 @@ Built with Electron — no Wine required.
   sudo apt install nodejs npm
 
   # Or use nvm for the latest version:
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm-v0.39.7/install.sh | bash
   nvm install 18
+  ```
+
+### Guild Chat Output (for boss mob / fight output)
+
+- **xdotool** and **wmctrl** — used to type directly into the EQ window
+  ```bash
+  sudo apt install xdotool wmctrl
   ```
 
 ### Text-to-Speech (for Audio Triggers)
@@ -57,7 +64,7 @@ npm start
 1. Go to the **Setup** tab
 2. Enter your EQ log file path, e.g.:
    `/home/paul/Games/everquest/eqlog_Erek_pq.proj.txt`
-3. Enter your character name (e.g. `Erek`) for DPS highlighting
+3. Enter your character name and class (e.g. `Erek` / `Beastlord`) for DPS highlighting and loot usability checks
 4. Click **Watch** then **Save Settings**
 
 ## Features
@@ -67,12 +74,45 @@ npm start
 - Shows all players/NPCs dealing damage
 - Damage %, DPS, and total damage per entity
 - Auto-resets after 8 seconds of no combat activity
+- **Boss fight tracking** — automatically detects and records fights against named mobs above a damage threshold; persists the last 5 fights across restarts
+- **Post to Guild** — sends a compact fight summary to EQ guild chat via xdotool:
+  `Boss 184s 1.2M@6700: Player1 75K, Player2 60K, ...` (fits as many players as possible in 255 chars)
 
-### Buff Timers
-- Add buffs manually with name, log trigger pattern, and duration
+### Boss Mob List
+- Maintain a roster of raid bosses with HP, level, zone, resists, and notes
+- **PQDI sync** — click the PQDI button on any mob to pull live data from pqdi.cc:
+  - Hit points, level, resists (MR/CR/FR/DR/PR) scraped from the HTML page
+  - Special abilities (Flurry, Rampage, Summon, Enrage, etc.)
+  - Spells the NPC can cast, with links to spell data
+- **Special abilities & spells** — each ability and spell shown as a chip; click **+** to add it directly to your timer list, pre-filled with trigger text, duration, and spell-fades message pulled from PQDI
+- **Guild output** — the **Guild** button builds a summary line and types it directly into EQ guild chat:
+  `Boss Name (12k hp) | MR:190 FR:1000 | Flurries | Ancient Breath, Gift of A'err`
+- **Zone editing** — mobs without a zone can have one assigned via a dropdown of all known zones
+
+### Buff & Debuff Timers
+- Add buff/debuff definitions with name, log trigger pattern, and duration
 - Use **PQDI Spell Lookup** to auto-fill cast text and duration from pqdi.cc
 - Countdown bars with warning highlight under 30 seconds
 - Optional TTS alert when buff expires
+- Timers grouped by category (Pet Buffs, Stat Buffs, Regen, Haste, etc.)
+- Group spells track all party members separately under one definition
+
+### Raid Event Timers
+- Repeating AOE countdown timers for raid bosses
+- Trigger fires on a log pattern (e.g. AoE landing message); resets automatically
+- Warning alert at a configurable lead time before the next hit
+- Stops cleanly on the boss death message
+- Global — not tied to any character profile
+
+### Loot Wishlist
+- Per-character gear tracking — record what's equipped in each slot
+- **Desired loot list** — mark items you want, organized by slot
+- **Item tooltips** with stat comparison against your currently equipped item:
+  - For multi-slot items (rings, earrings) compares against every item in those slots
+  - Shows item slot(s), all stats, and usable classes/races
+  - Your class and race highlighted in green (usable) or red (not usable)
+- **I Want This** button on mob loot items adds them to your wishlist in one click
+- Item data pulled from pqdi.cc API and cached locally; refreshed automatically when syncing a mob
 
 ### Audio Triggers
 - Regex pattern matching against live log lines
@@ -109,8 +149,9 @@ timers, and raid event timers tuned for Beastlord play in Planes of Power / Lucl
   Dexterity), haste (Savagery, Alacrity), and utility (Spirit of Wolf, Spirit Sight)
 - **7 debuff timers** — Sha's Lethargy, Drowsy (slows), DoT tracking (Envenomed Breath,
   Venom of the Snake, Sicken), Engulfing Roots, Incapacitate
-- **3 raid event timers** — Lord Inquisitor Seru (Torturing Winds, 49s), Emperor
-  Ssraeshza tank-hit rage mechanic (60s), Fling (49s)
+- **5 raid event timers** — Lord Inquisitor Seru (Torturing Winds, 49s), Emperor
+  Ssraeshza rage (60s), Fling/Aten Ha Ra (49s), Ventani the Warder (30s),
+  Hraashna the Warder (15s)
 
 **To import:**
 
@@ -126,7 +167,7 @@ timers, and raid event timers tuned for Beastlord play in Planes of Power / Lucl
 
 ```bash
 npm run build
-# Output: dist/Erek's Everquest Parser-1.0.0.AppImage
+# Output: dist/Erek's Everquest Parser-1.1.0.AppImage
 ```
 
 ## Updating
