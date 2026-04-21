@@ -819,11 +819,25 @@
   .dps-val-c.time { color: var(--text-dim); }
   .dps-lbl-c   { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
 
+  /* ── Engaged Mob Card ── */
+  .mob-card { display:flex; flex-direction:column; gap:4px; }
+  .mob-card-name { font-family:var(--mono); font-size:14px; font-weight:700; color:var(--accent); text-transform:capitalize; }
+  .mob-card-meta { font-family:var(--mono); font-size:11px; color:var(--text); }
+  .mob-card-resists { display:flex; gap:10px; flex-wrap:wrap; font-family:var(--mono); font-size:12px; font-weight:600; }
+  .mob-card-resist { color:var(--text); }
+  .mob-card-resist.immune { color:#e74c3c; font-weight:700; }
+  .mob-card-resist.high { color:#e8a020; font-weight:700; }
+  .mob-card-flags { display:flex; gap:5px; flex-wrap:wrap; }
+  .mob-card-flag { font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:3px; background:rgba(255,107,53,0.2); color:var(--accent2); border:1px solid rgba(255,107,53,0.4); font-weight:600; }
+  .mob-card-spells { font-family:var(--mono); font-size:11px; color:var(--text); }
+  .mob-card-loading { font-family:var(--mono); font-size:10px; color:var(--text-dim); font-style:italic; }
+
   /* ── Loot Panel ── */
   .loot-cell {
     background: var(--bg3);
-    padding: 6px 10px;
-    min-width: 150px;
+    padding: 8px 10px;
+    min-width: 180px;
+    max-width: 280px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -835,13 +849,11 @@
   @keyframes loot-pulse { from { background: var(--bg3); } to { background: rgba(255,107,53,0.12); } }
   .loot-item-name {
     font-family: var(--mono);
-    font-size: 9px;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
+    font-size: 10px;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-transform: uppercase;
   }
   .loot-winner-name { font-size: 13px; font-weight: 600; color: var(--text); }
   .loot-status-badge {
@@ -1254,7 +1266,7 @@
           <div style="flex:1;"></div>
           <button class="btn" style="padding:2px 8px;font-size:9px;" onclick="clearBiddingPanel()" title="Manually clear all active bids">✕ Clear</button>
         </div>
-        <div id="loot-items-bar" style="display:flex;align-items:stretch;gap:1px;background:var(--border);flex-wrap:wrap;padding:0;min-height:62px;"></div>
+        <div id="loot-items-bar" style="display:flex;align-items:stretch;gap:1px;background:var(--border);flex-wrap:wrap;padding:0;min-height:90px;"></div>
       </div>
 
       <!-- Row 1: Cooldown bar (full width, hidden when empty) -->
@@ -1283,6 +1295,16 @@
         <div style="padding:4px;">
           <div id="active-debuffs" style="display:grid;gap:0;align-items:start;"></div>
         </div>
+      </div>
+
+      <!-- Engaged Mob Card (hidden when not in combat) -->
+      <div id="panel-engaged-mob" style="display:none;flex-shrink:0;border-bottom:1px solid var(--border);">
+        <div style="padding:5px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent);">TARGET</div>
+          <div style="flex:1;"></div>
+          <button class="btn" style="padding:2px 8px;font-size:9px;" onclick="hideEngagedMobCard()">✕</button>
+        </div>
+        <div id="engaged-mob-content" style="padding:8px 14px;"></div>
       </div>
 
       <!-- Row 4: DPS Meter (full width, always visible) -->
@@ -1998,6 +2020,7 @@ async function init() {
   renderActiveBuffs();
   renderActiveDebuffs();
   await loadLootConfig();
+  lootHistory = await ipcRenderer.invoke('store-get', 'lootHistory') || {};
   await initGear();
   await loadBossFightSettings();
   await loadBossMobInfo();
@@ -2761,6 +2784,100 @@ ipcRenderer.on('zone-entered', (e, { zoneName }) => {
   document.getElementById('zone-name-display').textContent = zoneName;
   clearZoneAfk();
 });
+
+// ── Engaged Mob Card ──────────────────────────────────────────────────────────
+let engagedMobName        = null;
+let engagedMobFetchTarget = null; // tracks which mob the current fetch is for
+let engagedMobDebounce    = null;
+let engagedMobHideTimer   = null;
+
+ipcRenderer.on('mob-engaged', (e, { name, zone }) => {
+  if (name === engagedMobName) return; // same target, no-op
+  clearTimeout(engagedMobDebounce);
+  clearTimeout(engagedMobHideTimer);
+  engagedMobDebounce = setTimeout(() => {
+    engagedMobName = name;
+    showEngagedMobCard(name, zone);
+  }, 500);
+});
+
+ipcRenderer.on('mob-died', () => {
+  clearTimeout(engagedMobDebounce);
+  engagedMobDebounce = null;
+  engagedMobName = null;
+  // Keep card visible briefly so player can see it during loot, then auto-hide
+  clearTimeout(engagedMobHideTimer);
+  engagedMobHideTimer = setTimeout(hideEngagedMobCard, 8000);
+});
+
+async function showEngagedMobCard(name, zone) {
+  engagedMobFetchTarget = name;
+  const panel  = document.getElementById('panel-engaged-mob');
+  const content = document.getElementById('engaged-mob-content');
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
+  content.innerHTML = `<div class="mob-card-loading">Loading ${name}…</div>`;
+
+  // Check boss mob list first
+  const boss = bossMobList && bossMobList.find(m => m.name.toLowerCase() === name.toLowerCase());
+  const data = boss || await ipcRenderer.invoke('fetch-npc-by-name', name, zone);
+
+  if (engagedMobFetchTarget !== name) return; // switched to a different target while loading
+
+  if (!data) {
+    content.innerHTML = `<div class="mob-card"><div class="mob-card-name">${name}</div><div class="mob-card-loading">No PQDI data found.</div></div>`;
+    return;
+  }
+
+  renderEngagedMobContent(data, zone);
+}
+
+function renderEngagedMobContent(data, zone) {
+  const content = document.getElementById('engaged-mob-content');
+
+  const hpStr    = data.hp    ? Number(data.hp).toLocaleString() + ' hp' : '';
+  const levelStr = data.level ? `Lv.${data.level}` : '';
+  const zoneStr  = data.zoneLongName || data.zone || zone || '';
+  const metaParts = [levelStr, hpStr, zoneStr].filter(Boolean);
+
+  const resistPairs = [['MR', data.mr],['CR', data.cr],['FR', data.fr],['DR', data.dr],['PR', data.pr]];
+  const resistHtml = resistPairs.filter(([,v]) => v > 0).map(([k, v]) => {
+    const cls = v >= 1000 ? 'immune' : v >= 300 ? 'high' : '';
+    return `<span class="mob-card-resist ${cls}">${k}:${v}</span>`;
+  }).join('');
+
+  const flags = [];
+  if (data.flurries)  flags.push('Flurries');
+  if (data.rampages)  flags.push('Rampages');
+  if (data.specialAbilities) {
+    data.specialAbilities.forEach(a => {
+      if (/summon/i.test(a))  flags.push('Summons');
+      else if (/enrage/i.test(a)) flags.push('Enrages');
+    });
+  }
+  const flagsHtml = flags.length
+    ? `<div class="mob-card-flags">${[...new Set(flags)].map(f => `<span class="mob-card-flag">${f}</span>`).join('')}</div>`
+    : '';
+
+  const spellNames = (data.spells || []).map(s => s.name).join(', ');
+  const spellsHtml = spellNames ? `<div class="mob-card-spells">Spells: ${spellNames}</div>` : '';
+
+  content.innerHTML = `<div class="mob-card">
+    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+      <span class="mob-card-name">${(data.name || '').replace(/_/g, ' ')}</span>
+      ${metaParts.length ? `<span class="mob-card-meta">${metaParts.join(' · ')}</span>` : ''}
+    </div>
+    ${resistHtml ? `<div class="mob-card-resists">${resistHtml}</div>` : ''}
+    ${flagsHtml}
+    ${spellsHtml}
+  </div>`;
+}
+
+function hideEngagedMobCard() {
+  engagedMobFetchTarget = null;
+  document.getElementById('panel-engaged-mob').style.display = 'none';
+  document.getElementById('engaged-mob-content').innerHTML = '';
+}
 ipcRenderer.on('zone-afk-timer', (e, { totalSeconds }) => {
   if (!document.getElementById('zt-show-afk')?.checked) return;
   clearZoneAfk();
@@ -4101,6 +4218,8 @@ let activeLootItems = {};
 let activeRandomItems = {};
 // { [max]: { itemName, max, rolls:[{player,roll}] } }
 let lootConfig = {};
+let lootHistory = {};
+// { [itemName]: { winner, amount, date } }
 
 function lootStatusIndex(status) {
   const list = (lootConfig.bidStatuses || 'mem, app, alt').split(',').map(s => s.trim().toLowerCase());
@@ -4130,6 +4249,69 @@ function computeLootShadow(bids, winner) {
   }, null);
 }
 
+function formatLootHistory(hist) {
+  if (!hist) return '';
+  const d = new Date(hist.date);
+  const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+  if (hist.type === 'random') {
+    return `<div class="loot-shadow">Last won ${dateStr} via random roll by ${hist.winner}</div>`;
+  }
+  return `<div class="loot-shadow">Last: ${hist.winner}${hist.amount ? ' ' + hist.amount + ' dkp' : ''}</div>`;
+}
+
+function findItemByName(name) {
+  const lc = name.toLowerCase();
+  const desired = gearDesiredLoot && gearDesiredLoot.find(d => d.name.toLowerCase() === lc);
+  if (desired && gearItemCache[desired.id]) return gearItemCache[desired.id];
+  return Object.values(gearItemCache).find(item => item.name && item.name.toLowerCase() === lc) || null;
+}
+
+function makeLootCard(name, { itemData, isWanted, winnerHtml, shadowHtml, countdownHtml, historyHtml, badgeHtml, isClosing }) {
+  const iconHtml = (itemData && itemData.icon)
+    ? `<img src="https://www.pqdi.cc/static/icons/item_${itemData.icon}.png" style="width:28px;height:28px;image-rendering:pixelated;flex-shrink:0;border-radius:3px;" onerror="this.style.display='none'">`
+    : `<div style="width:28px;height:28px;flex-shrink:0;background:var(--bg3);border-radius:3px;border:1px solid var(--border);"></div>`;
+
+  const wantedBadge = isWanted
+    ? `<span style="font-family:var(--mono);font-size:9px;font-weight:700;color:#fff;background:var(--accent2);padding:1px 5px;border-radius:3px;letter-spacing:1px;">★ WANT</span>`
+    : '';
+
+  const nameStyle = isWanted
+    ? 'font-weight:700;color:var(--accent2);'
+    : '';
+
+  const usabilityDot = itemData
+    ? (() => {
+        const classBit = ALL_CLASS_DEFS.find(c => c.full === charClass)?.bit || 0;
+        const raceBit  = ALL_RACE_DEFS.find(r => r.abbrev === charRace)?.bit || 0;
+        const canUseClass = !itemData.classes || !classBit || (itemData.classes & classBit);
+        const canUseRace  = !itemData.races   || !raceBit  || (itemData.races  & raceBit);
+        const usable = canUseClass && canUseRace;
+        return `<span title="${usable ? 'Usable by you' : 'Not usable by you'}" style="font-size:11px;${usable ? 'color:var(--accent3)' : 'color:var(--accent2)'}">${usable ? '✓' : '✗'}</span>`;
+      })()
+    : '';
+
+  // Hover tooltip on name
+  const nameHtml = itemData
+    ? `<span class="loot-item-name" style="${nameStyle}cursor:pointer;"
+         onmouseenter="showItemTooltipByName('${name.replace(/'/g,"\\'")}',event)"
+         onmouseleave="hideItemCompare()">${name}</span>`
+    : `<span class="loot-item-name" style="${nameStyle}">${name}</span>`;
+
+  const escapedName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `<div class="loot-cell${isClosing ? ' closing' : ''}">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+      ${iconHtml}
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          ${nameHtml}${usabilityDot}${wantedBadge}${badgeHtml || ''}
+        </div>
+      </div>
+      <button onclick="closeBidCard('${escapedName}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;padding:0 2px;flex-shrink:0;line-height:1;" title="Dismiss">✕</button>
+    </div>
+    ${winnerHtml}${shadowHtml}${countdownHtml}${historyHtml}
+  </div>`;
+}
+
 function renderLootPanel() {
   const panel = document.getElementById('panel-loot');
   const bar   = document.getElementById('loot-items-bar');
@@ -4141,49 +4323,53 @@ function renderLootPanel() {
   const randomCells = randomItems.map(({ itemName, rolls }) => {
     const sorted = [...rolls].sort((a, b) => b.roll - a.roll);
     const leader = sorted[0];
-    const leaderHtml = leader
+    const itemData = findItemByName(itemName);
+    const isWanted = !!(gearDesiredLoot && gearDesiredLoot.find(d => d.name.toLowerCase() === itemName.toLowerCase()));
+    const hist = lootHistory[itemName] || Object.entries(lootHistory).find(([k]) => k.toLowerCase() === itemName.toLowerCase())?.[1];
+
+    const winnerHtml = leader
       ? `<div style="display:flex;align-items:baseline;gap:4px;">
            <span class="loot-winner-name">${leader.player}</span>
            <span class="loot-winner-amount">${leader.roll}</span>
+           ${rolls.length > 1 ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">(${rolls.length} rolled)</span>` : ''}
          </div>`
       : `<div class="loot-no-bids">No rolls yet</div>`;
-    const countHtml = rolls.length > 1
-      ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">${rolls.length} rolled</div>` : '';
-    return `<div class="loot-cell">
-      <div style="display:flex;align-items:center;gap:4px;">
-        <div class="loot-item-name" style="flex:1;">${itemName}</div>
-        <span style="font-family:var(--mono);font-size:8px;color:var(--accent4);letter-spacing:1px;">RANDOM</span>
-      </div>
-      ${leaderHtml}${countHtml}
-    </div>`;
+
+    const historyHtml = hist
+      ? formatLootHistory(hist) : '';
+
+    return makeLootCard(itemName, {
+      itemData, isWanted,
+      winnerHtml, shadowHtml: '', countdownHtml: '', historyHtml,
+      badgeHtml: `<span style="font-family:var(--mono);font-size:8px;color:var(--accent4);letter-spacing:1px;">RANDOM</span>`,
+      isClosing: false,
+    });
   }).join('');
 
-  bar.innerHTML = randomCells + bidItems.map(([name, state]) => {
+  const dkpCells = bidItems.map(([name, state]) => {
     const winner = state.overrideWinner
       ? { bidder: state.overrideWinner, amount: state.overrideAmount, status: null }
       : computeLootWinner(state.bids);
     const shadow = state.overrideWinner ? null : computeLootShadow(state.bids, winner);
     const isClosing = state.isLastCall || !!state.closingAt;
+    const itemData = findItemByName(name);
+    const isWanted = !!(gearDesiredLoot && gearDesiredLoot.find(d => d.name.toLowerCase() === name.toLowerCase()));
+    const hist = lootHistory[name] || Object.entries(lootHistory).find(([k]) => k.toLowerCase() === name.toLowerCase())?.[1];
 
-    // Winner row
-    let winnerHtml;
-    if (winner) {
-      const statusClass = (winner.status || '').toLowerCase();
-      const badge = winner.status
-        ? `<span class="loot-status-badge ${statusClass}">${winner.status}</span>` : '';
-      winnerHtml = `<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
-        <span class="loot-winner-name">${winner.bidder}</span>${badge}
-        <span class="loot-winner-amount">${winner.amount} dkp</span>
-      </div>`;
-    } else {
-      winnerHtml = `<div class="loot-no-bids">No bids yet</div>`;
-    }
+    const winnerHtml = winner
+      ? (() => {
+          const statusClass = (winner.status || '').toLowerCase();
+          const badge = winner.status ? `<span class="loot-status-badge ${statusClass}">${winner.status}</span>` : '';
+          return `<div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
+            <span class="loot-winner-name">${winner.bidder}</span>${badge}
+            <span class="loot-winner-amount">${winner.amount} dkp</span>
+          </div>`;
+        })()
+      : `<div class="loot-no-bids">No bids yet</div>`;
 
-    // Shadow bid
     const shadowHtml = shadow
       ? `<div class="loot-shadow">▲ ${shadow.status} ${shadow.amount} — ${shadow.bidder}</div>` : '';
 
-    // Countdown
     let countdownHtml = '';
     if (state.isLastCall) {
       countdownHtml = `<span class="loot-countdown">LAST CALL</span>`;
@@ -4192,17 +4378,29 @@ function renderLootPanel() {
       const pct = state.closingDuration ? Math.round(sec / state.closingDuration * 100) : 0;
       countdownHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
         <div style="flex:1;height:3px;background:var(--bg2);border-radius:2px;overflow:hidden;">
-          <div style="width:${pct}%;height:100%;background:var(--accent2);border-radius:2px;"></div>
+          <div style="width:${pct}%;height:100%;background:var(--accent2);border-radius:2px;transition:width 1s linear;"></div>
         </div>
         <span class="loot-countdown">${sec}s</span>
       </div>`;
     }
 
-    return `<div class="loot-cell${isClosing ? ' closing' : ''}">
-      <div class="loot-item-name">${name}</div>
-      ${winnerHtml}${shadowHtml}${countdownHtml}
-    </div>`;
+    const historyHtml = hist
+      ? formatLootHistory(hist) : '';
+
+    return makeLootCard(name, {
+      itemData, isWanted,
+      winnerHtml, shadowHtml, countdownHtml, historyHtml,
+      badgeHtml: '', isClosing,
+    });
   }).join('');
+
+  bar.innerHTML = randomCells + dkpCells;
+}
+
+function showItemTooltipByName(name, event) {
+  const itemData = findItemByName(name);
+  if (!itemData || !itemData.id) return;
+  showMobItemTooltip(event, itemData.id);
 }
 
 
@@ -4231,13 +4429,22 @@ async function saveLootConfig() {
   showToast('Loot settings saved');
 }
 
-ipcRenderer.on('loot-bids-open', (e, { items }) => {
+ipcRenderer.on('loot-bids-open', async (e, { items }) => {
   items.forEach(name => {
     if (!activeLootItems[name]) {
       activeLootItems[name] = { bids: [], closingAt: null, closingDuration: null, isLastCall: false, overrideWinner: null, overrideAmount: 0 };
     }
   });
   renderLootPanel();
+  const unknown = items.filter(name => !findItemByName(name));
+  if (unknown.length) {
+    await Promise.all(unknown.map(async name => {
+      const results = await ipcRenderer.invoke('search-items', name);
+      const match = results.find(r => r.Name && r.Name.toLowerCase() === name.toLowerCase());
+      if (match) await fetchItemData(match.id);
+    }));
+    renderLootPanel();
+  }
 });
 
 ipcRenderer.on('loot-bid', (e, { itemName, bidder, status, amount }) => {
@@ -4269,7 +4476,22 @@ ipcRenderer.on('loot-closing', (e, { countdown, isLastCall, updates }) => {
   renderLootPanel();
 });
 
-ipcRenderer.on('loot-sold', () => {
+ipcRenderer.on('loot-sold', (e, data) => {
+  const updates = (data && data.updates) || [];
+  // Save winners from explicit SOLD message
+  updates.forEach(({ itemName, winner, amount }) => {
+    lootHistory[itemName] = { winner, amount, date: Date.now(), type: 'dkp' };
+  });
+  // Also save any active items whose winner we know from CLOSING IN
+  const updatedNames = new Set(updates.map(u => u.itemName.toLowerCase()));
+  Object.entries(activeLootItems).forEach(([name, state]) => {
+    if (updatedNames.has(name.toLowerCase())) return;
+    const w = state.overrideWinner
+      ? { bidder: state.overrideWinner, amount: state.overrideAmount }
+      : computeLootWinner(state.bids);
+    if (w) lootHistory[name] = { winner: w.bidder, amount: w.amount, date: Date.now(), type: 'dkp' };
+  });
+  ipcRenderer.invoke('store-set', 'lootHistory', lootHistory);
   activeLootItems = {};
   renderLootPanel();
 });
@@ -4277,6 +4499,17 @@ ipcRenderer.on('loot-sold', () => {
 function clearBiddingPanel() {
   activeLootItems = {};
   activeRandomItems = {};
+  renderLootPanel();
+}
+
+function closeBidCard(name) {
+  if (activeLootItems[name]) {
+    delete activeLootItems[name];
+  } else {
+    // Random item — keyed by max, find by name
+    const entry = Object.entries(activeRandomItems).find(([, v]) => v.itemName === name);
+    if (entry) delete activeRandomItems[entry[0]];
+  }
   renderLootPanel();
 }
 
@@ -4288,12 +4521,17 @@ ipcRenderer.on('loot-random-open', (e, { itemName, max }) => {
 ipcRenderer.on('loot-roll', (e, { player, max, roll }) => {
   if (!activeRandomItems[max]) return;
   const item = activeRandomItems[max];
-  item.rolls = item.rolls.filter(r => r.player.toLowerCase() !== player.toLowerCase());
+  if (item.rolls.some(r => r.player.toLowerCase() === player.toLowerCase())) return;
   item.rolls.push({ player, roll });
   renderLootPanel();
 });
 
-ipcRenderer.on('loot-random-close', (e, { max }) => {
+ipcRenderer.on('loot-random-close', (e, { max, winner, roll }) => {
+  const item = activeRandomItems[max];
+  if (item && winner) {
+    lootHistory[item.itemName] = { winner, amount: roll, date: Date.now(), type: 'random' };
+    ipcRenderer.invoke('store-set', 'lootHistory', lootHistory);
+  }
   delete activeRandomItems[max];
   renderLootPanel();
 });
@@ -4589,12 +4827,15 @@ function renderGearSlots() {
       : `<div class="gear-equipped-row"><span class="gear-slot-label">EQUIPPED</span><span class="gear-empty">empty</span></div>`;
     const desiredHtml = desired.map((d, i) => {
       const safeName = (d.name || '').replace(/'/g, '&#39;').replace(/`/g, '&#96;');
-      return `<div class="gear-desired-row">
-        <span class="gear-slot-label desired">${i === 0 ? 'DESIRED' : ''}</span>
+      const hist = lootHistory[d.name] || Object.entries(lootHistory).find(([k]) => k.toLowerCase() === (d.name || '').toLowerCase())?.[1];
+      const histHtml = hist ? formatLootHistory(hist) : '';
+      return `<div class="gear-desired-row" style="flex-wrap:wrap;">
+        <span class="gear-slot-label desired" style="align-self:flex-start;margin-top:2px;">${i === 0 ? 'DESIRED' : ''}</span>
         <span class="gear-desired-name"
               onmouseenter="showItemCompare(event,${d.id},'${slot.key}')"
               onmouseleave="hideItemCompare()">${safeName}</span>
         <button class="gear-remove-btn" onclick="removeDesiredLoot(${d.id})">×</button>
+        ${histHtml ? `<div style="width:100%;padding-left:64px;">${histHtml}</div>` : ''}
       </div>`;
     }).join('');
     return `<div class="gear-slot-section">

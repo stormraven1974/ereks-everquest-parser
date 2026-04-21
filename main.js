@@ -84,6 +84,8 @@ let groupCastAnchor = {}; // { [buffId]: recipientName } - anchor for current gr
 let raidTimerState = {}; // { [id]: { warningTimeout, repeatTimeout, event } }
 let pendingRoller  = null; // player name buffered from "**A Magic Die is rolled by X."
 let lastRampageTarget = null; // tracks current rampage target for change detection
+let currentZone = '';        // updated on zone-enter for NPC lookup context
+let currentTargetName = null; // mob player is currently hitting
 
 // Boss fight tracking — last 5 persisted to store, rest in-memory only
 let bossFights = store.get('bossFightsHistory', []);
@@ -211,6 +213,40 @@ function processLine(line, event) {
   parseTell(line, event);
   parseZone(line, event);
   parseBossFight(line, event);
+  parseCurrentTarget(line, event);
+}
+
+function stripArticle(name) {
+  return name.replace(/^(?:a|an|the)\s+/i, '').trim();
+}
+
+function parseCurrentTarget(line, event) {
+  // Track zone for NPC disambiguation
+  const zoneM = line.match(/\] You have entered (.+?)\./i);
+  if (zoneM) { currentZone = zoneM[1].trim(); return; }
+
+  // Player melee hit: "You slash MobName for N points of damage"
+  const meleeM = line.match(/\] You (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:s|es|ed|ing)? (?!YOU)(.+?) for \d+ points? of damage/i);
+  if (meleeM) {
+    event.reply('mob-engaged', { name: stripArticle(meleeM[1]), zone: currentZone });
+    return;
+  }
+
+  // Player spell hit: "Your SpellName hit/hits/blast/... MobName for N points"
+  const spellM = line.match(/\] Your .+? (?:hit|hits|blast|blasts|burn|burns|pierce|pierces) (?!YOU)(.+?) for \d+ points? of/i);
+  if (spellM) {
+    event.reply('mob-engaged', { name: stripArticle(spellM[1]), zone: currentZone });
+    return;
+  }
+
+  // Mob death
+  const slainYouM  = line.match(/\] You have slain (.+?)!/i);
+  const slainByM   = line.match(/\] (.+?) has been slain by/i);
+  const slainPassM = line.match(/\] (.+?) was slain by/i);
+  if (slainYouM || slainByM || slainPassM) {
+    event.reply('mob-died');
+    return;
+  }
 }
 
 function checkTriggers(line, event) {
@@ -814,7 +850,9 @@ function parseLootMessages(line, event) {
     return;
   }
 
-  const guildM = line.match(/\] (.+?) tells the guild, '(.+?)'\s*$/i);
+  const guildM = line.match(/\] (.+?) tells the guild, '(.+?)'\s*$/i)
+             || line.match(/\] (You) tell the guild, '(.+?)'\s*$/i)
+             || line.match(/\] (You) say to your guild, '(.+?)'\s*$/i);
   if (!guildM) return;
   const speaker = guildM[1].trim();
   const msg     = guildM[2].trim();
@@ -857,11 +895,19 @@ function parseLootMessages(line, event) {
     return;
   }
 
-  // SOLD: "SOLD! Item (Winner - 125 dkp) // ..."
+  // SOLD prefix: "SOLD! Item (Winner - 125 dkp) // ..."
   if (msgUp.startsWith(soldKw)) {
     const rest = msg.substring(soldKw.length).replace(/^[!\s]+/, '').trim();
     event.reply('loot-sold', { updates: parseItemsWithWinners(rest) });
     return;
+  }
+  // SOLD suffix: "Item Name - Winner - 12 dkp - SOLD!"
+  if (msgUp.endsWith('SOLD!') || msgUp.endsWith('SOLD')) {
+    const soldSuffixM = msg.match(/^(.+?)\s*-\s*(.+?)\s*-\s*(\d+)\s*dkp\s*-\s*SOLD!?$/i);
+    if (soldSuffixM) {
+      event.reply('loot-sold', { updates: [{ itemName: soldSuffixM[1].trim(), winner: soldSuffixM[2].trim(), amount: parseInt(soldSuffixM[3]) }] });
+      return;
+    }
   }
 
   // CLOSING IN: "CLOSING IN 15s! ..." or "CLOSING IN LAST CALL! ..."
@@ -897,10 +943,17 @@ function parseLootMessages(line, event) {
     return;
   }
 
-  // Random item announcement: "Ancient: High Priest's Bulwark - 2002"
-  const randomItemM = msg.match(/^(.+?)\s+-\s+(\d+)$/);
-  if (randomItemM) {
-    event.reply('loot-random-open', { itemName: randomItemM[1].trim(), max: parseInt(randomItemM[2]) });
+  // Random item announcement — space-separated, single or multiple items:
+  // "Smolder 1007 Red Resistance Stone 1008 Staff 1009" or "Zherozsh's Key 1009"
+  // Uses 4-digit minimum to avoid matching numbers embedded in item names.
+  const randomRe = /(.+?)\s+(\d{4,})(?=\s+[A-Za-z]|$)/g;
+  const randomPairs = [];
+  let rp;
+  while ((rp = randomRe.exec(msg)) !== null) {
+    randomPairs.push({ itemName: rp[1].trim(), max: parseInt(rp[2]) });
+  }
+  if (randomPairs.length) {
+    randomPairs.forEach(({ itemName, max }) => event.reply('loot-random-open', { itemName, max }));
   }
 }
 
@@ -1408,62 +1461,116 @@ ipcMain.handle('search-npc', async (event, name) => {
   }
 });
 
+function parseNpcPageHtml(html) {
+  // Drops
+  const drops = [];
+  const seen = new Set();
+  const itemRe = /href="\/item\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>\s*([\d.]+)%/g;
+  let m;
+  while ((m = itemRe.exec(html)) !== null) {
+    const id = parseInt(m[1]);
+    const name = m[2].trim();
+    const dropRate = parseFloat(m[3]);
+    if (!seen.has(id)) { seen.add(id); drops.push({ id, name, dropRate }); }
+  }
+  drops.sort((a, b) => b.dropRate - a.dropRate);
+
+  // Resists
+  let resists = null;
+  const resistRe = /MR[\s\S]{0,60}?CR[\s\S]{0,60}?FR[\s\S]{0,60}?DR[\s\S]{0,60}?PR[\s\S]{0,800}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>/;
+  const rm = resistRe.exec(html);
+  if (rm) resists = { mr: +rm[1], cr: +rm[2], fr: +rm[3], dr: +rm[4], pr: +rm[5] };
+
+  // Special Abilities
+  let specialAbilities = [];
+  const saIdx = html.search(/Special\s+Abilities\s*:/i);
+  const spellMarker = html.search(/Can\s+cast\s+these\s+spells/i);
+  if (saIdx >= 0) {
+    const saEnd = spellMarker > saIdx ? spellMarker : Math.min(saIdx + 2000, html.length);
+    const saSrc = html.slice(saIdx, saEnd);
+    const saText = saSrc
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+      .replace(/&#\d+;/g,' ').replace(/\s+/g,' ')
+      .replace(/Special\s+Abilities\s*:/i, '')
+      .trim();
+    specialAbilities = saText.split(',').map(s => s.trim()).filter(s => s.length > 1);
+  }
+
+  // Spells
+  let spells = [];
+  if (spellMarker >= 0) {
+    const spellSrc = html.slice(spellMarker, spellMarker + 4000);
+    const spellLinkRe = /href="\/spell\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>/g;
+    let sm;
+    while ((sm = spellLinkRe.exec(spellSrc)) !== null) {
+      spells.push({ id: parseInt(sm[1]), name: sm[2].trim() });
+    }
+  }
+
+  return { drops, resists, specialAbilities, spells };
+}
+
 ipcMain.handle('fetch-npc-drops', async (event, npcId) => {
   try {
     const html = await pqdiGet(`https://www.pqdi.cc/npc/${npcId}`);
-
-    // ── Drops ──────────────────────────────────────────────────────────────────
-    const drops = [];
-    const seen = new Set();
-    const itemRe = /href="\/item\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>\s*([\d.]+)%/g;
-    let m;
-    while ((m = itemRe.exec(html)) !== null) {
-      const id = parseInt(m[1]);
-      const name = m[2].trim();
-      const dropRate = parseFloat(m[3]);
-      if (!seen.has(id)) { seen.add(id); drops.push({ id, name, dropRate }); }
-    }
-    drops.sort((a, b) => b.dropRate - a.dropRate);
-
-    // ── Resists (scraped from the MR/CR/FR/DR/PR table on the page) ────────────
-    // Headers are <th>MR</th>…<th>PR</th>; values are <td>N</td> in the next row.
-    let resists = null;
-    const resistRe = /MR[\s\S]{0,60}?CR[\s\S]{0,60}?FR[\s\S]{0,60}?DR[\s\S]{0,60}?PR[\s\S]{0,800}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>[\s\S]{0,200}?<t[dh][^>]*>\s*(\d+)\s*<\/t[dh]>/;
-    const rm = resistRe.exec(html);
-    if (rm) resists = { mr: +rm[1], cr: +rm[2], fr: +rm[3], dr: +rm[4], pr: +rm[5] };
-
-    // ── Special Abilities ──────────────────────────────────────────────────────
-    // Slice between "Special Abilities" and the next major section or end of page.
-    let specialAbilities = [];
-    const saIdx   = html.search(/Special\s+Abilities\s*:/i);
-    const spellMarker = html.search(/Can\s+cast\s+these\s+spells/i);
-    if (saIdx >= 0) {
-      const saEnd = spellMarker > saIdx ? spellMarker : Math.min(saIdx + 2000, html.length);
-      const saSrc = html.slice(saIdx, saEnd);
-      const saText = saSrc
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
-        .replace(/&#\d+;/g,' ').replace(/\s+/g,' ')
-        .replace(/Special\s+Abilities\s*:/i, '')
-        .trim();
-      specialAbilities = saText.split(',').map(s => s.trim()).filter(s => s.length > 1);
-    }
-
-    // ── Spells ─────────────────────────────────────────────────────────────────
-    let spells = [];
-    if (spellMarker >= 0) {
-      const spellSrc = html.slice(spellMarker, spellMarker + 4000);
-      const spellLinkRe = /href="\/spell\/(\d+)"[^>]*>\s*([^<]+?)\s*<\/a>/g;
-      let sm;
-      while ((sm = spellLinkRe.exec(spellSrc)) !== null) {
-        spells.push({ id: parseInt(sm[1]), name: sm[2].trim() });
-      }
-    }
-
-    return { drops, resists, specialAbilities, spells };
+    return parseNpcPageHtml(html);
   } catch (e) {
     console.error('fetch-npc-drops error:', e);
     return { drops: [], resists: null, specialAbilities: [], spells: [] };
+  }
+});
+
+ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
+  const zoneSuffix = zone ? `.${zone.toLowerCase().replace(/\s+/g, '_')}` : '';
+  const cacheKey = `npcCache.${name.toLowerCase()}${zoneSuffix}`;
+  const cached = store.get(cacheKey);
+  if (cached && cached.cachedAt && (Date.now() - cached.cachedAt) < 7 * 24 * 3600 * 1000) return cached;
+
+  try {
+    const json = await pqdiGet(`https://www.pqdi.cc/api/v1/npcs?name=${encodeURIComponent(name)}`);
+    const data = JSON.parse(json);
+    if (!Array.isArray(data) || !data.length) return null;
+
+    // Prefer exact name match (ignoring article prefix a/an/the)
+    const normalize = s => s.replace(/_/g, ' ').replace(/^(a|an|the)\s+/i, '').toLowerCase();
+    const nameNorm = normalize(name);
+    const exact = data.filter(n => normalize(n.name) === nameNorm);
+    let candidates = exact.length ? exact : data;
+
+    // Prefer candidates whose long_name matches the current zone
+    if (zone) {
+      const zoneNorm = zone.toLowerCase();
+      const zoneMatch = candidates.filter(n => n.long_name && n.long_name.toLowerCase() === zoneNorm);
+      if (zoneMatch.length) candidates = zoneMatch;
+    }
+
+    const best = candidates.sort((a, b) => (b.hp || 0) - (a.hp || 0))[0];
+
+    const html = await pqdiGet(`https://www.pqdi.cc/npc/${best.id}`);
+    const { resists, specialAbilities, spells } = parseNpcPageHtml(html);
+
+    const toResist = v => (v === undefined || v === null) ? 0 : Math.min(1000, Math.max(0, parseInt(v) || 0));
+    const r = resists || {};
+    const result = {
+      id:               best.id,
+      name:             best.name.replace(/_/g, ' '),
+      hp:               best.hp    || 0,
+      level:            best.level || 0,
+      mr: toResist(r.mr), cr: toResist(r.cr), fr: toResist(r.fr),
+      dr: toResist(r.dr), pr: toResist(r.pr),
+      specialAbilities,
+      spells,
+      flurries:  specialAbilities.some(a => /flurry/i.test(a)),
+      rampages:  specialAbilities.some(a => /rampage/i.test(a)),
+      cachedAt:  Date.now(),
+    };
+
+    store.set(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error('fetch-npc-by-name error:', e);
+    return null;
   }
 });
 
