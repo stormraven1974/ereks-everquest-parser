@@ -1,7 +1,7 @@
 # Erek's Everquest Parser
 
 A native Linux EverQuest log parser with DPS meter, buff/debuff timers, boss mob tracker,
-loot wishlist, and audio triggers. Built with Electron — no Wine required.
+loot bidding, loot wishlist, and audio triggers. Built with Electron — no Wine required.
 
 ## Prerequisites
 
@@ -78,6 +78,13 @@ npm start
 - **Post to Guild** — sends a compact fight summary to EQ guild chat via xdotool:
   `Boss 184s 1.2M@6700: Player1 75K, Player2 60K, ...` (fits as many players as possible in 255 chars)
 
+### Engaged Mob Card
+- Automatically appears when you start hitting a mob
+- Shows resist profile (MR/CR/FR/DR/PR), HP, level, special abilities, and spells
+- Pulls from your saved boss mob list first; falls back to a live PQDI lookup by name
+- Debounced 500ms to avoid flicker when switching targets
+- Auto-hides 8 seconds after the mob dies (dismissable manually)
+
 ### Boss Mob List
 - Maintain a roster of raid bosses with HP, level, zone, resists, and notes
 - **PQDI sync** — click the PQDI button on any mob to pull live data from pqdi.cc:
@@ -103,6 +110,20 @@ npm start
 - Warning alert at a configurable lead time before the next hit
 - Stops cleanly on the boss death message
 - Global — not tied to any character profile
+
+### Loot Bidding
+- Live DKP bidding panel — tracks open items, bids by player, and countdown timers
+- Triggered by guild chat announcements (works whether you or another officer is calling)
+- **BIDS OPEN** — `Item One, Item Two - BIDS OPEN` opens bid cards for each item
+  - Item icon and stats auto-fetched from pqdi.cc for any item not already cached
+  - Voice alert if any open item matches your desired loot list
+- **Individual bids** — `Item Name mem 125` / `Item Name app 80` / `Item Name alt 50`
+  - Configurable status keywords (default: mem, app, alt)
+- **CLOSING IN** — `CLOSING IN 30s! Item (CurrentWinner - 125 dkp)` starts countdown
+- **LAST CALL** — `CLOSING IN LAST CALL! Item (Winner - 125 dkp)`
+- **SOLD** — `SOLD! Item (Winner - 125 dkp)` or `Item - Winner - 125 dkp - SOLD!` closes bidding and saves to history
+- **Random roll mode** — tracks `/random` rolls per item; duplicate rolls from the same player are ignored (first roll wins)
+- All keywords and separators configurable in Setup
 
 ### Loot Wishlist
 - Per-character gear tracking — record what's equipped in each slot
@@ -167,7 +188,7 @@ timers, and raid event timers tuned for Beastlord play in Planes of Power / Lucl
 
 ```bash
 npm run build
-# Output: dist/Erek's Everquest Parser-1.1.0.AppImage
+# Output: dist/Erek's Everquest Parser-1.2.0.AppImage
 ```
 
 ## Updating
