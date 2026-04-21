@@ -1142,6 +1142,7 @@ ipcMain.handle('export-timers', async () => {
     buffTimerGroups:   store.get('buffTimerGroups', ['General']),
     debuffTimerGroups: store.get('debuffTimerGroups', ['General']),
     raidTimers:        store.get('raidTimers', []),
+    lootConfig:        store.get('lootConfig', {}),
     discOverrides:     profile.discOverrides    || {},
     enabledDiscs:      profile.enabledDiscs     || [],
     cooldownSettings:  profile.cooldownSettings || {},
@@ -1165,6 +1166,7 @@ ipcMain.handle('import-timers', async () => {
     if (data.buffTimerGroups)   store.set('buffTimerGroups',   data.buffTimerGroups);
     if (data.debuffTimerGroups) store.set('debuffTimerGroups', data.debuffTimerGroups);
     if (data.raidTimers)        store.set('raidTimers',        data.raidTimers);
+    if (data.lootConfig)        store.set('lootConfig',        data.lootConfig);
     // Merge profile fields into current profile
     const profileKey = store.get('currentProfileKey', 'default');
     const existing = store.get(`profiles.${profileKey}`, {});
@@ -1183,6 +1185,126 @@ ipcMain.handle('import-timers', async () => {
       hasDiscs:       !!data.discOverrides || !!data.enabledDiscs,
       hasCooldowns:   !!data.cooldownSettings,
     };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('export-boss-mobs', async () => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Boss Mob List', defaultPath: 'boss-mobs.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (!filePath) return { success: false };
+  const data = {
+    bossMobInfo:       store.get('bossMobInfo', []),
+    bossFightSettings: store.get('bossFightSettings', { always: [], never: [] }),
+    knownBosses:       [...knownBosses],
+    exportedAt:        new Date().toISOString(),
+  };
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  return { success: true, filePath };
+});
+
+ipcMain.handle('import-boss-mobs', async () => {
+  const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Import Boss Mob List',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  });
+  if (!filePaths || !filePaths[0]) return { success: false };
+  try {
+    const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+
+    // Boss mob info — merge by name
+    const incoming = data.bossMobInfo || [];
+    const existing = store.get('bossMobInfo', []);
+    const existingNames = new Set(existing.map(m => m.name.toLowerCase()));
+    const added = incoming.filter(m => !existingNames.has(m.name.toLowerCase()));
+    store.set('bossMobInfo', [...existing, ...added]);
+
+    // Boss fight settings — merge always/never lists
+    if (data.bossFightSettings) {
+      const cur = store.get('bossFightSettings', { always: [], never: [] });
+      const mergeList = (a, b) => [...new Set([...(a||[]), ...(b||[])].map(n => n.toLowerCase()))];
+      store.set('bossFightSettings', {
+        always: mergeList(cur.always, data.bossFightSettings.always),
+        never:  mergeList(cur.never,  data.bossFightSettings.never),
+      });
+    }
+
+    // Known bosses — merge into in-memory set
+    if (Array.isArray(data.knownBosses)) {
+      data.knownBosses.forEach(n => knownBosses.add(n.toLowerCase()));
+      store.set('knownBosses', [...knownBosses]);
+    }
+
+    return { success: true, addedCount: added.length, skippedCount: incoming.length - added.length };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('export-npc-cache', async () => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export NPC Cache', defaultPath: 'npc-cache.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (!filePath) return { success: false };
+  const cache = store.get('npcCache', {});
+  const npcs = Object.values(cache).filter(Boolean);
+  fs.writeFileSync(filePath, JSON.stringify({ npcs, exportedAt: new Date().toISOString() }, null, 2));
+  return { success: true, filePath, count: npcs.length };
+});
+
+ipcMain.handle('import-npc-cache', async () => {
+  const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Import NPC Cache',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  });
+  if (!filePaths || !filePaths[0]) return { success: false };
+  try {
+    const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+    const npcs = data.npcs || [];
+    const existing = store.get('npcCache', {});
+    let added = 0;
+    npcs.forEach(npc => {
+      if (!npc || !npc.name) return;
+      const key = npc.name.replace(/_/g, ' ').replace(/^(?:a|an|the)\s+/i, '').trim().toLowerCase();
+      if (!existing[key]) { existing[key] = npc; added++; }
+    });
+    store.set('npcCache', existing);
+    return { success: true, addedCount: added, skippedCount: npcs.length - added };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('export-item-cache', async () => {
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Item Cache', defaultPath: 'item-cache.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (!filePath) return { success: false };
+  const cache = store.get('itemCache', {});
+  const items = Object.values(cache).filter(Boolean);
+  fs.writeFileSync(filePath, JSON.stringify({ items, exportedAt: new Date().toISOString() }, null, 2));
+  return { success: true, filePath, count: items.length };
+});
+
+ipcMain.handle('import-item-cache', async () => {
+  const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Import Item Cache',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  });
+  if (!filePaths || !filePaths[0]) return { success: false };
+  try {
+    const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
+    const items = data.items || [];
+    const existing = store.get('itemCache', {});
+    let added = 0;
+    items.forEach(item => {
+      if (!item || !item.id) return;
+      if (!existing[item.id]) { existing[item.id] = item; added++; }
+    });
+    store.set('itemCache', existing);
+    return { success: true, addedCount: added, skippedCount: items.length - added };
   } catch (e) { return { success: false, error: e.message }; }
 });
 

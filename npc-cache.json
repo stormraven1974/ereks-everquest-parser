@@ -1,0 +1,131 @@
+{
+  "npcs": [
+    {
+      "id": 113041,
+      "name": "a_Drakkel_Dire_Wolf",
+      "hp": 14500,
+      "level": 52,
+      "mr": 35,
+      "cr": 425,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 111267) 111267_a_Drakkel_Dire_Wolf_MAGELO-GEN Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 With a probability of 100% (multiplier: 1)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776695183590
+    },
+    {
+      "id": 116116,
+      "name": "a_frost_giant_scout",
+      "hp": 2684,
+      "level": 34,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack",
+        "Unmezzable",
+        "Unstunable Drops Spawns Spawn Groups Faction (id: 100511) level_34_research Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 011799 Words of Duress (2.28%)",
+        "011763 Rune of Concussion (1.56%)",
+        "011767 Rune of the Cyclone (1.17%)",
+        "011851 Words of the Suffering (0.96%)",
+        "011707 Salil s Writ Pg. 64 (0.9%)",
+        "011847 Words of Neglect (0.9%)",
+        "016039 Words of Cazic-Thule (0.87%)",
+        "011706 A Faded Salils Writ Page (0.84%)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776695323393
+    },
+    {
+      "id": 161004,
+      "name": "A Netherbian Drone",
+      "hp": 840,
+      "level": 21,
+      "mr": 25,
+      "cr": 25,
+      "fr": 25,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 105871) level_20_Research Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 011788 Words of Dominion (1.7%)",
+        "011746 Rune of Al Kabor (1.0%)",
+        "016039 Words of Cazic-Thule (1.0%)",
+        "011789 Ice of Velious (0.84%)",
+        "011744 Rune of Oppression (0.72%)",
+        "011820 Words of Absorption (0.7%)",
+        "016076 Part of Tasarin s Grimoire Pg. 312 (0.7%)",
+        "016074 Part of Tasarin s Grimoire Pg. 30 (0.7%)",
+        "01179"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776695966129,
+      "netherbian_lair": {
+        "id": 161004,
+        "name": "A Netherbian Drone",
+        "hp": 840,
+        "level": 21,
+        "mr": 25,
+        "cr": 25,
+        "fr": 25,
+        "dr": 25,
+        "pr": 25,
+        "specialAbilities": [
+          "Magical Attack Drops Spawns Spawn Groups Faction (id: 105871) level_20_Research Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 011788 Words of Dominion (1.7%)",
+          "011746 Rune of Al Kabor (1.0%)",
+          "016039 Words of Cazic-Thule (1.0%)",
+          "011789 Ice of Velious (0.84%)",
+          "011744 Rune of Oppression (0.72%)",
+          "011820 Words of Absorption (0.7%)",
+          "016076 Part of Tasarin s Grimoire Pg. 312 (0.7%)",
+          "016074 Part of Tasarin s Grimoire Pg. 30 (0.7%)",
+          "01179"
+        ],
+        "spells": [],
+        "flurries": false,
+        "rampages": false,
+        "cachedAt": 1776783669723
+      }
+    },
+    {
+      "id": 161002,
+      "name": "A Netherbian Warrior",
+      "hp": 910,
+      "level": 21,
+      "mr": 25,
+      "cr": 25,
+      "fr": 25,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 105871) level_20_Research Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 011788 Words of Dominion (1.7%)",
+        "011746 Rune of Al Kabor (1.0%)",
+        "016039 Words of Cazic-Thule (1.0%)",
+        "011789 Ice of Velious (0.84%)",
+        "011744 Rune of Oppression (0.72%)",
+        "011820 Words of Absorption (0.7%)",
+        "016076 Part of Tasarin s Grimoire Pg. 312 (0.7%)",
+        "016074 Part of Tasarin s Grimoire Pg. 30 (0.7%)",
+        "01179"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776695982379
+    }
+  ],
+  "exportedAt": "2026-04-21T15:44:33.372366+00:00"
+}

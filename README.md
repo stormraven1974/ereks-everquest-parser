@@ -157,10 +157,10 @@ npm start
 | Flurry       | `flurries`               | Flurry       |
 | You died     | `You have been slain`    | You died     |
 
-## Importing Timers
+## Importing Timers & Config
 
 The repo includes a `timers.json` file with a ready-to-use set of buff timers, debuff
-timers, and raid event timers tuned for Beastlord play in Planes of Power / Luclin content.
+timers, raid event timers, and loot bidding config tuned for Beastlord play in Planes of Power / Luclin content.
 
 **What's included:**
 
@@ -177,12 +177,45 @@ timers, and raid event timers tuned for Beastlord play in Planes of Power / Lucl
 **To import:**
 
 1. Open the app and go to the **Setup** tab
-2. Click **Import Timers**
-3. Navigate to the repo directory and select `timers.json`
-4. Existing timers with matching IDs will be skipped; new ones are merged in
+2. Click **Import Timers** and select `timers.json` from the repo
+3. Existing timers with matching IDs will be skipped; new ones are merged in
+4. Loot bidding keywords (BIDS OPEN, CLOSING IN, etc.) are imported alongside timers
 
 > **Note:** Raid timers are global (not per-character). Buff/debuff timers are global
 > definitions — which ones are *active* is saved per character profile.
+
+## Importing Boss Mobs
+
+The repo includes a `boss-mobs.json` file. Once populated it contains the full raid boss
+roster with HP, level, resist profiles, special abilities, spells, and the always/never
+boss classification lists used by the DPS tracker.
+
+**To import:**
+
+1. Open the app and go to the **Setup** tab
+2. Click **Import Boss Mobs** and select `boss-mobs.json` from the repo
+3. Mobs already in your list (matched by name) are skipped; new ones are added
+4. Always/never boss classification lists and known-boss history are merged in
+
+**To export your own:**
+
+- Click **Export Boss Mobs** on the Setup tab to save your current list to a file
+
+## Importing Item Cache
+
+The repo includes an `item-cache.json` file. Once populated it contains pre-fetched PQDI
+item data (stats, icon, effects) so the app doesn't need to re-fetch every item from
+pqdi.cc on first use.
+
+**To import:**
+
+1. Open the app and go to the **Setup** tab
+2. Click **Import Item Cache** and select `item-cache.json` from the repo
+3. Items already in your local cache are skipped; new ones are added
+
+**To export your own:**
+
+- Click **Export Item Cache** on the Setup tab to share your cached item data
 
 ## Build AppImage (optional)
 

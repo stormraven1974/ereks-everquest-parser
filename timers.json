@@ -4,7 +4,7 @@
       "id": "1774400998687",
       "name": "Savagery",
       "triggerPattern": "\\] (.+?)'s lips curl into a feral snarl as they descend into savagery",
-      "durationSeconds": 390,
+      "durationSeconds": 358,
       "expireAlert": true,
       "spellFades": "The savagery fades.",
       "enabled": true,
@@ -37,6 +37,7 @@
       "triggerPattern": "\\] (.+?) is imbued with the spirit of snow\\.",
       "durationSeconds": 2880,
       "expireAlert": true,
+      "spellFades": "range: 100",
       "enabled": true,
       "group": "Pet Buffs"
     },
@@ -46,6 +47,7 @@
       "triggerPattern": "\\] (.+?) is imbued with the spirit of an ancient storm\\.",
       "durationSeconds": 2880,
       "expireAlert": true,
+      "spellFades": "range: 100",
       "enabled": true,
       "group": "Pet Buffs"
     },
@@ -56,14 +58,16 @@
       "durationSeconds": 2880,
       "expireAlert": true,
       "enabled": true,
-      "group": "Pet Buffs"
+      "group": "Pet Buffs",
+      "spellFades": "Your pet's Spirit of Flame spell has worn off."
     },
     {
       "id": "1774401027803",
-      "name": "Sha's Ferocity",
+      "name": "Sha`s Ferocity",
       "triggerPattern": "\\] (.+?) growls with the ferocity of Sha\\.",
       "durationSeconds": 1050,
       "expireAlert": true,
+      "spellFades": "Your pet's Sha's Ferocity spell has worn off.",
       "enabled": true,
       "group": "Pet Buffs",
       "isGroupSpell": false
@@ -87,13 +91,14 @@
       "expireAlert": true,
       "enabled": true,
       "group": "Regen",
-      "isGroupSpell": true
+      "isGroupSpell": true,
+      "spellFades": ""
     },
     {
       "id": "1774401039608",
       "name": "Spiritual Purity",
       "triggerPattern": "\\] (.+?) is enveloped by an aura of spiritual purity\\.",
-      "durationSeconds": 2700,
+      "durationSeconds": 2697,
       "expireAlert": true,
       "spellFades": "The aura of purity fades.",
       "enabled": true,
@@ -104,7 +109,7 @@
       "id": "1774400976823",
       "name": "Spiritual Strength",
       "triggerPattern": "\\] (.+?) has been filled with spiritual strength\\.",
-      "durationSeconds": 4320,
+      "durationSeconds": 2512,
       "expireAlert": true,
       "spellFades": "Your spiritual strength fades.",
       "enabled": true,
@@ -199,7 +204,7 @@
   "debuffTimers": [
     {
       "id": "1774324121039",
-      "name": "Sha's Lethargy",
+      "name": "Sha&#39;s Lethargy",
       "triggerPattern": "\\] (.+?) feels lethargic\\.",
       "durationSeconds": 210,
       "spellFades": "",
@@ -285,16 +290,16 @@
     {
       "id": "1774637715750",
       "name": "Emperor Ssraeshza (Rage)",
-      "aoeTrigger": "Emperor Ssraeshza\\s+hit .+ non-melee",
+      "aoeTrigger": "Emperor Ssraeshza hit .+ for \\d{4,} points of non-melee damage",
       "interval": 60,
       "warningLeadTime": 10,
       "deathPattern": "Emperor Ssraeshza  has been slain"
     },
     {
       "id": "1774673097516",
-      "name": "Fling",
+      "name": "Aten Ha Ra + Goos",
       "aoeTrigger": "is knocked into the air by a massive force",
-      "interval": 49,
+      "interval": 45,
       "warningLeadTime": 5,
       "deathPattern": "Aten Ha Ra has been slain"
     },
@@ -315,23 +320,17 @@
       "deathPattern": "Hraashna the Warder has been slain"
     }
   ],
-  "discOverrides": {
-    "disc_beastial_rage": {
-      "detect": "A bestial fury consumes you",
-      "cooldown": 1800
-    }
+  "lootConfig": {
+    "enabled": true,
+    "bidsOpenKeyword": "BIDS OPEN",
+    "bidStatuses": "mem, app, alt",
+    "closingKeyword": "CLOSING IN",
+    "soldKeyword": "SOLD!",
+    "bidsOpenSeparator": ",",
+    "itemDelimiter": "//"
   },
-  "enabledDiscs": [
-    "disc_beastial_rage"
-  ],
-  "cooldownSettings": {
-    "paragonEnabled": true,
-    "paragonDuration": 900,
-    "mgbEnabled": true,
-    "mgbDuration": 540,
-    "discEnabled": false,
-    "discDuration": 1800,
-    "discName": "Discipline"
-  },
-  "exportedAt": "2026-04-15T00:00:00.000Z"
+  "discOverrides": {},
+  "enabledDiscs": [],
+  "cooldownSettings": {},
+  "exportedAt": "2026-04-21T15:30:50.752329+00:00"
 }

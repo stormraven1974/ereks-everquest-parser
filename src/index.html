@@ -1224,6 +1224,12 @@
           <button class="btn warn" onclick="clearCombat()">Reset DPS</button>
           <button class="btn" onclick="exportTimers()">Export Timers</button>
           <button class="btn" onclick="importTimers()">Import Timers</button>
+          <button class="btn" onclick="exportBossMobs()">Export Boss Mobs</button>
+          <button class="btn" onclick="importBossMobs()">Import Boss Mobs</button>
+          <button class="btn" onclick="exportItemCache()">Export Item Cache</button>
+          <button class="btn" onclick="importItemCache()">Import Item Cache</button>
+          <button class="btn" onclick="exportNpcCache()">Export NPC Cache</button>
+          <button class="btn" onclick="importNpcCache()">Import NPC Cache</button>
         </div>
       </div>
     </div>
@@ -3764,6 +3770,56 @@ async function importTimers() {
   if (result.hasDiscs)           parts.push('disciplines');
   if (result.hasCooldowns)       parts.push('AA cooldowns');
   showToast('Imported ' + parts.join(', '));
+}
+
+async function exportBossMobs() {
+  const result = await ipcRenderer.invoke('export-boss-mobs');
+  if (result.success) showToast('Exported to ' + result.filePath.split('/').pop());
+  else showToast('Export cancelled');
+}
+
+async function importBossMobs() {
+  const result = await ipcRenderer.invoke('import-boss-mobs');
+  if (!result.success) {
+    if (result.error) showToast('Import failed: ' + result.error);
+    return;
+  }
+  bossMobList = await ipcRenderer.invoke('store-get', 'bossMobInfo') || [];
+  renderBossMobList();
+  showToast(`Imported ${result.addedCount} boss mob${result.addedCount !== 1 ? 's' : ''}` +
+    (result.skippedCount ? ` (${result.skippedCount} already existed)` : ''));
+}
+
+async function exportNpcCache() {
+  const result = await ipcRenderer.invoke('export-npc-cache');
+  if (result.success) showToast(`Exported ${result.count} NPC${result.count !== 1 ? 's' : ''} to ` + result.filePath.split('/').pop());
+  else showToast('Export cancelled');
+}
+
+async function importNpcCache() {
+  const result = await ipcRenderer.invoke('import-npc-cache');
+  if (!result.success) {
+    if (result.error) showToast('Import failed: ' + result.error);
+    return;
+  }
+  showToast(`Imported ${result.addedCount} NPC${result.addedCount !== 1 ? 's' : ''}` +
+    (result.skippedCount ? ` (${result.skippedCount} already cached)` : ''));
+}
+
+async function exportItemCache() {
+  const result = await ipcRenderer.invoke('export-item-cache');
+  if (result.success) showToast(`Exported ${result.count} item${result.count !== 1 ? 's' : ''} to ` + result.filePath.split('/').pop());
+  else showToast('Export cancelled');
+}
+
+async function importItemCache() {
+  const result = await ipcRenderer.invoke('import-item-cache');
+  if (!result.success) {
+    if (result.error) showToast('Import failed: ' + result.error);
+    return;
+  }
+  showToast(`Imported ${result.addedCount} item${result.addedCount !== 1 ? 's' : ''}` +
+    (result.skippedCount ? ` (${result.skippedCount} already cached)` : ''));
 }
 
 function showToast(msg, duration=2500) {
