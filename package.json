@@ -19,10 +19,12 @@
   "author": "Paul",
   "license": "MIT",
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "chokidar": "^3.6.0",
     "electron-store": "^8.2.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0",
     "playwright": "^1.59.1"

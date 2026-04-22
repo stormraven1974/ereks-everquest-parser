@@ -4,7 +4,9 @@ const fs = require('fs');
 const chokidar = require('chokidar');
 const Store = require('electron-store');
 const { exec } = require('child_process');
+const db = require('./src/db');
 
+// electron-store kept only as migration source; nothing writes to it after init
 const store = new Store();
 
 // ── One-time migration from old userData path (when app was named 'eq-parser') ─
@@ -14,7 +16,6 @@ const store = new Store();
   if (!fs.existsSync(oldPath)) return;
   try {
     const old = JSON.parse(fs.readFileSync(oldPath, 'utf8'));
-    // Import keys from old store that don't already exist in the new store
     for (const [k, v] of Object.entries(old)) {
       if (store.get(k) === undefined) store.set(k, v);
     }
@@ -32,41 +33,18 @@ function profileKeyFromPath(logPath) {
   const m = base.match(/^eqlog_(.+)$/i);
   return m ? m[1] : base;
 }
+
+let _currentProfileKey = 'default';
+
 function pGet(field, def) {
-  const key = store.get('currentProfileKey', 'default');
-  return store.get(`profiles.${key}.${field}`, def);
+  const profile = db.getProfile(_currentProfileKey);
+  const val = profile[field];
+  return val !== undefined ? val : def;
 }
 function pSet(field, value) {
-  const key = store.get('currentProfileKey', 'default');
-  store.set(`profiles.${key}.${field}`, value);
-}
-
-// One-time migration: if profile key has no data yet, copy old flat-store settings into it
-const FLAT_PROFILE_FIELDS = ['charName', 'warderName', 'spellExtendPct', 'cooldownSettings', 'announceSkillups', 'rampageChangeEnabled', 'zoneTimerOptions'];
-function migrateToProfile(key) {
-  if (store.get(`profiles.${key}`) !== undefined) return; // already migrated
-  const flat = {};
-  FLAT_PROFILE_FIELDS.forEach(f => {
-    const v = store.get(f);
-    if (v !== undefined) flat[f] = v;
-  });
-  if (Object.keys(flat).length > 0) {
-    store.set(`profiles.${key}`, flat);
-  }
-}
-
-// Seed default raid timers on first run
-if (!store.get('raidTimers')) {
-  store.set('raidTimers', [
-    {
-      id: 'seru_torturing_winds',
-      name: 'Lord Inquisitor Seru',
-      aoeTrigger: 'stricken by torturing winds',
-      interval: 45,
-      warningLeadTime: 10,
-      deathPattern: 'Lord Inquisitor Seru has been slain',
-    },
-  ]);
+  const profile = db.getProfile(_currentProfileKey) || {};
+  profile[field] = value;
+  db.setProfile(_currentProfileKey, profile);
 }
 
 let mainWindow;
@@ -87,14 +65,16 @@ let lastRampageTarget = null; // tracks current rampage target for change detect
 let currentZone = '';        // updated on zone-enter for NPC lookup context
 let currentTargetName = null; // mob player is currently hitting
 
-// Boss fight tracking — last 5 persisted to store, rest in-memory only
-let bossFights = store.get('bossFightsHistory', []);
+// Boss fight tracking — last 5 persisted to db, rest in-memory only
+let bossFights = [];           // loaded from db after init
 let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{} }
 let pendingSummon = null;      // { owner } — set when a summon line is seen, cleared on first pet hit
 let petOwners = {};            // { petNameLower -> ownerName } — current session only (owners change)
-let knownPetNames = new Set(store.get('knownPetNames', [])); // pet names seen across all sessions
-let knownPlayers = new Set(store.get('knownPlayers', [])); // persisted across restarts
-let knownBosses  = new Set(store.get('knownBosses',  [])); // mobs that have crossed the damage threshold
+let knownPetNames = new Set(); // loaded from db after init
+let knownPlayers  = new Set(); // loaded from db after init
+let knownBosses   = new Set(); // loaded from db after init
+let currentGroup  = [];        // character names currently in group (session only)
+let recentTells   = [];        // last 5 incoming tells [{sender, msg, ts}]
 const BOSS_DMG_THRESHOLD = 40000;
 
 function createWindow() {
@@ -111,6 +91,15 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  db.init(store);
+  // Load in-memory sets from db
+  bossFights    = db.getBossFightsHistory();
+  knownBosses   = db.getKnownBosses();
+  knownPetNames = db.getKnownNames('pet');
+  knownPlayers  = db.getKnownNames('player');
+  // Restore currentProfileKey
+  _currentProfileKey = db.getSetting('currentProfileKey', 'default');
+
   createWindow();
   initTraderWatchers();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
@@ -120,17 +109,17 @@ app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(
 // Log Watching
 ipcMain.on('start-watching', (event, logPath) => {
   const profileKey = profileKeyFromPath(logPath);
-  store.set('currentProfileKey', profileKey);
-  migrateToProfile(profileKey);
+  _currentProfileKey = profileKey;
+  db.setSetting('currentProfileKey', profileKey);
+  db.setSetting('logPath', logPath);
+  // Ensure profile exists
+  if (!db.getProfile(profileKey) || Object.keys(db.getProfile(profileKey)).length === 0) {
+    db.setProfile(profileKey, {});
+  }
   if (logWatcher) { logWatcher.close(); logWatcher = null; }
   lastFileSize = 0;
   if (!fs.existsSync(logPath)) { event.reply('watch-error', 'File not found: ' + logPath); return; }
-  // Track known log paths for the character switcher dropdown
-  const knownLogs = store.get('knownLogPaths', []);
-  if (!knownLogs.includes(logPath)) {
-    knownLogs.push(logPath);
-    store.set('knownLogPaths', knownLogs);
-  }
+  db.addKnownLogPath(logPath);
   lastFileSize = fs.statSync(logPath).size;
   logWatcher = chokidar.watch(logPath, { usePolling: true, interval: 500, persistent: true });
   logWatcher.on('change', (filePath) => {
@@ -145,9 +134,16 @@ ipcMain.on('start-watching', (event, logPath) => {
       buffer.toString('utf8').split('\n').filter(l => l.trim()).forEach(line => processLine(line, event));
     } catch (e) { console.error('Read error:', e); }
   });
+  guildRaidQueue = [];
+  if (guildRaidFlushTimer) clearInterval(guildRaidFlushTimer);
+  guildRaidFlushTimer = setInterval(flushGuildRaid, 250);
   event.reply('watch-started', logPath);
 });
-ipcMain.on('stop-watching', () => { if (logWatcher) { logWatcher.close(); logWatcher = null; } });
+ipcMain.on('stop-watching', () => {
+  if (logWatcher) { logWatcher.close(); logWatcher = null; }
+  if (guildRaidFlushTimer) { clearInterval(guildRaidFlushTimer); guildRaidFlushTimer = null; }
+  guildRaidQueue = [];
+});
 
 // Cast tracking - gate buffs/debuffs to only the player's own spells
 function clearPendingCast() {
@@ -180,19 +176,121 @@ function resolvePetOwner(name) {
     pendingSummon = null;
     if (!knownPetNames.has(key)) {
       knownPetNames.add(key);
-      store.set('knownPetNames', [...knownPetNames]);
+      db.addKnownName(key, 'pet');
     }
     return petOwners[key];
   }
   if (knownPetNames.has(key)) return 'Unknown Pet';
   if (!knownPlayers.has(key)) {
     knownPlayers.add(key);
-    store.set('knownPlayers', [...knownPlayers]);
+    db.addKnownName(key, 'player');
   }
   return name;
 }
 
+// ── Player Tracking ────────────────────────────────────────────────────────────
+
+function parseLineTimestamp(line) {
+  const m = line.match(/^\[(.+?)\]/);
+  if (!m) return Date.now();
+  const t = new Date(m[1]).getTime();
+  return isNaN(t) ? Date.now() : t;
+}
+
+function trackCharacterSeen(name, line) {
+  if (!name || /^you$/i.test(name)) return;
+  if (!db.isFeatureEnabled('player_tracking')) return;
+  db.upsertCharacterSeen(name, parseLineTimestamp(line));
+}
+
+function parseGroupChat(line) {
+  const m = line.match(/\] (.+?) tells the group, '(.+?)'\s*$/i)
+          || line.match(/\] (You) tell the group, '(.+?)'\s*$/i);
+  if (m) trackCharacterSeen(m[1].trim(), line);
+}
+
+function parseRaidChat(line) {
+  const m = line.match(/\] (.+?) tells the raid, '(.+?)'\s*$/i)
+          || line.match(/\] (You) tell the raid, '(.+?)'\s*$/i);
+  if (m) trackCharacterSeen(m[1].trim(), line);
+}
+
+// ── Group Membership ──────────────────────────────────────────────────────────
+
+function buildGroupMember(name) {
+  const char   = db.findCharacter(name);
+  const player = char ? db.getPlayer(char.player_id) : null;
+  const cls    = player?.characters.find(c => c.is_main)?.class || char?.class || null;
+  return {
+    name,
+    class:           cls,
+    friend:          !!player?.friend,
+    do_not_group:    !!player?.do_not_group,
+    do_not_help:     !!player?.do_not_help,
+    last_grouped_time: player?.last_grouped_time || null,
+    notes:           player?.notes || '',
+  };
+}
+
+function emitGroupUpdate(event) {
+  const members = currentGroup.map(buildGroupMember);
+  if (event) event.reply('group-update', members);
+  else if (mainWindow) mainWindow.webContents.send('group-update', members);
+}
+
+function parseGroupMembership(line, event) {
+  const ts = parseLineTimestamp(line);
+
+  // Another player joins
+  const joinM = line.match(/\] (.+?) has joined the group\./i);
+  if (joinM) {
+    const name = joinM[1].trim();
+    if (!currentGroup.includes(name)) currentGroup.push(name);
+    if (currentGroup.length > 6) currentGroup.shift();
+    if (db.isFeatureEnabled('player_tracking')) db.recordGrouped(name, ts);
+    emitGroupUpdate(event);
+    return;
+  }
+
+  // Self joins
+  if (/\] You have joined the group\./i.test(line)) {
+    const myName = pGet('charName', '');
+    if (myName && !currentGroup.includes(myName)) currentGroup.push(myName);
+    emitGroupUpdate(event);
+    return;
+  }
+
+  // Another player leaves
+  const leaveM = line.match(/\] (.+?) has left the group\./i);
+  if (leaveM) {
+    currentGroup = currentGroup.filter(n => n !== leaveM[1].trim());
+    emitGroupUpdate(event);
+    return;
+  }
+
+  // Self removed or group disbanded
+  if (/\] You have been removed from the group\./i.test(line)
+   || /\] Your group has been disbanded\./i.test(line)) {
+    currentGroup = [];
+    emitGroupUpdate(event);
+  }
+}
+
 // Line Processing
+// Fast pre-filter: does this line look like guild or raid chat?
+const GUILD_RAID_LINE_RE = /\] .+? (?:tells? the (?:guild|raid)|say to your guild),\s+'/i;
+
+// Guild/raid lines are queued and flushed on a short interval rather than inline,
+// keeping combat/buff parsing latency tight.
+let guildRaidQueue  = [];
+let guildRaidFlushTimer = null;
+
+function flushGuildRaid() {
+  if (!guildRaidQueue.length) return;
+  const batch = guildRaidQueue.splice(0);
+  for (const { line, event } of batch) parseGuildLootMessages(line, event);
+}
+
 function processLine(line, event) {
   event.reply('log-line', line);
   parsePetSummon(line);
@@ -209,11 +307,16 @@ function processLine(line, event) {
   parseCooldowns(line, event);
   parseDiscs(line, event);
   parseRaidTimers(line, event);
-  parseLootMessages(line, event);
+  parseRollMessages(line, event);   // system /random messages — always immediate
+  parseGroupChat(line);
+  parseRaidChat(line);
+  parseGroupMembership(line, event);
   parseTell(line, event);
   parseZone(line, event);
   parseBossFight(line, event);
   parseCurrentTarget(line, event);
+
+  if (GUILD_RAID_LINE_RE.test(line)) guildRaidQueue.push({ line, event });
 }
 
 function stripArticle(name) {
@@ -250,7 +353,7 @@ function parseCurrentTarget(line, event) {
 }
 
 function checkTriggers(line, event) {
-  (store.get('triggers', [])).forEach(trigger => {
+  db.getTriggers().forEach(trigger => {
     if (!trigger.enabled) return;
     try {
       if (new RegExp(trigger.pattern, 'i').test(line)) {
@@ -362,7 +465,7 @@ function isBossTarget(name) {
   if (!name || !name.trim()) return false;
   // Generic mobs start with lowercase article — never a boss
   if (/^an? /i.test(name) && /^[a-z]/.test(name.replace(/^an? /i, ''))) return false;
-  const settings = store.get('bossFightSettings', {});
+  const settings = db.getBossFightSettings();
   const neverList = (settings.never || []).map(n => n.toLowerCase());
   if (neverList.includes(name.toLowerCase())) return false;
   return true;
@@ -425,7 +528,7 @@ function finalizeFight(fight, event) {
   if (!fight) return;
 
   const totalDmg = Object.values(fight.players).reduce((s, v) => s + v.dmg, 0);
-  const settings = store.get('bossFightSettings', {});
+  const settings = db.getBossFightSettings();
   const alwaysList = (settings.always || []).map(n => n.toLowerCase());
   const bossKey = fight.bossName.toLowerCase();
   const isAlways = alwaysList.includes(bossKey) || knownBosses.has(bossKey);
@@ -434,7 +537,7 @@ function finalizeFight(fight, event) {
 
   if (!knownBosses.has(bossKey)) {
     knownBosses.add(bossKey);
-    store.set('knownBosses', [...knownBosses]);
+    db.addKnownBoss(bossKey);
   }
 
   const endTime = Date.now();
@@ -452,13 +555,14 @@ function finalizeFight(fight, event) {
   };
 
   bossFights.unshift(record);
-  store.set('bossFightsHistory', bossFights.slice(0, 5));
+  bossFights = bossFights.slice(0, 5);
+  db.addBossFight(record);
   if (event) event.reply('boss-fight-recorded', record);
 }
 
 // Buff Timers - with AA Spell Extend, recipient capture, group buff deduplication
 function parseBuffs(line, event) {
-  const buffDefs = store.get('buffTimers', []);
+  const buffDefs = db.getTimers('buff_timers');
   const extendPct = (pGet('spellExtendPct', 0)) / 100;
   const charName = (pGet('charName', 'Me')).toLowerCase();
   const enabledBuffIds = pGet('enabledBuffTimers', null);
@@ -517,7 +621,7 @@ function parseBuffs(line, event) {
 
 // Debuff Timers
 function parseDebuffs(line, event) {
-  const debuffDefs = store.get('debuffTimers', []);
+  const debuffDefs = db.getTimers('debuff_timers');
   const enabledDebuffIds = pGet('enabledDebuffTimers', null);
   debuffDefs.forEach(debuff => {
     const isEnabled = enabledDebuffIds ? enabledDebuffIds.includes(debuff.id) : debuff.enabled;
@@ -640,7 +744,7 @@ function parseWornOff(line, event) {
   });
   // Also check spell_fades text on buff definitions
   if (clearedBuffs.length === 0) {
-    const buffDefs = store.get('buffTimers', []);
+    const buffDefs = db.getTimers('buff_timers');
     buffDefs.forEach(def => {
       if (!def.spellFades) return;
       try {
@@ -673,7 +777,7 @@ function parseWornOff(line, event) {
   });
   // Also check spell_fades text on debuff definitions
   if (clearedDebuffs.length === 0) {
-    const debuffDefs = store.get('debuffTimers', []);
+    const debuffDefs = db.getTimers('debuff_timers');
     debuffDefs.forEach(def => {
       if (!def.spellFades) return;
       try {
@@ -813,7 +917,7 @@ function startRaidTimer(def, event) {
 }
 
 function parseRaidTimers(line, event) {
-  const defs = store.get('raidTimers', []);
+  const defs = db.getTimers('raid_timers');
   for (const def of defs) {
     if (def.deathPattern && (() => { try { return new RegExp(def.deathPattern, 'i').test(line); } catch(e) { return line.toLowerCase().includes(def.deathPattern.toLowerCase()); } })()) {
       if (raidTimerState[def.id]) {
@@ -835,20 +939,23 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function parseLootMessages(line, event) {
-  const config = store.get('lootConfig') || {};
+// System /random messages — processed immediately on every line
+function parseRollMessages(line, event) {
+  const config = db.getLootConfig();
   if (!config.enabled) return;
-
-  // Roll lines are system messages, not guild chat — handle before guild check
   const rollerM = line.match(/\]\s+\*\*A Magic Die is rolled by (.+?)\./i);
   if (rollerM) { pendingRoller = rollerM[1].trim(); return; }
-
   const rollResultM = line.match(/\]\s+\*\*It could have been any number from 0 to (\d+), but this time it turned up a (\d+)/i);
   if (rollResultM && pendingRoller) {
     event.reply('loot-roll', { player: pendingRoller, max: parseInt(rollResultM[1]), roll: parseInt(rollResultM[2]) });
     pendingRoller = null;
-    return;
   }
+}
+
+// Guild/raid loot messages — called from the 250ms batch flush
+function parseGuildLootMessages(line, event) {
+  const config = db.getLootConfig();
+  if (!config.enabled) return;
 
   const guildM = line.match(/\] (.+?) tells the guild, '(.+?)'\s*$/i)
              || line.match(/\] (You) tell the guild, '(.+?)'\s*$/i)
@@ -857,6 +964,7 @@ function parseLootMessages(line, event) {
   const speaker = guildM[1].trim();
   const msg     = guildM[2].trim();
   const msgUp   = msg.toUpperCase();
+  trackCharacterSeen(speaker, line);
 
   const bidsOpenKw = (config.bidsOpenKeyword || 'BIDS OPEN').toUpperCase();
   const closingKw  = (config.closingKeyword  || 'CLOSING IN').toUpperCase();
@@ -882,7 +990,7 @@ function parseLootMessages(line, event) {
       event.reply('loot-bids-open', { items });
       // Voice alert for any character whose desired loot is up for bid
       const itemsLower = items.map(i => i.toLowerCase());
-      const allProfiles = store.get('profiles', {});
+      const allProfiles = db.getAllProfiles();
       for (const [, profileData] of Object.entries(allProfiles)) {
         const desired = profileData.desiredLoot || [];
         const match = desired.find(d => itemsLower.includes(d.name.toLowerCase()));
@@ -1011,6 +1119,7 @@ function parseTell(line, event) {
   const m = line.match(/\] (.+?) tells you,\s*['"](.+?)['"]/i);
   const sender = m ? m[1].trim() : 'Someone';
   const msg = m ? m[2] : '';
+  trackCharacterSeen(sender, line);
   const charName = pGet('charName', '');
 
   // Normalize both sides: replace backtick with apostrophe for comparison
@@ -1045,6 +1154,11 @@ function parseTell(line, event) {
 
   speakText(sender);
   event.reply('tell-received', { sender, msg, line });
+
+  const ts = parseLineTimestamp(line) || Date.now();
+  recentTells.unshift({ sender, msg, ts });
+  if (recentTells.length > 5) recentTells.length = 5;
+  if (mainWindow) mainWindow.webContents.send('recent-tells-update', recentTells);
 }
 
 // Zone Tracking
@@ -1108,24 +1222,175 @@ function speakText(text) {
 }
 ipcMain.on('speak', (event, text) => speakText(text));
 
-// Store
-ipcMain.handle('store-get', (event, key) => store.get(key));
-ipcMain.handle('store-set', (event, key, value) => store.set(key, value));
+// ── Store / Profile IPC ───────────────────────────────────────────────────────
+// Generic store-get/set route to db helpers so the renderer needs no changes
+ipcMain.handle('store-get', (event, key) => {
+  if (key === 'lootHistory')      return db.getLootHistory();
+  if (key === 'lootConfig')       return db.getLootConfig();
+  if (key === 'bossMobInfo')      return db.getBossMobs();
+  if (key === 'bossFightSettings')return db.getBossFightSettings();
+  if (key === 'knownBosses')      return [...knownBosses];
+  if (key === 'buffTimers')       return db.getTimers('buff_timers');
+  if (key === 'debuffTimers')     return db.getTimers('debuff_timers');
+  if (key === 'raidTimers')       return db.getTimers('raid_timers');
+  if (key === 'buffTimerGroups')  return db.getTimerGroups('buff');
+  if (key === 'debuffTimerGroups')return db.getTimerGroups('debuff');
+  if (key === 'profiles')         return db.getAllProfiles();
+  if (key === 'knownLogPaths')    return db.getKnownLogPaths();
+  if (key === 'featureToggles')   return db.getFeatureToggles();
+  // profile sub-key: "profiles.X.field"
+  const profM = key.match(/^profiles\.(.+?)\.(.+)$/);
+  if (profM) { const p = db.getProfile(profM[1]); return p[profM[2]]; }
+  return db.getSetting(key);
+});
 
-ipcMain.handle('get-profile-key', () => store.get('currentProfileKey', 'default'));
-ipcMain.handle('get-profile', () => {
-  const key = store.get('currentProfileKey', 'default');
-  migrateToProfile(key);
-  return store.get(`profiles.${key}`, {});
+ipcMain.handle('store-set', (event, key, value) => {
+  if (key === 'lootHistory') {
+    // value is the full history object
+    const existing = db.getLootHistory();
+    for (const [item, rec] of Object.entries(value)) {
+      if (!existing[item]) db.setLootEntry(item, rec.winner, rec.amount, rec.type);
+    }
+    return;
+  }
+  if (key === 'lootConfig')        return db.setLootConfig(value);
+  if (key === 'bossMobInfo')       return db.setBossMobs(value);
+  if (key === 'bossFightSettings') return db.setBossFightSettings(value);
+  if (key === 'buffTimers')        return db.setTimers('buff_timers',   value);
+  if (key === 'debuffTimers')      return db.setTimers('debuff_timers', value);
+  if (key === 'raidTimers')        return db.setTimers('raid_timers',   value);
+  if (key === 'buffTimerGroups')   return db.setTimerGroups('buff',   value);
+  if (key === 'debuffTimerGroups') return db.setTimerGroups('debuff', value);
+  if (key === 'featureToggles')    return; // set individually via set-feature-toggle
+  // profile sub-key
+  const profM = key.match(/^profiles\.(.+?)\.(.+)$/);
+  if (profM) {
+    const p = db.getProfile(profM[1]);
+    p[profM[2]] = value;
+    return db.setProfile(profM[1], p);
+  }
+  db.setSetting(key, value);
 });
+
+ipcMain.handle('store-delete', (event, key) => db.setSetting(key, undefined));
+
+ipcMain.handle('get-profile-key', () => _currentProfileKey);
+ipcMain.handle('get-profile', () => db.getProfile(_currentProfileKey));
 ipcMain.handle('set-profile', (event, data) => {
-  const key = store.get('currentProfileKey', 'default');
-  const existing = store.get(`profiles.${key}`, {});
-  store.set(`profiles.${key}`, { ...existing, ...data });
+  const existing = db.getProfile(_currentProfileKey);
+  db.setProfile(_currentProfileKey, { ...existing, ...data });
 });
-ipcMain.handle('get-all-profile-keys', () => Object.keys(store.get('profiles', {})));
-ipcMain.handle('get-known-logs', () => store.get('knownLogPaths', []));
-ipcMain.handle('store-delete', (event, key) => store.delete(key));
+ipcMain.handle('get-all-profile-keys', () => {
+  return Object.keys(db.getAllProfiles());
+});
+ipcMain.handle('get-known-logs', () => db.getKnownLogPaths());
+
+// Feature toggles
+ipcMain.handle('get-feature-toggles', () => db.getFeatureToggles());
+ipcMain.handle('set-feature-toggle', (event, feature, enabled) => db.setFeatureToggle(feature, enabled));
+
+// ── Group IPC ──────────────────────────────────────────────────────────────────
+ipcMain.handle('get-current-group', () => currentGroup.map(buildGroupMember));
+
+// ── Players IPC ────────────────────────────────────────────────────────────────
+ipcMain.handle('get-all-players', () => db.getAllPlayers());
+ipcMain.handle('get-player',      (e, id) => db.getPlayer(id));
+
+ipcMain.handle('update-player', (e, id, fields) => {
+  db.updatePlayer(id, fields);
+  return db.getPlayer(id);
+});
+
+ipcMain.handle('update-character', (e, charId, fields) => {
+  db.updateCharacter(charId, fields);
+  return { success: true };
+});
+
+ipcMain.handle('set-main-character', (e, charId, playerId) => {
+  // unset all mains for this player, then set the chosen one
+  const chars = db.getPlayer(playerId)?.characters || [];
+  for (const c of chars) db.updateCharacter(c.id, { is_main: 0 });
+  db.updateCharacter(charId, { is_main: 1 });
+  return db.getPlayer(playerId);
+});
+
+ipcMain.handle('add-character', (e, playerId, name, charClass) => {
+  const existing = db.findCharacter(name);
+  if (existing) {
+    if (existing.player_id === playerId) {
+      if (charClass) db.updateCharacter(existing.id, { class: charClass });
+    } else {
+      // Move character from old player; delete old player if now empty and unflagged
+      db.moveCharacter(existing.id, playerId);
+      if (charClass) db.updateCharacter(existing.id, { class: charClass });
+    }
+  } else {
+    db.addCharacterToPlayer(playerId, name, charClass, false);
+  }
+  return { player: db.getPlayer(playerId) };
+});
+
+ipcMain.handle('remove-character', (e, charId) => {
+  db.getDb().prepare('DELETE FROM characters WHERE id = ?').run(charId);
+  return { success: true };
+});
+
+ipcMain.handle('delete-player', (e, id) => {
+  db.getDb().prepare('DELETE FROM players WHERE id = ?').run(id);
+  return { success: true };
+});
+
+ipcMain.handle('delete-stale-players', (e, days) => {
+  db.deleteStaleNonFlaggedPlayers((days || 30) * 24 * 3600 * 1000);
+  return db.getAllPlayers();
+});
+
+ipcMain.handle('seed-players-from-log', () => {
+  const logPath = db.getSetting('logPath', '');
+  if (!logPath || !fs.existsSync(logPath)) return { seeded: 0, error: 'No log file configured' };
+
+  const tsRe    = /^\[(.+?)\]/;
+  const groupRe = /\] (.+?) tells the group, '/i;
+  const guildRe = /\] (.+?) (?:tells the guild|tell the guild|say to your guild), '/i;
+  const raidRe  = /\] (.+?) tells the raid, '/i;
+  const tellRe  = /\] (.+?) tells you, '/i;
+
+  // NPC vendor filter: two-word name with no apostrophe is almost certainly an NPC
+  const isNpcName = name => name.includes(' ') && !name.includes("'") && !name.includes('`');
+
+  let seeded = 0;
+  const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+
+  for (const line of lines) {
+    let name = null;
+
+    const gm = line.match(groupRe); if (gm) name = gm[1].trim();
+    if (!name) { const m = line.match(guildRe); if (m) name = m[1].trim(); }
+    if (!name) { const m = line.match(raidRe);  if (m) name = m[1].trim(); }
+    if (!name) { const m = line.match(tellRe);  if (m) { const n = m[1].trim(); if (!isNpcName(n)) name = n; } }
+
+    if (!name || /^you$/i.test(name)) continue;
+
+    const tsM = line.match(tsRe);
+    const ts  = tsM ? (new Date(tsM[1]).getTime() || Date.now()) : Date.now();
+    db.upsertCharacterSeen(name, ts);
+    seeded++;
+  }
+
+  return { seeded };
+});
+
+ipcMain.handle('find-character', (e, name) => db.findCharacter(name));
+
+// ── Friends IPC ────────────────────────────────────────────────────────────────
+const ONLINE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+
+ipcMain.handle('get-online-friends', () => {
+  const cutoff = Date.now() - ONLINE_WINDOW_MS;
+  return db.getAllPlayers().filter(p => p.friend === 1 && p.last_seen_time && p.last_seen_time >= cutoff);
+});
+
+ipcMain.handle('get-recent-tells', () => recentTells);
 
 // Export / Import JSON
 ipcMain.handle('export-timers', async () => {
@@ -1134,15 +1399,14 @@ ipcMain.handle('export-timers', async () => {
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (!filePath) return { success: false };
-  const profileKey = store.get('currentProfileKey', 'default');
-  const profile = store.get(`profiles.${profileKey}`, {});
+  const profile = db.getProfile(_currentProfileKey);
   const data = {
-    buffTimers:        store.get('buffTimers', []),
-    debuffTimers:      store.get('debuffTimers', []),
-    buffTimerGroups:   store.get('buffTimerGroups', ['General']),
-    debuffTimerGroups: store.get('debuffTimerGroups', ['General']),
-    raidTimers:        store.get('raidTimers', []),
-    lootConfig:        store.get('lootConfig', {}),
+    buffTimers:        db.getTimers('buff_timers'),
+    debuffTimers:      db.getTimers('debuff_timers'),
+    buffTimerGroups:   db.getTimerGroups('buff'),
+    debuffTimerGroups: db.getTimerGroups('debuff'),
+    raidTimers:        db.getTimers('raid_timers'),
+    lootConfig:        db.getLootConfig(),
     discOverrides:     profile.discOverrides    || {},
     enabledDiscs:      profile.enabledDiscs     || [],
     cooldownSettings:  profile.cooldownSettings || {},
@@ -1161,22 +1425,18 @@ ipcMain.handle('import-timers', async () => {
   if (!filePaths || !filePaths[0]) return { success: false };
   try {
     const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
-    if (data.buffTimers)        store.set('buffTimers',        data.buffTimers);
-    if (data.debuffTimers)      store.set('debuffTimers',      data.debuffTimers);
-    if (data.buffTimerGroups)   store.set('buffTimerGroups',   data.buffTimerGroups);
-    if (data.debuffTimerGroups) store.set('debuffTimerGroups', data.debuffTimerGroups);
-    if (data.raidTimers)        store.set('raidTimers',        data.raidTimers);
-    if (data.lootConfig)        store.set('lootConfig',        data.lootConfig);
-    // Merge profile fields into current profile
-    const profileKey = store.get('currentProfileKey', 'default');
-    const existing = store.get(`profiles.${profileKey}`, {});
-    const profileUpdate = {};
-    if (data.discOverrides)    profileUpdate.discOverrides    = data.discOverrides;
-    if (data.enabledDiscs)     profileUpdate.enabledDiscs     = data.enabledDiscs;
-    if (data.cooldownSettings) profileUpdate.cooldownSettings = data.cooldownSettings;
-    if (Object.keys(profileUpdate).length > 0) {
-      store.set(`profiles.${profileKey}`, { ...existing, ...profileUpdate });
-    }
+    if (data.buffTimers)        db.setTimers('buff_timers',   data.buffTimers);
+    if (data.debuffTimers)      db.setTimers('debuff_timers', data.debuffTimers);
+    if (data.buffTimerGroups)   db.setTimerGroups('buff',     data.buffTimerGroups);
+    if (data.debuffTimerGroups) db.setTimerGroups('debuff',   data.debuffTimerGroups);
+    if (data.raidTimers)        db.setTimers('raid_timers',   data.raidTimers);
+    if (data.lootConfig)        db.setLootConfig(data.lootConfig);
+    const existing = db.getProfile(_currentProfileKey);
+    const update = {};
+    if (data.discOverrides)    update.discOverrides    = data.discOverrides;
+    if (data.enabledDiscs)     update.enabledDiscs     = data.enabledDiscs;
+    if (data.cooldownSettings) update.cooldownSettings = data.cooldownSettings;
+    if (Object.keys(update).length) db.setProfile(_currentProfileKey, { ...existing, ...update });
     return {
       success: true,
       buffCount:      (data.buffTimers   || []).length,
@@ -1195,8 +1455,8 @@ ipcMain.handle('export-boss-mobs', async () => {
   });
   if (!filePath) return { success: false };
   const data = {
-    bossMobInfo:       store.get('bossMobInfo', []),
-    bossFightSettings: store.get('bossFightSettings', { always: [], never: [] }),
+    bossMobInfo:       db.getBossMobs(),
+    bossFightSettings: db.getBossFightSettings(),
     knownBosses:       [...knownBosses],
     exportedAt:        new Date().toISOString(),
   };
@@ -1213,30 +1473,22 @@ ipcMain.handle('import-boss-mobs', async () => {
   if (!filePaths || !filePaths[0]) return { success: false };
   try {
     const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
-
-    // Boss mob info — merge by name
     const incoming = data.bossMobInfo || [];
-    const existing = store.get('bossMobInfo', []);
+    const existing = db.getBossMobs();
     const existingNames = new Set(existing.map(m => m.name.toLowerCase()));
     const added = incoming.filter(m => !existingNames.has(m.name.toLowerCase()));
-    store.set('bossMobInfo', [...existing, ...added]);
-
-    // Boss fight settings — merge always/never lists
+    db.setBossMobs([...existing, ...added]);
     if (data.bossFightSettings) {
-      const cur = store.get('bossFightSettings', { always: [], never: [] });
+      const cur = db.getBossFightSettings();
       const mergeList = (a, b) => [...new Set([...(a||[]), ...(b||[])].map(n => n.toLowerCase()))];
-      store.set('bossFightSettings', {
+      db.setBossFightSettings({
         always: mergeList(cur.always, data.bossFightSettings.always),
         never:  mergeList(cur.never,  data.bossFightSettings.never),
       });
     }
-
-    // Known bosses — merge into in-memory set
     if (Array.isArray(data.knownBosses)) {
-      data.knownBosses.forEach(n => knownBosses.add(n.toLowerCase()));
-      store.set('knownBosses', [...knownBosses]);
+      data.knownBosses.forEach(n => { knownBosses.add(n.toLowerCase()); db.addKnownBoss(n.toLowerCase()); });
     }
-
     return { success: true, addedCount: added.length, skippedCount: incoming.length - added.length };
   } catch (e) { return { success: false, error: e.message }; }
 });
@@ -1247,8 +1499,7 @@ ipcMain.handle('export-npc-cache', async () => {
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (!filePath) return { success: false };
-  const cache = store.get('npcCache', {});
-  const npcs = Object.values(cache).filter(Boolean);
+  const npcs = Object.values(db.getNpcCache()).filter(Boolean);
   fs.writeFileSync(filePath, JSON.stringify({ npcs, exportedAt: new Date().toISOString() }, null, 2));
   return { success: true, filePath, count: npcs.length };
 });
@@ -1263,14 +1514,13 @@ ipcMain.handle('import-npc-cache', async () => {
   try {
     const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
     const npcs = data.npcs || [];
-    const existing = store.get('npcCache', {});
+    const existing = db.getNpcCache();
     let added = 0;
     npcs.forEach(npc => {
       if (!npc || !npc.name) return;
       const key = npc.name.replace(/_/g, ' ').replace(/^(?:a|an|the)\s+/i, '').trim().toLowerCase();
-      if (!existing[key]) { existing[key] = npc; added++; }
+      if (!existing[key]) { db.setNpc(key, npc); added++; }
     });
-    store.set('npcCache', existing);
     return { success: true, addedCount: added, skippedCount: npcs.length - added };
   } catch (e) { return { success: false, error: e.message }; }
 });
@@ -1281,8 +1531,7 @@ ipcMain.handle('export-item-cache', async () => {
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (!filePath) return { success: false };
-  const cache = store.get('itemCache', {});
-  const items = Object.values(cache).filter(Boolean);
+  const items = Object.values(db.getItemCache()).filter(Boolean);
   fs.writeFileSync(filePath, JSON.stringify({ items, exportedAt: new Date().toISOString() }, null, 2));
   return { success: true, filePath, count: items.length };
 });
@@ -1297,13 +1546,11 @@ ipcMain.handle('import-item-cache', async () => {
   try {
     const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
     const items = data.items || [];
-    const existing = store.get('itemCache', {});
     let added = 0;
     items.forEach(item => {
       if (!item || !item.id) return;
-      if (!existing[item.id]) { existing[item.id] = item; added++; }
+      if (!db.getItemById(item.id)) { db.setItem(item); added++; }
     });
-    store.set('itemCache', existing);
     return { success: true, addedCount: added, skippedCount: items.length - added };
   } catch (e) { return { success: false, error: e.message }; }
 });
@@ -1518,8 +1765,7 @@ async function fetchEffectName(id) {
 }
 
 ipcMain.handle('fetch-item', async (event, itemId, force) => {
-  const cacheKey = `itemCache.${itemId}`;
-  const cached = store.get(cacheKey);
+  const cached = db.getItemById(itemId);
   if (cached && !force) return cached;
   try {
     const json = await pqdiGet(`https://www.pqdi.cc/api/v1/item/${itemId}`);
@@ -1553,7 +1799,7 @@ ipcMain.handle('fetch-item', async (event, itemId, force) => {
         proc:  procName,
       },
     };
-    store.set(cacheKey, item);
+    db.setItem(item);
     return item;
   } catch (e) {
     console.error('fetch-item error:', e);
@@ -1645,8 +1891,8 @@ ipcMain.handle('fetch-npc-drops', async (event, npcId) => {
 
 ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
   const zoneSuffix = zone ? `.${zone.toLowerCase().replace(/\s+/g, '_')}` : '';
-  const cacheKey = `npcCache.${name.toLowerCase()}${zoneSuffix}`;
-  const cached = store.get(cacheKey);
+  const cacheKey = `${name.toLowerCase()}${zoneSuffix}`;
+  const cached = db.getNpcByKey(cacheKey);
   if (cached && cached.cachedAt && (Date.now() - cached.cachedAt) < 7 * 24 * 3600 * 1000) return cached;
 
   try {
@@ -1688,7 +1934,7 @@ ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
       cachedAt:  Date.now(),
     };
 
-    store.set(cacheKey, result);
+    db.setNpc(cacheKey, result);
     return result;
   } catch (e) {
     console.error('fetch-npc-by-name error:', e);
@@ -1697,7 +1943,7 @@ ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
 });
 
 ipcMain.handle('load-equipment-file', async () => {
-  const logPath = store.get('logPath', '');
+  const logPath = db.getSetting('logPath', '');
   if (!logPath) return { error: 'No log file configured' };
   const dir  = path.dirname(logPath);
   const base = path.basename(logPath, '.txt');
@@ -1791,7 +2037,7 @@ function broadcastTraderData(charName, eqDir) {
     const items   = Object.entries(curr)
       .map(([name, count]) => ({ name, count, price: prices[name] !== undefined ? prices[name] : -1 }))
       .sort((a, b) => a.name.localeCompare(b.name));
-    const sales = store.get(`traderSales.${charName}`, []);
+    const sales = db.getTraderSales(charName);
     mainWindow.webContents.send('trader-data', { charName, items, sales });
   } catch (e) { console.error('broadcastTraderData error:', e); }
 }
@@ -1802,9 +2048,8 @@ function startTraderWatcher(trader) {
   const invPath = path.join(eqDir, `${name}-Inventory.txt`);
   if (!fs.existsSync(invPath)) { console.warn(`Trader inventory not found: ${invPath}`); return; }
 
-  const snapKey = `traderSnapshot.${name}`;
-  if (!store.get(snapKey)) {
-    store.set(snapKey, parseTraderInventory(fs.readFileSync(invPath, 'utf8')));
+  if (!db.getTraderSnapshot(name)) {
+    db.setTraderSnapshot(name, parseTraderInventory(fs.readFileSync(invPath, 'utf8')));
   }
 
   const watcher = chokidar.watch(invPath, { usePolling: true, interval: 3000, persistent: true });
@@ -1812,12 +2057,11 @@ function startTraderWatcher(trader) {
     try {
       const content = fs.readFileSync(invPath, 'utf8');
       const curr    = parseTraderInventory(content);
-      const prev    = store.get(snapKey, {});
+      const prev    = db.getTraderSnapshot(name) || {};
       const iniPath = findPriceIniPath(eqDir, name);
       const prices  = iniPath ? parsePriceIni(fs.readFileSync(iniPath, 'utf8')) : {};
       const sold    = diffInventory(prev, curr);
       if (sold.length > 0) {
-        const salesKey  = `traderSales.${name}`;
         const timestamp = Date.now();
         const newSales  = sold.map(s => ({
           name: s.name, qtySold: s.qtySold,
@@ -1825,9 +2069,9 @@ function startTraderWatcher(trader) {
           total: (prices[s.name] || 0) * s.qtySold,
           soldAt: timestamp,
         }));
-        store.set(salesKey, [...store.get(salesKey, []), ...newSales]);
+        db.addTraderSales(name, newSales);
       }
-      store.set(snapKey, curr);
+      db.setTraderSnapshot(name, curr);
       broadcastTraderData(name, eqDir);
     } catch (e) { console.error('Trader watcher error:', e); }
   });
@@ -1835,23 +2079,23 @@ function startTraderWatcher(trader) {
 }
 
 function initTraderWatchers() {
-  store.get('traders', []).forEach(t => startTraderWatcher(t));
+  db.getTraders().forEach(t => startTraderWatcher(t));
 }
 
-ipcMain.handle('get-traders', () => store.get('traders', []));
+ipcMain.handle('get-traders', () => db.getTraders());
 
 ipcMain.handle('set-traders', (event, traders) => {
-  const old = store.get('traders', []);
+  const old = db.getTraders();
   old.filter(t => !traders.find(n => n.name === t.name)).forEach(t => {
     if (traderWatchers[t.name]) { traderWatchers[t.name].close(); delete traderWatchers[t.name]; }
   });
   traders.filter(t => !old.find(o => o.name === t.name)).forEach(t => startTraderWatcher(t));
-  store.set('traders', traders);
+  db.setTraders(traders);
   return { success: true };
 });
 
 ipcMain.handle('get-trader-data', (event, charName) => {
-  const trader = store.get('traders', []).find(t => t.name === charName);
+  const trader = db.getTraders().find(t => t.name === charName);
   if (!trader) return null;
   const invPath = path.join(trader.eqDir, `${charName}-Inventory.txt`);
   const iniPath = findPriceIniPath(trader.eqDir, charName);
@@ -1863,24 +2107,24 @@ ipcMain.handle('get-trader-data', (event, charName) => {
       .map(([name, count]) => ({ name, count, price: prices[name] !== undefined ? prices[name] : -1 }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
-  return { items, sales: store.get(`traderSales.${charName}`, []) };
+  return { items, sales: db.getTraderSales(charName) };
 });
 
 ipcMain.handle('clear-trader-sales', (event, charName) => {
-  store.delete(`traderSales.${charName}`);
+  db.clearTraderSales(charName);
   return { success: true };
 });
 
 // ── Boss Fight IPC ─────────────────────────────────────────────────────────────
 ipcMain.handle('get-boss-fights',          ()           => bossFights);
-ipcMain.handle('get-boss-fight-settings',  ()           => store.get('bossFightSettings', { always: [], never: [] }));
-ipcMain.handle('set-boss-fight-settings',  (e, val)     => store.set('bossFightSettings', val));
-ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; store.delete('bossFightsHistory'); });
+ipcMain.handle('get-boss-fight-settings',  ()           => db.getBossFightSettings());
+ipcMain.handle('set-boss-fight-settings',  (e, val)     => db.setBossFightSettings(val));
+ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; db.clearBossFightsHistory(); });
 
 ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
   if (!logPath || !fs.existsSync(logPath)) return { seeded: 0 };
 
-  const settings   = store.get('bossFightSettings', {});
+  const settings   = db.getBossFightSettings();
   const alwaysList = (settings.always || []).map(n => n.toLowerCase());
   const neverList  = (settings.never  || []).map(n => n.toLowerCase());
 
@@ -1952,6 +2196,7 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
     .reverse();
 
   bossFights = records;
-  store.set('bossFightsHistory', bossFights);
+  db.clearBossFightsHistory();
+  records.forEach(f => db.addBossFight(f));
   return { seeded: records.length };
 });
