@@ -1,7 +1,7 @@
 # Erek's Everquest Parser
 
 A native Linux EverQuest log parser with DPS meter, buff/debuff timers, boss mob tracker,
-loot bidding, loot wishlist, and audio triggers. Built with Electron — no Wine required.
+loot bidding, loot wishlist, player/friend tracking, and audio triggers. Built with Electron — no Wine required.
 
 ## Prerequisites
 
@@ -67,6 +67,18 @@ npm start
 3. Enter your character name and class (e.g. `Erek` / `Beastlord`) for DPS highlighting and loot usability checks
 4. Click **Watch** then **Save Settings**
 
+## Storage
+
+All persistent data is stored in a single **SQLite database** at:
+
+```
+~/.config/ereks-everquest-parser/data.db
+```
+
+This includes player records, timer definitions, settings, DPS history, buff data, loot config, boss fights, trader data, and item/NPC cache. There is no longer any JSON settings file — everything lives in the database. If you need to reset the app to a clean state, delete `data.db` and restart.
+
+The first time you run a new version, any data from the old electron-store format is automatically migrated into SQLite and the old store is left untouched as a backup.
+
 ## Features
 
 ### DPS Meter
@@ -84,6 +96,13 @@ npm start
 - Pulls from your saved boss mob list first; falls back to a live PQDI lookup by name
 - Debounced 500ms to avoid flicker when switching targets
 - Auto-hides 8 seconds after the mob dies (dismissable manually)
+
+### Group Panel
+- Appears automatically at the top of the main view whenever you are in a group
+- One card per member showing class icon, character name, and flag indicators (friend ★, Do Not Group, Do Not Help)
+- Updates in real time as players join or leave the group
+- **Add Friend** and **Blacklist** quick-action buttons on each card
+- Class icons for all 16 EQ classes; falls back to a colored abbreviation badge if the image is missing
 
 ### Boss Mob List
 - Maintain a roster of raid bosses with HP, level, zone, resists, and notes
@@ -135,12 +154,39 @@ npm start
 - **I Want This** button on mob loot items adds them to your wishlist in one click
 - Item data pulled from pqdi.cc API and cached locally; refreshed automatically when syncing a mob
 
+### Player & Friend Tracking
+
+Player records are automatically created when a character is seen speaking in group chat,
+guild chat, raid chat, or an incoming tell. Auction, OOC, shout, and chat channels are
+ignored.
+
+#### Players Tab
+- Full list of all known players, searchable by name
+- Each player record stores: friend flag, Do Not Group, Do Not Help, freeform notes, and a list of linked characters with class and main designation
+- Click any row to open the **edit modal**: manage flags, notes, and the character list
+- **Linking alts** — add multiple character names to one player record; designate a main; moving a character from another player's record automatically cleans up the old record if it becomes empty
+- **Load from Log** — scans your full log history and seeds the player database from all group/guild/raid/tell activity, preserving the original timestamps
+- **Cleanup** — bulk-delete unflagged, never-grouped players not seen in the last N days
+
+#### Online Friends & Recent Tells
+Shown at the top of the Players tab:
+- **Online Friends** — players flagged as friends seen in chat within the last 30 minutes; displays active character name and designated main if different (e.g. `Bevan (main: Condiar)`)
+- **Recent Tells** — last 5 incoming tells, most recent first, with sender, message, and timestamp
+- Both sections have **Add Friend** and **Blacklist** quick-action buttons (Blacklist sets Do Not Group + Do Not Help in one click)
+- Updates live as new tells arrive; refreshes immediately when you flag someone as a friend
+
 ### Audio Triggers
 - Regex pattern matching against live log lines
 - Text-to-speech alerts (uses system TTS, no audio files needed)
 - Use **PQDI Spell Lookup** to auto-fill cast text from spell data
 - Per-trigger enable/disable toggle
 - Test button to preview TTS
+
+### Feature Toggles
+Heavy features can be individually disabled from the Setup tab if they impact performance:
+- **Player tracking** — auto-create player records from chat activity
+- **Pet window** — unassigned pet tracking (planned)
+- **Online inference** — infer online status from recent chat (used by the Online Friends list)
 
 ### Live Log
 - Scrolling view of all log lines
@@ -221,7 +267,7 @@ pqdi.cc on first use.
 
 ```bash
 npm run build
-# Output: dist/Erek's Everquest Parser-1.2.0.AppImage
+# Output: dist/Erek's Everquest Parser-1.3.0.AppImage
 ```
 
 ## Updating
@@ -230,6 +276,9 @@ npm run build
 git pull
 npm install
 ```
+
+> **Note:** After `git pull`, the app will automatically migrate any new schema changes
+> on first launch. You do not need to do anything with the database manually.
 
 ## License
 
