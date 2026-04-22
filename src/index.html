@@ -1307,6 +1307,14 @@
           <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent3);">GROUP</div>
         </div>
         <div id="group-members-bar" style="display:flex;gap:1px;background:var(--border);min-height:72px;"></div>
+        <!-- Alpha Loot rotation bar — hidden unless alpha is enabled -->
+        <div id="alpha-bar" style="display:none;align-items:center;gap:10px;padding:5px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-wrap:wrap;">
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent4);text-transform:uppercase;flex-shrink:0;">Alpha</span>
+          <div id="alpha-rotation-display" style="display:flex;gap:6px;align-items:center;flex:1;flex-wrap:wrap;"></div>
+          <button class="btn" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="skipAlpha()">Skip</button>
+          <button class="btn" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="resetAlphaRotation()">Reset</button>
+          <button class="btn success" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="postAlpha()">Post</button>
+        </div>
       </div>
 
       <!-- AA Timers: always visible when any AA is enabled -->
@@ -1378,6 +1386,13 @@
             <span class="dps-val-c" id="enemy-dps" style="font-size:12px;color:var(--accent2);">0</span><span class="dps-lbl-c">dps</span>
           </div>
           <div id="combat-indicator">IDLE</div>
+        </div>
+        <!-- Unassigned Pets panel — hidden when empty -->
+        <div id="pet-unassigned-panel" style="display:none;flex-direction:column;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg2);">
+          <div style="padding:4px 10px;display:flex;align-items:center;gap:8px;">
+            <span style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--accent4);text-transform:uppercase;">Unassigned Pets</span>
+          </div>
+          <div id="pet-unassigned-list" style="display:flex;flex-direction:column;gap:2px;padding:0 10px 6px;"></div>
         </div>
         <div style="padding:10px;overflow-y:auto;flex:1;min-height:0;">
           <div id="player-list">
@@ -1656,6 +1671,25 @@
         <div id="desired-loot-search-results" style="display:none;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
 
         <div id="gear-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      </div>
+
+      <!-- ── Alpha Loot Tracker ── -->
+      <div class="form-section" style="margin-top:16px;">
+        <div class="section-title">Alpha Loot Tracker</div>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
+          Tracks which group member is next for alpha loot. Rotation advances automatically when a listed item is looted.
+          The rotation bar appears in the Group panel while you're in a group.
+        </p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="alpha-enabled" class="toggle" onchange="saveAlphaConfig()"/>
+          <label style="font-size:12px;cursor:pointer;" for="alpha-enabled">Enable Alpha Loot Tracker</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="text" id="alpha-item-input" placeholder="Item name…" style="max-width:280px;"
+            onkeydown="if(event.key==='Enter')alphaAddItem()"/>
+          <button class="btn" onclick="alphaAddItem()">Add Item</button>
+        </div>
+        <div id="alpha-item-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
 
       <div class="form-section" style="margin-top:16px;">
@@ -2194,6 +2228,7 @@ async function init() {
   await loadBossMobInfo();
   await loadPlayers();
   await loadCurrentGroup();
+  await loadAlphaConfig();
   await loadFriendsTab();
   // Seed fights from log if store is empty and we have a log path
   if (logPath && !bossFightList.length) {
@@ -2413,11 +2448,13 @@ ipcRenderer.on('combat-end', (e, summary) => {
   document.getElementById('combat-indicator').textContent = 'IDLE';
   lastCombatSummary = summary;
   renderDPS(summary);
+  renderUnassignedPets([]);
 });
 
 ipcRenderer.on('combat-update', (e, summary) => {
   lastCombatSummary = summary;
   renderDPS(summary);
+  renderUnassignedPets(summary.unassigned);
 });
 
 ipcRenderer.on('buff-started', (e, { id, name, recipient, endsAt, durationSeconds, group, isGroupSpell }) => {
@@ -4921,11 +4958,158 @@ function renderGroupPanel(members) {
   }).join('');
 }
 
-ipcRenderer.on('group-update', (e, members) => renderGroupPanel(members));
+ipcRenderer.on('group-update', (e, members) => {
+  window._currentGroupNames = members.map(m => m.name);
+  renderGroupPanel(members);
+});
 
 async function loadCurrentGroup() {
   const members = await ipcRenderer.invoke('get-current-group');
   renderGroupPanel(members);
+  const state = await ipcRenderer.invoke('get-alpha-state');
+  renderAlphaBar(state);
+}
+
+// ── Alpha Loot ────────────────────────────────────────────────────────────────
+let alphaConfig = { enabled: false, items: [] };
+let alphaState  = { rotation: [], lastLooted: null };
+
+async function loadAlphaConfig() {
+  alphaConfig = await ipcRenderer.invoke('get-alpha-config');
+  document.getElementById('alpha-enabled').checked = !!alphaConfig.enabled;
+  renderAlphaItemList();
+}
+
+function renderAlphaItemList() {
+  const el = document.getElementById('alpha-item-list');
+  if (!alphaConfig.items?.length) {
+    el.innerHTML = `<div style="color:var(--text-dim);font-family:var(--mono);font-size:11px;">No items configured.</div>`;
+    return;
+  }
+  el.innerHTML = alphaConfig.items.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);">
+      <input type="checkbox" class="toggle" ${item.active ? 'checked' : ''} onchange="alphaToggleItem(${i}, this.checked)"/>
+      <span style="flex:1;font-family:var(--mono);font-size:11px;${item.active ? '' : 'color:var(--text-dim);text-decoration:line-through;'}">${esc(item.name)}</span>
+      <button class="btn danger" style="padding:1px 7px;font-size:9px;" onclick="alphaRemoveItem(${i})">✕</button>
+    </div>`).join('');
+}
+
+async function saveAlphaConfig() {
+  alphaConfig.enabled = document.getElementById('alpha-enabled').checked;
+  await ipcRenderer.invoke('save-alpha-config', alphaConfig);
+  renderAlphaItemList();
+  const state = await ipcRenderer.invoke('get-alpha-state');
+  renderAlphaBar(state);
+}
+
+async function alphaAddItem() {
+  const input = document.getElementById('alpha-item-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (alphaConfig.items.some(i => i.name.toLowerCase() === name.toLowerCase())) {
+    input.value = '';
+    return;
+  }
+  alphaConfig.items.push({ name, active: true });
+  input.value = '';
+  await saveAlphaConfig();
+}
+
+async function alphaRemoveItem(idx) {
+  alphaConfig.items.splice(idx, 1);
+  await saveAlphaConfig();
+}
+
+async function alphaToggleItem(idx, val) {
+  alphaConfig.items[idx].active = val;
+  await saveAlphaConfig();
+}
+
+function renderAlphaBar(state = {}) {
+  alphaState = state;
+  const { rotation, lastLooted } = alphaState;
+  const bar = document.getElementById('alpha-bar');
+  const disp = document.getElementById('alpha-rotation-display');
+  if (!alphaConfig.enabled || !rotation?.length) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  disp.innerHTML = rotation.map((name, i) => {
+    const isCurrent = i === 0;
+    return `<span style="font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:3px;
+      background:${isCurrent ? 'rgba(124,255,107,0.15)' : 'var(--bg3)'};
+      color:${isCurrent ? 'var(--accent3)' : 'var(--text-dim)'};
+      border:1px solid ${isCurrent ? 'rgba(124,255,107,0.4)' : 'var(--border)'};
+      font-weight:${isCurrent ? '700' : '400'};">
+      ${isCurrent ? '▶ ' : ''}${esc(name)}
+    </span>`;
+  }).join('');
+  if (lastLooted) {
+    disp.innerHTML += `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-left:4px;">
+      (last: ${esc(lastLooted.name)} looted ${esc(lastLooted.item)})
+    </span>`;
+  }
+}
+
+async function skipAlpha() {
+  const state = await ipcRenderer.invoke('skip-alpha');
+  renderAlphaBar(state);
+}
+
+async function resetAlphaRotation() {
+  const state = await ipcRenderer.invoke('reset-alpha-rotation');
+  renderAlphaBar(state);
+}
+
+function postAlpha() {
+  const { rotation, lastLooted } = alphaState;
+  if (!rotation?.length) return;
+  const current = rotation[0];
+  const next    = rotation[1];
+  let msg = '';
+  if (lastLooted) msg += `${lastLooted.name} looted ${lastLooted.item}. `;
+  msg += `Next alpha: ${current}`;
+  if (next) msg += ` (after: ${next})`;
+  sendLineToEQ(`/gsay ${msg}`);
+}
+
+ipcRenderer.on('alpha-update', (e, state) => renderAlphaBar(state));
+
+// ── Pet Tracking ──────────────────────────────────────────────────────────────
+function renderUnassignedPets(unassigned) {
+  const panel = document.getElementById('pet-unassigned-panel');
+  const list  = document.getElementById('pet-unassigned-list');
+  if (!unassigned?.length) {
+    panel.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  panel.style.display = 'flex';
+  const groupNames = [...(window._currentGroupNames || [])];
+  list.innerHTML = unassigned.map(p => {
+    const opts = groupNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent4);min-width:120px;">${esc(p.name)}</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);min-width:80px;">${p.totalDmg.toLocaleString()} dmg</span>
+      <select id="pet-owner-${esc(p.name)}" style="padding:2px 6px;font-size:10px;max-width:130px;">
+        <option value="">— assign to —</option>${opts}
+      </select>
+      <button class="btn" style="padding:1px 7px;font-size:9px;" onclick="assignPet(${JSON.stringify(p.name)})">Assign</button>
+      <button class="btn" style="padding:1px 7px;font-size:9px;" onclick="dismissPet(${JSON.stringify(p.name)})">Dismiss</button>
+    </div>`;
+  }).join('');
+}
+
+async function assignPet(petName) {
+  const sel = document.getElementById(`pet-owner-${petName}`);
+  const owner = sel?.value;
+  if (!owner) return;
+  await ipcRenderer.invoke('assign-pet', petName, owner);
+}
+
+async function dismissPet(petName) {
+  await ipcRenderer.invoke('dismiss-pet', petName);
 }
 
 // ── Friends Tab ───────────────────────────────────────────────────────────────

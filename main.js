@@ -70,11 +70,16 @@ let bossFights = [];           // loaded from db after init
 let activeFights = {};         // key: bossName.toLowerCase() → { bossName, startTime, players:{} }
 let pendingSummon = null;      // { owner } — set when a summon line is seen, cleared on first pet hit
 let petOwners = {};            // { petNameLower -> ownerName } — current session only (owners change)
+let dismissedPets = new Set(); // pet names dismissed from unassigned panel this session
 let knownPetNames = new Set(); // loaded from db after init
 let knownPlayers  = new Set(); // loaded from db after init
 let knownBosses   = new Set(); // loaded from db after init
 let currentGroup  = [];        // character names currently in group (session only)
 let recentTells   = [];        // last 5 incoming tells [{sender, msg, ts}]
+let alphaRotation = [];        // ordered player names; index 0 = current
+let alphaLastLooted = null;    // { name, item } — last alpha loot event
+
+const PET_CLASSES = ['Magician', 'Necromancer', 'Enchanter', 'Bard', 'Druid'];
 const BOSS_DMG_THRESHOLD = 40000;
 
 function createWindow() {
@@ -248,7 +253,9 @@ function parseGroupMembership(line, event) {
     if (!currentGroup.includes(name)) currentGroup.push(name);
     if (currentGroup.length > 6) currentGroup.shift();
     if (db.isFeatureEnabled('player_tracking')) db.recordGrouped(name, ts);
+    syncAlphaRotation({ added: name });
     emitGroupUpdate(event);
+    emitAlphaUpdate(event);
     return;
   }
 
@@ -256,15 +263,20 @@ function parseGroupMembership(line, event) {
   if (/\] You have joined the group\./i.test(line)) {
     const myName = pGet('charName', '');
     if (myName && !currentGroup.includes(myName)) currentGroup.push(myName);
+    syncAlphaRotation({ added: myName });
     emitGroupUpdate(event);
+    emitAlphaUpdate(event);
     return;
   }
 
   // Another player leaves
   const leaveM = line.match(/\] (.+?) has left the group\./i);
   if (leaveM) {
-    currentGroup = currentGroup.filter(n => n !== leaveM[1].trim());
+    const name = leaveM[1].trim();
+    currentGroup = currentGroup.filter(n => n !== name);
+    syncAlphaRotation({ removed: name });
     emitGroupUpdate(event);
+    emitAlphaUpdate(event);
     return;
   }
 
@@ -272,8 +284,56 @@ function parseGroupMembership(line, event) {
   if (/\] You have been removed from the group\./i.test(line)
    || /\] Your group has been disbanded\./i.test(line)) {
     currentGroup = [];
+    alphaRotation = [];
     emitGroupUpdate(event);
+    emitAlphaUpdate(event);
   }
+}
+
+// ── Alpha Loot Helpers ─────────────────────────────────────────────────────────
+function getAlphaConfig() {
+  try { return JSON.parse(db.getSetting('alphaLoot', 'null')) || { enabled: false, items: [] }; }
+  catch { return { enabled: false, items: [] }; }
+}
+
+function syncAlphaRotation({ added, removed } = {}) {
+  const cfg = getAlphaConfig();
+  if (!cfg.enabled) return;
+  if (removed) {
+    alphaRotation = alphaRotation.filter(n => n.toLowerCase() !== removed.toLowerCase());
+  }
+  if (added) {
+    // Re-slot alphabetically (treat rejoin as new)
+    alphaRotation = alphaRotation.filter(n => n.toLowerCase() !== added.toLowerCase());
+    const idx = alphaRotation.findIndex(n => n.toLowerCase() > added.toLowerCase());
+    if (idx === -1) alphaRotation.push(added);
+    else alphaRotation.splice(idx, 0, added);
+  }
+}
+
+function emitAlphaUpdate(event) {
+  const payload = { rotation: alphaRotation, lastLooted: alphaLastLooted };
+  if (event) event.reply('alpha-update', payload);
+  else if (mainWindow) mainWindow.webContents.send('alpha-update', payload);
+}
+
+function parseAlphaLoot(line, event) {
+  const cfg = getAlphaConfig();
+  if (!cfg.enabled || !cfg.items?.some(i => i.active)) return;
+  // "You have looted a Fungi Tunic from ..."  or  "Erek has looted a Fungi Tunic from ..."
+  const m = line.match(/\] (You|.+?) (?:have )?looted (?:a |an )?(.+?) (?:from |\.)/i);
+  if (!m) return;
+  const item = m[2].trim();
+  const match = cfg.items.find(i => i.active && i.name.toLowerCase() === item.toLowerCase());
+  if (!match) return;
+  const playerName = m[1] === 'You' ? (pGet('charName', '') || 'You') : m[1].trim();
+  alphaLastLooted = { name: playerName, item };
+  // Advance rotation: current goes to back
+  if (alphaRotation.length > 0) {
+    const current = alphaRotation.shift();
+    alphaRotation.push(current);
+  }
+  emitAlphaUpdate(event);
 }
 
 // Line Processing
@@ -315,6 +375,7 @@ function processLine(line, event) {
   parseZone(line, event);
   parseBossFight(line, event);
   parseCurrentTarget(line, event);
+  parseAlphaLoot(line, event);
 
   if (GUILD_RAID_LINE_RE.test(line)) guildRaidQueue.push({ line, event });
 }
@@ -439,23 +500,84 @@ function mergeWarders(playersMap) {
   return result;
 }
 
+function applyPetRollup(playersMap) {
+  const result = {};
+  for (const [name, data] of Object.entries(playersMap)) {
+    const owner = petOwners[name.toLowerCase()];
+    if (owner) {
+      if (!result[owner]) result[owner] = { totalDmg: 0, spellDmg: 0, meleeDmg: 0, hits: 0 };
+      result[owner].totalDmg += data.totalDmg;
+      result[owner].spellDmg += data.spellDmg;
+      result[owner].meleeDmg += data.meleeDmg;
+      result[owner].hits     += data.hits;
+    } else {
+      result[name] = result[name]
+        ? { totalDmg: result[name].totalDmg + data.totalDmg, spellDmg: result[name].spellDmg + data.spellDmg,
+            meleeDmg: result[name].meleeDmg + data.meleeDmg, hits: result[name].hits + data.hits }
+        : { ...data };
+    }
+  }
+  return result;
+}
+
+function getUnassignedPets(playersMap) {
+  if (!db.isFeatureEnabled('pet_window')) return [];
+  const myName = pGet('charName', '').toLowerCase();
+  const unassigned = Object.keys(playersMap || {}).filter(name => {
+    const nl = name.toLowerCase();
+    return nl !== 'you' &&
+           nl !== myName &&
+           !petOwners[nl] &&
+           !dismissedPets.has(nl) &&
+           !currentGroup.some(g => g.toLowerCase() === nl) &&
+           !knownPlayers.has(nl);
+  });
+
+  // Auto-associate: exactly 1 unknown + exactly 1 pet-class group member
+  if (unassigned.length === 1) {
+    const petClassMembers = currentGroup.filter(name => {
+      const m = buildGroupMember(name);
+      return PET_CLASSES.includes(m.class);
+    });
+    if (petClassMembers.length === 1) {
+      petOwners[unassigned[0].toLowerCase()] = petClassMembers[0];
+      return [];
+    }
+  }
+  return unassigned;
+}
+
 function buildCombatSummary() {
   const elapsed = Math.max(1, (Date.now() - combatData.startTime) / 1000);
+  const rolledUp = applyPetRollup(mergeWarders(combatData.players || {}));
+  const unassignedNames = getUnassignedPets(rolledUp);
   const toRows = (map, total) => Object.entries(map || {}).map(([name, d]) => ({
     name, totalDmg: d.totalDmg, hits: d.hits,
     dps: Math.round(d.totalDmg / elapsed),
     pct: total > 0 ? Math.round((d.totalDmg / total) * 100) : 0,
   })).sort((a, b) => b.totalDmg - a.totalDmg);
-  const players = toRows(mergeWarders(combatData.players), combatData.totalDmg);
-  const enemies = toRows(combatData.enemies, combatData.enemyTotalDmg);
+
+  // Build player rows excluding unassigned pets
+  const playerMap = Object.fromEntries(
+    Object.entries(rolledUp).filter(([name]) => !unassignedNames.includes(name))
+  );
+  const assignedTotal = Object.values(playerMap).reduce((s, d) => s + d.totalDmg, 0);
+  const players  = toRows(playerMap, assignedTotal);
+  const enemies  = toRows(combatData.enemies, combatData.enemyTotalDmg);
+  const unassigned = unassignedNames.map(name => {
+    const d = rolledUp[name];
+    return { name, totalDmg: d.totalDmg, hits: d.hits, dps: Math.round(d.totalDmg / elapsed) };
+  });
+
   return {
     elapsed: Math.round(elapsed),
-    totalDmg: combatData.totalDmg,
-    dps: Math.round(combatData.totalDmg / elapsed),
+    totalDmg: assignedTotal,
+    dps: Math.round(assignedTotal / elapsed),
     enemyTotalDmg: combatData.enemyTotalDmg,
     enemyDps: Math.round(combatData.enemyTotalDmg / elapsed),
     players,
     enemies,
+    unassigned,
   };
 }
 
@@ -1391,6 +1513,57 @@ ipcMain.handle('get-online-friends', () => {
 });
 
 ipcMain.handle('get-recent-tells', () => recentTells);
+
+// ── Pet Tracking IPC ───────────────────────────────────────────────────────────
+ipcMain.handle('assign-pet', (e, petName, ownerName) => {
+  petOwners[petName.toLowerCase()] = ownerName;
+  dismissedPets.delete(petName.toLowerCase());
+  if (mainWindow && combatActive) mainWindow.webContents.send('combat-update', buildCombatSummary());
+  return { ok: true };
+});
+
+ipcMain.handle('dismiss-pet', (e, petName) => {
+  dismissedPets.add(petName.toLowerCase());
+  if (mainWindow && combatActive) mainWindow.webContents.send('combat-update', buildCombatSummary());
+  return { ok: true };
+});
+
+// ── Alpha Loot IPC ─────────────────────────────────────────────────────────────
+ipcMain.handle('get-alpha-config', () => getAlphaConfig());
+
+ipcMain.handle('save-alpha-config', (e, cfg) => {
+  db.setSetting('alphaLoot', JSON.stringify(cfg));
+  // Re-sync rotation if enabled state changed
+  if (!cfg.enabled) alphaRotation = [];
+  return { ok: true };
+});
+
+ipcMain.handle('get-alpha-state', () => ({
+  rotation: alphaRotation,
+  lastLooted: alphaLastLooted,
+}));
+
+ipcMain.handle('skip-alpha', (e) => {
+  if (alphaRotation.length > 0) {
+    const skipped = alphaRotation.shift();
+    alphaRotation.push(skipped);
+  }
+  emitAlphaUpdate(null);
+  return { rotation: alphaRotation };
+});
+
+ipcMain.handle('reset-alpha-rotation', () => {
+  // Re-build alphabetically from current group
+  const cfg = getAlphaConfig();
+  if (cfg.enabled) {
+    alphaRotation = [...currentGroup].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  } else {
+    alphaRotation = [];
+  }
+  alphaLastLooted = null;
+  emitAlphaUpdate(null);
+  return { rotation: alphaRotation };
+});
 
 // Export / Import JSON
 ipcMain.handle('export-timers', async () => {
