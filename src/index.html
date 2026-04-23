@@ -1059,14 +1059,14 @@
 
 <div id="nav">
   <div class="nav-tab active" data-tab="dashboard">Dashboard</div>
-  <div class="nav-tab" data-tab="setup">Setup</div>
+  <div class="nav-tab" data-tab="players">Socials</div>
+  <div class="nav-tab" data-tab="loot">Loot</div>
+  <div class="nav-tab" data-tab="fights">Fights</div>
   <div class="nav-tab" data-tab="timers">Timers</div>
   <div class="nav-tab" data-tab="raid">Raid</div>
-  <div class="nav-tab" data-tab="loot">Loot</div>
   <div class="nav-tab" data-tab="trader">Trader</div>
-  <div class="nav-tab" data-tab="fights">Fights</div>
   <div class="nav-tab" data-tab="mobs">Mobs</div>
-  <div class="nav-tab" data-tab="players">Players</div>
+  <div class="nav-tab" data-tab="setup">Setup</div>
   <div class="nav-tab" data-tab="log">Log</div>
 </div>
 
@@ -1608,7 +1608,47 @@
   <!-- ── LOOT TAB ── -->
   <div class="tab-panel" id="tab-loot">
     <div class="loot-setup-wrap">
+      <!-- ── Equipment & Desired Loot ── -->
       <div class="form-section">
+        <div class="section-title">Equipment &amp; Desired Loot</div>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Per-character. Load your <em>CharacterName</em>-Inventory.txt to auto-populate current gear. Add desired items to receive voice alerts when they're put up for bid.</p>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="loadEquipmentFile(true)">Refresh Equipment</button>
+          <span id="gear-load-status" style="font-size:10px;color:var(--text-dim);"></span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <input type="text" id="desired-loot-search" placeholder="Search item to add to desired loot…" style="max-width:260px;" onkeydown="if(event.key==='Enter')searchDesiredLoot()"/>
+          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="searchDesiredLoot()">Search</button>
+          <span id="desired-loot-search-status" style="font-size:10px;color:var(--text-dim);"></span>
+        </div>
+        <div id="desired-loot-search-results" style="display:none;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
+
+        <div id="gear-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+      </div>
+
+      <!-- ── Alpha Loot Tracker ── -->
+      <div class="form-section" style="margin-top:16px;">
+        <div class="section-title">Alpha Loot Tracker</div>
+        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
+          Tracks which group member is next for alpha loot. Rotation advances automatically when a listed item is looted.
+          The rotation bar appears in the Group panel while you're in a group.
+        </p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input type="checkbox" id="alpha-enabled" class="toggle" onchange="saveAlphaConfig()"/>
+          <label style="font-size:12px;cursor:pointer;" for="alpha-enabled">Enable Alpha Loot Tracker</label>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="text" id="alpha-item-input" placeholder="Item name…" style="max-width:280px;"
+            onkeydown="if(event.key==='Enter')alphaAddItem()"/>
+          <button class="btn" onclick="alphaAddItem()">Add Item</button>
+        </div>
+        <div id="alpha-item-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
+      </div>
+
+      <!-- ── Loot Bidding Config ── -->
+      <div class="form-section" style="margin-top:16px;">
         <div class="section-title">Loot Bidding</div>
         <p style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">Configure guild loot message patterns. Settings are global (not per-character).</p>
 
@@ -1651,45 +1691,6 @@
         </div>
 
         <button class="btn success" onclick="saveLootConfig()">Save Settings</button>
-      </div>
-
-      <!-- ── Equipment & Desired Loot ── -->
-      <div class="form-section" style="margin-top:16px;">
-        <div class="section-title">Equipment &amp; Desired Loot</div>
-        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Per-character. Load your <em>CharacterName</em>-Inventory.txt to auto-populate current gear. Add desired items to receive voice alerts when they're put up for bid.</p>
-
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="loadEquipmentFile(true)">Refresh Equipment</button>
-          <span id="gear-load-status" style="font-size:10px;color:var(--text-dim);"></span>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <input type="text" id="desired-loot-search" placeholder="Search item to add to desired loot…" style="max-width:260px;" onkeydown="if(event.key==='Enter')searchDesiredLoot()"/>
-          <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="searchDesiredLoot()">Search</button>
-          <span id="desired-loot-search-status" style="font-size:10px;color:var(--text-dim);"></span>
-        </div>
-        <div id="desired-loot-search-results" style="display:none;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
-
-        <div id="gear-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-      </div>
-
-      <!-- ── Alpha Loot Tracker ── -->
-      <div class="form-section" style="margin-top:16px;">
-        <div class="section-title">Alpha Loot Tracker</div>
-        <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
-          Tracks which group member is next for alpha loot. Rotation advances automatically when a listed item is looted.
-          The rotation bar appears in the Group panel while you're in a group.
-        </p>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-          <input type="checkbox" id="alpha-enabled" class="toggle" onchange="saveAlphaConfig()"/>
-          <label style="font-size:12px;cursor:pointer;" for="alpha-enabled">Enable Alpha Loot Tracker</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <input type="text" id="alpha-item-input" placeholder="Item name…" style="max-width:280px;"
-            onkeydown="if(event.key==='Enter')alphaAddItem()"/>
-          <button class="btn" onclick="alphaAddItem()">Add Item</button>
-        </div>
-        <div id="alpha-item-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
 
       <div class="form-section" style="margin-top:16px;">
@@ -5148,10 +5149,28 @@ function renderOnlineFriends(friends) {
   }
   el.innerHTML = friends.map(p => {
     const name = getDisplayName(p);
-    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);">
-      <span style="color:var(--accent4);font-size:13px;">★</span>
+    const main = p.characters?.find(c => c.is_main) || p.characters?.[0];
+    const cls  = main?.class || '';
+    const info = CLASS_INFO[cls];
+    const alts = (p.characters || []).filter(c => c !== main);
+    const allChars = [main, ...alts].filter(Boolean);
+    const tooltip = allChars.length
+      ? 'Plays: ' + allChars.map(c => c.name + (c.class ? ` (${c.class})` : '')).join(', ')
+      : '';
+    const badgeSize = 'width:18px;height:18px;border-radius:3px;font-size:8px;';
+    let badge;
+    if (info) {
+      const iconPath = `../assets/class-icons/${cls.toLowerCase().replace(/ /g, '')}.webp`;
+      badge = `<img src="${iconPath}" class="group-class-badge"
+        style="object-fit:contain;${badgeSize}background:${info.color}22;border:1px solid ${info.color}44;"
+        onerror="this.outerHTML='<div class=\\'group-class-badge\\' style=\\'${badgeSize}background:${info.color}22;color:${info.color};border:1px solid ${info.color}44;\\'>${info.abbr}</div>'"
+        alt="${esc(cls)}"${tooltip ? ` title="${esc(tooltip)}"` : ''}>`;
+    } else {
+      badge = `<div class="group-class-badge" style="${badgeSize}background:#1e2a4a;color:var(--text-dim);border:1px solid var(--border);"${tooltip ? ` title="${esc(tooltip)}"` : ''}>?</div>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);"${tooltip ? ` title="${esc(tooltip)}"` : ''}>
+      ${badge}
       <span style="font-family:var(--mono);font-size:12px;flex:1;">${name}</span>
-      <div style="display:flex;gap:4px;">${friendQuickActions(p.id, p.friend, p.do_not_group, p.do_not_help)}</div>
     </div>`;
   }).join('');
 }
