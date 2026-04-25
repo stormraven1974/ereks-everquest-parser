@@ -86,7 +86,7 @@ The first time you run a new version, any data from the old electron-store forma
 - Shows all players/NPCs dealing damage
 - Damage %, DPS, and total damage per entity
 - Auto-resets after 8 seconds of no combat activity
-- **Boss fight tracking** — automatically detects and records fights against named mobs above a damage threshold; persists the last 5 fights across restarts
+- **Boss fight tracking** — records fights against any mob in your Boss Mobs list; full history persisted across restarts with all participants and DPS
 - **Post to Guild** — sends a compact fight summary to EQ guild chat via xdotool:
   `Boss 184s 1.2M@6700: Player1 75K, Player2 60K, ...` (fits as many players as possible in 255 chars)
 
@@ -106,10 +106,12 @@ The first time you run a new version, any data from the old electron-store forma
 
 ### Boss Mob List
 - Maintain a roster of raid bosses with HP, level, zone, resists, and notes
+- **This list controls fight tracking** — only mobs in this list are recorded as boss fights; add a mob here and its next kill is automatically captured
 - **PQDI sync** — click the PQDI button on any mob to pull live data from pqdi.cc:
   - Hit points, level, resists (MR/CR/FR/DR/PR) scraped from the HTML page
   - Special abilities (Flurry, Rampage, Summon, Enrage, etc.)
   - Spells the NPC can cast, with links to spell data
+- **Slowability** — each mob shows whether it's slowable by Shaman/Enchanter slow, disease slow only, or unslowable; included in the guild announcement
 - **Special abilities & spells** — each ability and spell shown as a chip; click **+** to add it directly to your timer list, pre-filled with trigger text, duration, and spell-fades message pulled from PQDI
 - **Guild output** — the **Guild** button builds a summary line and types it directly into EQ guild chat:
   `Boss Name (12k hp) | MR:190 FR:1000 | Flurries | Ancient Breath, Gift of A'err`
@@ -233,15 +235,13 @@ timers, raid event timers, and loot bidding config tuned for Beastlord play in P
 ## Importing Boss Mobs
 
 The repo includes a `boss-mobs.json` file. Once populated it contains the full raid boss
-roster with HP, level, resist profiles, special abilities, spells, and the always/never
-boss classification lists used by the DPS tracker.
+roster with HP, level, resist profiles, special abilities, and spells.
 
 **To import:**
 
 1. Open the app and go to the **Setup** tab
 2. Click **Import Boss Mobs** and select `boss-mobs.json` from the repo
 3. Mobs already in your list (matched by name) are skipped; new ones are added
-4. Always/never boss classification lists and known-boss history are merged in
 
 **To export your own:**
 
@@ -267,7 +267,7 @@ pqdi.cc on first use.
 
 ```bash
 npm run build
-# Output: dist/Erek's Everquest Parser-1.3.0.AppImage
+# Output: dist/Erek's Everquest Parser-1.5.0.AppImage
 ```
 
 ## Updating
