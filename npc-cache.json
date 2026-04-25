@@ -125,7 +125,4152 @@
       "flurries": false,
       "rampages": false,
       "cachedAt": 1776695982379
+    },
+    {
+      "id": 119026,
+      "name": "a geonid",
+      "hp": 9790,
+      "level": 44,
+      "mr": 40,
+      "cr": 325,
+      "fr": 115,
+      "dr": 315,
+      "pr": 315,
+      "specialAbilities": [
+        "Magical Attack",
+        "Immune to melee except magical Drops Spawns Spawn Groups Faction (id: 100511) level_34_research Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 011799 Words of Duress (2.28%)",
+        "011763 Rune of Concussion (1.56%)",
+        "011767 Rune of the Cyclone (1.17%)",
+        "011851 Words of the Suffering (0.96%)",
+        "011707 Salil s Writ Pg. 64 (0.9%)",
+        "011847 Words of Neglect (0.9%)",
+        "016039 Words of Cazic-Thule (0.87%)",
+        "011706 A Faded Salils Writ Page (0.84%)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776939277655
+    },
+    {
+      "id": 119120,
+      "name": "a geonid shaman",
+      "hp": 9790,
+      "level": 44,
+      "mr": 40,
+      "cr": 325,
+      "fr": 115,
+      "dr": 315,
+      "pr": 315,
+      "specialAbilities": [
+        "Magical Attack",
+        "Immune to melee except magical"
+      ],
+      "spells": [
+        {
+          "id": 389,
+          "name": "Guardian"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 111,
+          "name": "Malaisement"
+        },
+        {
+          "id": 131,
+          "name": "Instill"
+        },
+        {
+          "id": 163,
+          "name": "Incapacitate"
+        },
+        {
+          "id": 170,
+          "name": "Alacrity"
+        },
+        {
+          "id": 267,
+          "name": "Inner Fire"
+        },
+        {
+          "id": 435,
+          "name": "Venom of the Snake"
+        },
+        {
+          "id": 438,
+          "name": "Gale of Poison"
+        },
+        {
+          "id": 507,
+          "name": "Togor's Insects"
+        },
+        {
+          "id": 510,
+          "name": "Blizzard Blast"
+        },
+        {
+          "id": 527,
+          "name": "Insidious Malady"
+        },
+        {
+          "id": 1429,
+          "name": "Blast of Poison"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 278,
+          "name": "Spirit of Wolf"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776939404059
+    },
+    {
+      "id": 119294,
+      "name": "a shimmering geonid",
+      "hp": 9740,
+      "level": 44,
+      "mr": 40,
+      "cr": 325,
+      "fr": 115,
+      "dr": 315,
+      "pr": 315,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 92828) a_shimmering_geonid Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-3 With a probability of 100%"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776940838251
+    },
+    {
+      "id": 158045,
+      "name": "Zun Senshali Xakra",
+      "hp": 60000,
+      "level": 61,
+      "mr": 85,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Can proc: Lesser Shadow Poison Drops Spawns Spawn Groups Faction (id: 6150532) [Global] VT LegacyLoot Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondar"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776991794415
+    },
+    {
+      "id": 158005,
+      "name": "Pli Thall Xakra",
+      "hp": 70000,
+      "level": 64,
+      "mr": 95,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2157,
+          "name": "Word of Command"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        },
+        {
+          "id": 2509,
+          "name": "Blessed Armor of the Risen"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992055867
+    },
+    {
+      "id": 158023,
+      "name": "Zun Thall Xakra",
+      "hp": 65000,
+      "level": 61,
+      "mr": 85,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2157,
+          "name": "Word of Command"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992093236
+    },
+    {
+      "id": 158058,
+      "name": "Zun Centien Xakra",
+      "hp": 75000,
+      "level": 61,
+      "mr": 85,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 6150532) [Global] VT LegacyLoot Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 028955 Crimson Headband (5.0%)",
+        "028990 Shield of Spiked Energy (5.0%)",
+        "028988 Leggings of the Fiery Star (5.0%)",
+        "028985 Scythe of Shadows (5.0%)",
+        "028982 Gauntlets of View (5."
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776992375690
+    },
+    {
+      "id": 158025,
+      "name": "Zov Centien Xakra",
+      "hp": 70000,
+      "level": 58,
+      "mr": 70,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 6150532) [Global] VT LegacyLoot Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 028955 Crimson Headband (5.0%)",
+        "028990 Shield of Spiked Energy (5.0%)",
+        "028988 Leggings of the Fiery Star (5.0%)",
+        "028985 Scythe of Shadows (5.0%)",
+        "028982 Gauntlets of View (5.0%)",
+        "0289"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776992413012
+    },
+    {
+      "id": 158063,
+      "name": "Zov Senshali Xakra",
+      "hp": 55000,
+      "level": 58,
+      "mr": 70,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Can proc: Lesser Shadow Poison Drops Spawns Spawn Groups Faction (id: 6150532) [Global] VT LegacyLoot Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\""
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776992457143
+    },
+    {
+      "id": 158055,
+      "name": "Zov Liako Xakra",
+      "hp": 65000,
+      "level": 58,
+      "mr": 70,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 9,
+          "name": "Superior Healing"
+        },
+        {
+          "id": 44,
+          "name": "Yaulp III"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 131,
+          "name": "Instill"
+        },
+        {
+          "id": 312,
+          "name": "Valor"
+        },
+        {
+          "id": 1288,
+          "name": "Divine Glory"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776992479961
+    },
+    {
+      "id": 158071,
+      "name": "Zun Liako Xakra",
+      "hp": 70000,
+      "level": 61,
+      "mr": 85,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1533,
+          "name": "Heroism"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3429,
+          "name": "Touch of Nife"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776992564285
+    },
+    {
+      "id": 158021,
+      "name": "Qua Zethon Xakra",
+      "hp": 45000,
+      "level": 55,
+      "mr": 65,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2161,
+          "name": "Shock of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 732,
+          "name": "Ice Comet"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1634,
+          "name": "Tishan's Discord"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992614758
+    },
+    {
+      "id": 158022,
+      "name": "Zov Zethon Xakra",
+      "hp": 50000,
+      "level": 58,
+      "mr": 70,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2161,
+          "name": "Shock of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 1642,
+          "name": "Lure of Frost"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992630607
+    },
+    {
+      "id": 158000,
+      "name": "Pli Centien",
+      "hp": 80000,
+      "level": 64,
+      "mr": 95,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 With a probabil"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776992726724
+    },
+    {
+      "id": 158070,
+      "name": "Zun Zethon Xakra",
+      "hp": 55000,
+      "level": 61,
+      "mr": 85,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2161,
+          "name": "Shock of Shadows"
+        },
+        {
+          "id": 2163,
+          "name": "Lure of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992777820
+    },
+    {
+      "id": 158039,
+      "name": "Eom Thall",
+      "hp": 75000,
+      "level": 66,
+      "mr": 115,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2157,
+          "name": "Word of Command"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        },
+        {
+          "id": 1545,
+          "name": "The Unspoken Word"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992799546
+    },
+    {
+      "id": 158048,
+      "name": "Qua Zethon",
+      "hp": 45000,
+      "level": 55,
+      "mr": 65,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2161,
+          "name": "Shock of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 732,
+          "name": "Ice Comet"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1634,
+          "name": "Tishan's Discord"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776992977748
+    },
+    {
+      "id": 158077,
+      "name": "Zov Centien",
+      "hp": 70000,
+      "level": 58,
+      "mr": 70,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 With a probability of 100% ("
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776993024553
+    },
+    {
+      "id": 158064,
+      "name": "Qua Centien Xakra",
+      "hp": 65000,
+      "level": 55,
+      "mr": 65,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 6150532) [Global] VT LegacyLoot Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 028955 Crimson Headband (5.0%)",
+        "028990 Shield of Spiked Energy (5.0%)",
+        "028988 Leggings of the Fiery Star (5.0%)",
+        "028985 Scythe of Shadows (5.0%)",
+        "028982 Gauntlets of View (5.0%)",
+        "028969 Halbe"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776993041326
+    },
+    {
+      "id": 158030,
+      "name": "Zun Centien",
+      "hp": 75000,
+      "level": 61,
+      "mr": 85,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 With a probabi"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776993150333
+    },
+    {
+      "id": 158038,
+      "name": "Zun Thall",
+      "hp": 65000,
+      "level": 61,
+      "mr": 85,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2157,
+          "name": "Word of Command"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776993201882
+    },
+    {
+      "id": 158026,
+      "name": "Zov Thall Xakra",
+      "hp": 60000,
+      "level": 58,
+      "mr": 70,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 416,
+          "name": "Word Divine"
+        },
+        {
+          "id": 1518,
+          "name": "Remedy"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1535,
+          "name": "Symbol of Marzin"
+        },
+        {
+          "id": 1539,
+          "name": "Fortitude"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776993218971
+    },
+    {
+      "id": 158079,
+      "name": "Qua Senshali",
+      "hp": 50000,
+      "level": 55,
+      "mr": 65,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Can proc: Lesser Shadow Poison Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 010418 Akheva Blood (50.0%"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776993264651
+    },
+    {
+      "id": 158078,
+      "name": "Qua Centien",
+      "hp": 65000,
+      "level": 55,
+      "mr": 65,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 With a probability of 100% (multipli"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776993302367
+    },
+    {
+      "id": 158046,
+      "name": "Pli Thall",
+      "hp": 70000,
+      "level": 64,
+      "mr": 95,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2157,
+          "name": "Word of Command"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        },
+        {
+          "id": 2509,
+          "name": "Blessed Armor of the Risen"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776993358734
+    },
+    {
+      "id": 158041,
+      "name": "Zun Va Liako",
+      "hp": 70000,
+      "level": 61,
+      "mr": 85,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 3400,
+          "name": "Festering Darkness"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776993414408
+    },
+    {
+      "id": 158066,
+      "name": "Zov Liako",
+      "hp": 65000,
+      "level": 58,
+      "mr": 70,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 9,
+          "name": "Superior Healing"
+        },
+        {
+          "id": 44,
+          "name": "Yaulp III"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 131,
+          "name": "Instill"
+        },
+        {
+          "id": 312,
+          "name": "Valor"
+        },
+        {
+          "id": 1288,
+          "name": "Divine Glory"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776993466613
+    },
+    {
+      "id": 158067,
+      "name": "Qua Va Liako",
+      "hp": 60000,
+      "level": 55,
+      "mr": 65,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 236,
+          "name": "Shieldskin"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 367,
+          "name": "Heart Flutter"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 524,
+          "name": "Spirit Tap"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776993675550
+    },
+    {
+      "id": 158018,
+      "name": "Zun Va Liako Xakra",
+      "hp": 70000,
+      "level": 61,
+      "mr": 85,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 3400,
+          "name": "Festering Darkness"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776993700768
+    },
+    {
+      "id": 158002,
+      "name": "Zov Va Liako",
+      "hp": 65000,
+      "level": 58,
+      "mr": 70,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 367,
+          "name": "Heart Flutter"
+        },
+        {
+          "id": 393,
+          "name": "Steelskin"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 525,
+          "name": "Drain Spirit"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776993733398
+    },
+    {
+      "id": 158001,
+      "name": "Eom Centien",
+      "hp": 90000,
+      "level": 66,
+      "mr": 115,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20569) Akheva Blood VT Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 W"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776994518848
+    },
+    {
+      "id": 158033,
+      "name": "Eom Zethon",
+      "hp": 70000,
+      "level": 66,
+      "mr": 115,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2162,
+          "name": "Black Winds"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1638,
+          "name": "Lure of Flame"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776995795855
+    },
+    {
+      "id": 158017,
+      "name": "Eom Va Liako",
+      "hp": 80000,
+      "level": 66,
+      "mr": 115,
+      "cr": 50,
+      "fr": 335,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 3400,
+          "name": "Festering Darkness"
+        },
+        {
+          "id": 3403,
+          "name": "Aura of Pain"
+        },
+        {
+          "id": 3413,
+          "name": "Touch of Innoruuk"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1776995804782
+    },
+    {
+      "id": 158037,
+      "name": "Pli Liako Xakra",
+      "hp": 75000,
+      "level": 64,
+      "mr": 95,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1533,
+          "name": "Heroism"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3247,
+          "name": "Aura of the Crusader"
+        },
+        {
+          "id": 3430,
+          "name": "Light of Nife"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776995889086
+    },
+    {
+      "id": 158036,
+      "name": "Pli Zethon Xakra",
+      "hp": 65000,
+      "level": 64,
+      "mr": 95,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2162,
+          "name": "Black Winds"
+        },
+        {
+          "id": 2163,
+          "name": "Lure of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776995934024
+    },
+    {
+      "id": 158056,
+      "name": "Eom Liako",
+      "hp": 80000,
+      "level": 66,
+      "mr": 115,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3247,
+          "name": "Aura of the Crusader"
+        },
+        {
+          "id": 3430,
+          "name": "Light of Nife"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776996114052
+    },
+    {
+      "id": 158073,
+      "name": "Eom Liako Xakra",
+      "hp": 80000,
+      "level": 66,
+      "mr": 115,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3247,
+          "name": "Aura of the Crusader"
+        },
+        {
+          "id": 3430,
+          "name": "Light of Nife"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776996157624
+    },
+    {
+      "id": 158054,
+      "name": "Pli Liako",
+      "hp": 75000,
+      "level": 64,
+      "mr": 95,
+      "cr": 335,
+      "fr": 50,
+      "dr": 35,
+      "pr": 35,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1533,
+          "name": "Heroism"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3247,
+          "name": "Aura of the Crusader"
+        },
+        {
+          "id": 3430,
+          "name": "Light of Nife"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1776996204410
+    },
+    {
+      "id": 162063,
+      "name": "A Temple Patroller",
+      "hp": 9985,
+      "level": 50,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Immune to fleeing",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 90525) fearplane Gems 2 Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-8"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1776999727336
+    },
+    {
+      "id": 162061,
+      "name": "a Shissar Tormentor",
+      "hp": 14150,
+      "level": 54,
+      "mr": 50,
+      "cr": 145,
+      "fr": 50,
+      "dr": 1000,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 236,
+          "name": "Shieldskin"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 367,
+          "name": "Heart Flutter"
+        },
+        {
+          "id": 446,
+          "name": "Siphon Life"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 524,
+          "name": "Spirit Tap"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000118105
+    },
+    {
+      "id": 162045,
+      "name": "Zhroushe Mezhkazh",
+      "hp": 15340,
+      "level": 53,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unfearable",
+        "Immune to fleeing",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 21138) Luclin Spells Int Table B Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 007639 Spell: Phantasmal Protection (2.0%)",
+        "007669 Spell: Glamorous Visage (2.0%)",
+        "007668 Spell: Horrifying Visage (2.0%)",
+        "007659 Spell: Spell Shield (2.0%)",
+        "007658 Spell: Decession (2.0%)",
+        "007649 Spell: Mind Wrack (2.0%)",
+        "007648 Spell: Crippling Claudication (2.0%)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000283788
+    },
+    {
+      "id": 162085,
+      "name": "A Shissar Arcanist",
+      "hp": 9280,
+      "level": 50,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 731,
+          "name": "Wrath of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1645,
+          "name": "Pillar of Lightning"
+        },
+        {
+          "id": 1634,
+          "name": "Tishan's Discord"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 612,
+          "name": "Markar's Clash"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 659,
+          "name": "Conflagration"
+        },
+        {
+          "id": 636,
+          "name": "Bonds of Force"
+        },
+        {
+          "id": 732,
+          "name": "Ice Comet"
+        },
+        {
+          "id": 755,
+          "name": "Rend"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1639,
+          "name": "Voltaic Draught"
+        },
+        {
+          "id": 1642,
+          "name": "Lure of Frost"
+        },
+        {
+          "id": 1646,
+          "name": "Pillar of Frost"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000325997
+    },
+    {
+      "id": 162089,
+      "name": "#Rhozth Ssravizh",
+      "hp": 32000,
+      "level": 60,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Always Calls for Help",
+        "Corpse Camper"
+      ],
+      "spells": [
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 2913,
+          "name": "Balance of Zebuxoruk"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777000345422
+    },
+    {
+      "id": 162109,
+      "name": "A Shissar Defiler",
+      "hp": 10000,
+      "level": 50,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 3571,
+          "name": "Torbas' Poison Blast"
+        },
+        {
+          "id": 2014,
+          "name": "Incinerate Bones"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 1412,
+          "name": "Chilling Embrace"
+        },
+        {
+          "id": 473,
+          "name": "Invoke Fear II"
+        },
+        {
+          "id": 456,
+          "name": "Bond of Death"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 436,
+          "name": "Envenomed Bolt"
+        },
+        {
+          "id": 435,
+          "name": "Venom of the Snake"
+        },
+        {
+          "id": 32,
+          "name": "Plague"
+        },
+        {
+          "id": 31,
+          "name": "Scourge"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 525,
+          "name": "Drain Spirit"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000387319
+    },
+    {
+      "id": 162046,
+      "name": "#Acolyte Wivlx",
+      "hp": 15340,
+      "level": 56,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unfearable",
+        "Immune to fleeing",
+        "Always Calls for Help",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1635,
+          "name": "Markar's Discord"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 732,
+          "name": "Ice Comet"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1638,
+          "name": "Lure of Flame"
+        },
+        {
+          "id": 1642,
+          "name": "Lure of Frost"
+        },
+        {
+          "id": 1643,
+          "name": "Draught of Jiva"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000394936
+    },
+    {
+      "id": 162132,
+      "name": "A Shissar Spiritward",
+      "hp": 9500,
+      "level": 50,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1584,
+          "name": "Shroud of the Spirits"
+        },
+        {
+          "id": 168,
+          "name": "Talisman of Altuna"
+        },
+        {
+          "id": 9,
+          "name": "Superior Healing"
+        },
+        {
+          "id": 32,
+          "name": "Plague"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 112,
+          "name": "Malosi"
+        },
+        {
+          "id": 132,
+          "name": "Immobilize"
+        },
+        {
+          "id": 170,
+          "name": "Alacrity"
+        },
+        {
+          "id": 436,
+          "name": "Envenomed Bolt"
+        },
+        {
+          "id": 1573,
+          "name": "Insidious Decay"
+        },
+        {
+          "id": 1586,
+          "name": "Ice Strike"
+        },
+        {
+          "id": 1588,
+          "name": "Turgur's Insects"
+        },
+        {
+          "id": 1592,
+          "name": "Cripple"
+        },
+        {
+          "id": 2527,
+          "name": "Plague of Insects"
+        },
+        {
+          "id": 3574,
+          "name": "Blast of Venom"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000414473
+    },
+    {
+      "id": 162014,
+      "name": "A Shissar Disciple",
+      "hp": 9500,
+      "level": 56,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 416,
+          "name": "Word Divine"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1518,
+          "name": "Remedy"
+        },
+        {
+          "id": 1519,
+          "name": "Divine Light"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1535,
+          "name": "Symbol of Marzin"
+        },
+        {
+          "id": 2505,
+          "name": "Armor of the Faithful"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1539,
+          "name": "Fortitude"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000425596
+    },
+    {
+      "id": 162006,
+      "name": "a temple guard",
+      "hp": 10016,
+      "level": 50,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Immune to fleeing",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 90525) fearplane Gems 2 Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-8"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000433950
+    },
+    {
+      "id": 162008,
+      "name": "#Disciple Yelwinz",
+      "hp": 15340,
+      "level": 56,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unfearable",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 416,
+          "name": "Word Divine"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1518,
+          "name": "Remedy"
+        },
+        {
+          "id": 1519,
+          "name": "Divine Light"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1535,
+          "name": "Symbol of Marzin"
+        },
+        {
+          "id": 2505,
+          "name": "Armor of the Faithful"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1539,
+          "name": "Fortitude"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000502603
+    },
+    {
+      "id": 162488,
+      "name": "a Shissar acolyte",
+      "hp": 12500,
+      "level": 51,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 21138) Luclin Spells Int Table B Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 007668 Spell: Horrifying Visage (2.0%)",
+        "007669 Spell: Glamorous Visage (2.0%)",
+        "007659 Spell: Spell Shield (2.0%)",
+        "007638 Spell: Mass Mystical Transvergan (2.0%)",
+        "007658 Spell: Decession (2.0%)",
+        "007649 Spell: Mind Wrack (2.0%)",
+        "007648 Spell: Crippling Claudication (2.0%)",
+        "00763"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777000547113
+    },
+    {
+      "id": 162037,
+      "name": "#a glyph covered serpent",
+      "hp": 300000,
+      "level": 63,
+      "mr": 185,
+      "cr": 100,
+      "fr": 65,
+      "dr": 1000,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help",
+        "NO LOITERING",
+        "Corpse Camper"
+      ],
+      "spells": [
+        {
+          "id": 2809,
+          "name": "Wave of Death"
+        },
+        {
+          "id": 2810,
+          "name": "Glowing Glyphs"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777000631495
+    },
+    {
+      "id": 124311,
+      "name": "an acolyte of Veeshan",
+      "hp": 100000,
+      "level": 62,
+      "mr": 185,
+      "cr": 1000,
+      "fr": 140,
+      "dr": 40,
+      "pr": 40,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1492,
+          "name": "Thunder Blast"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777078883287
+    },
+    {
+      "id": 124291,
+      "name": "a cerulean warden",
+      "hp": 65000,
+      "level": 62,
+      "mr": 185,
+      "cr": 1000,
+      "fr": 140,
+      "dr": 40,
+      "pr": 40,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1492,
+          "name": "Thunder Blast"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1777078893946
+    },
+    {
+      "id": 124298,
+      "name": "a crimson destroyer",
+      "hp": 75000,
+      "level": 62,
+      "mr": 185,
+      "cr": 50,
+      "fr": 1000,
+      "dr": 40,
+      "pr": 40,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Double Attack",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1494,
+          "name": "Flame Jet"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777078951763
+    },
+    {
+      "id": 124294,
+      "name": "an onyx warden",
+      "hp": 65000,
+      "level": 62,
+      "mr": 185,
+      "cr": 90,
+      "fr": 60,
+      "dr": 135,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1493,
+          "name": "Acid Jet"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777079012775
+    },
+    {
+      "id": 124289,
+      "name": "a jade warden",
+      "hp": 65000,
+      "level": 62,
+      "mr": 185,
+      "cr": 50,
+      "fr": 90,
+      "dr": 1000,
+      "pr": 140,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1491,
+          "name": "Slime Mist"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777079226768
+    },
+    {
+      "id": 844,
+      "name": "a crimson warden",
+      "hp": 65000,
+      "level": 62,
+      "mr": 185,
+      "cr": 60,
+      "fr": 1000,
+      "dr": 135,
+      "pr": 85,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "Always Calls for Help",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1494,
+          "name": "Flame Jet"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777079359048
+    },
+    {
+      "id": 124309,
+      "name": "a tiger stripe racnar",
+      "hp": 65000,
+      "level": 60,
+      "mr": 185,
+      "cr": 335,
+      "fr": 60,
+      "dr": 40,
+      "pr": 40,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Double Attack",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to melee except magical",
+        "Proximity Aggro",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 105524) ruby crown table Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 010049 Fire Emerald Ring (12.0%)",
+        "010036 Black Sapphire (11.0%)",
+        "022503 Blue Diamond (11.0%)",
+        "010053 Jacinth (11.0%)",
+        "010051 Ruby Crown (11.0%)",
+        "010048 Star Ruby Earring (11.0%)",
+        "010035 Ruby (11.0%"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1777079963934
+    },
+    {
+      "id": 124315,
+      "name": "The Herald of Vulak`Aerr",
+      "hp": 300000,
+      "level": 66,
+      "mr": 185,
+      "cr": 50,
+      "fr": 90,
+      "dr": 1000,
+      "pr": 140,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Resistant to Ranged Spells",
+        "Always Calls for Help",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 2102,
+          "name": "Drake Breath"
+        },
+        {
+          "id": 2103,
+          "name": "Drake Breath"
+        },
+        {
+          "id": 2104,
+          "name": "Drake Breath"
+        },
+        {
+          "id": 2105,
+          "name": "Drake Breath"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777080070682
+    },
+    {
+      "id": 162026,
+      "name": "an elite temple guard",
+      "hp": 16500,
+      "level": 58,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 367,
+          "name": "Heart Flutter"
+        },
+        {
+          "id": 393,
+          "name": "Steelskin"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 525,
+          "name": "Drain Spirit"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777081485446
+    },
+    {
+      "id": 162005,
+      "name": "A Shissar Priest",
+      "hp": 7515,
+      "level": 56,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 416,
+          "name": "Word Divine"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1518,
+          "name": "Remedy"
+        },
+        {
+          "id": 1519,
+          "name": "Divine Light"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1535,
+          "name": "Symbol of Marzin"
+        },
+        {
+          "id": 2505,
+          "name": "Armor of the Faithful"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1539,
+          "name": "Fortitude"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777081503110
+    },
+    {
+      "id": 162058,
+      "name": "A Shissar Warlock",
+      "hp": 6040,
+      "level": 50,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 456,
+          "name": "Bond of Death"
+        },
+        {
+          "id": 3572,
+          "name": "Torbas' Venom Blast"
+        },
+        {
+          "id": 3571,
+          "name": "Torbas' Poison Blast"
+        },
+        {
+          "id": 2014,
+          "name": "Incinerate Bones"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 1412,
+          "name": "Chilling Embrace"
+        },
+        {
+          "id": 473,
+          "name": "Invoke Fear II"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 436,
+          "name": "Envenomed Bolt"
+        },
+        {
+          "id": 435,
+          "name": "Venom of the Snake"
+        },
+        {
+          "id": 32,
+          "name": "Plague"
+        },
+        {
+          "id": 31,
+          "name": "Scourge"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 525,
+          "name": "Drain Spirit"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 1613,
+          "name": "Deflux"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777081560245
+    },
+    {
+      "id": 162003,
+      "name": "#Commander Zazuzh",
+      "hp": 17500,
+      "level": 56,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "Always Calls for Help",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 367,
+          "name": "Heart Flutter"
+        },
+        {
+          "id": 393,
+          "name": "Steelskin"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 524,
+          "name": "Spirit Tap"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777081658926
+    },
+    {
+      "id": 162082,
+      "name": "A Shissar Spirit Binder",
+      "hp": 9800,
+      "level": 51,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Immune to fleeing",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1584,
+          "name": "Shroud of the Spirits"
+        },
+        {
+          "id": 168,
+          "name": "Talisman of Altuna"
+        },
+        {
+          "id": 9,
+          "name": "Superior Healing"
+        },
+        {
+          "id": 32,
+          "name": "Plague"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 112,
+          "name": "Malosi"
+        },
+        {
+          "id": 132,
+          "name": "Immobilize"
+        },
+        {
+          "id": 170,
+          "name": "Alacrity"
+        },
+        {
+          "id": 436,
+          "name": "Envenomed Bolt"
+        },
+        {
+          "id": 1573,
+          "name": "Insidious Decay"
+        },
+        {
+          "id": 1586,
+          "name": "Ice Strike"
+        },
+        {
+          "id": 1588,
+          "name": "Turgur's Insects"
+        },
+        {
+          "id": 1592,
+          "name": "Cripple"
+        },
+        {
+          "id": 2527,
+          "name": "Plague of Insects"
+        },
+        {
+          "id": 3574,
+          "name": "Blast of Venom"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777081690656
+    },
+    {
+      "id": 162019,
+      "name": "a temple skirmisher",
+      "hp": 13520,
+      "level": 53,
+      "mr": 50,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "NO LOITERING Drops Spawns Spawn Groups Faction (id: 90525) fearplane Gems 2 Default -1.0 -> -1.0 Bulk copy in-game links:"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777081945708
+    },
+    {
+      "id": 162074,
+      "name": "A Shissar Arch Arcanist",
+      "hp": 7170,
+      "level": 53,
+      "mr": 60,
+      "cr": 50,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1645,
+          "name": "Pillar of Lightning"
+        },
+        {
+          "id": 1634,
+          "name": "Tishan's Discord"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 1609,
+          "name": "Manaskin"
+        },
+        {
+          "id": 755,
+          "name": "Rend"
+        },
+        {
+          "id": 1637,
+          "name": "Draught of Fire"
+        },
+        {
+          "id": 1638,
+          "name": "Lure of Flame"
+        },
+        {
+          "id": 1639,
+          "name": "Voltaic Draught"
+        },
+        {
+          "id": 1642,
+          "name": "Lure of Frost"
+        },
+        {
+          "id": 1643,
+          "name": "Draught of Jiva"
+        },
+        {
+          "id": 732,
+          "name": "Ice Comet"
+        },
+        {
+          "id": 1646,
+          "name": "Pillar of Frost"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777082060846
+    },
+    {
+      "id": 162002,
+      "name": "an imperial guard",
+      "hp": 50000,
+      "level": 60,
+      "mr": 60,
+      "cr": 60,
+      "fr": 90,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1777082658626
+    },
+    {
+      "id": 162130,
+      "name": "#Klazaz the Slayer",
+      "hp": 30000,
+      "level": 59,
+      "mr": 60,
+      "cr": 60,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unslowable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help Drops Spawns Spawn Groups Faction (id: 95043) Shissar Blood 25pct Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 <div cl"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777085160172
+    },
+    {
+      "id": 162127,
+      "name": "#Skzik the Tormentor",
+      "hp": 30000,
+      "level": 59,
+      "mr": 200,
+      "cr": 60,
+      "fr": 140,
+      "dr": 30,
+      "pr": 45,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unslowable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help Drops Spawns Spawn Groups Faction (id: 95043) Shissar Blood 25pct Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 <div c"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1777085202941
+    },
+    {
+      "id": 159197,
+      "name": "A Legionnaire of the Hand",
+      "hp": 10500,
+      "level": 45,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 15,
+          "name": "Greater Healing"
+        },
+        {
+          "id": 43,
+          "name": "Yaulp II"
+        },
+        {
+          "id": 89,
+          "name": "Daring"
+        },
+        {
+          "id": 230,
+          "name": "Root"
+        },
+        {
+          "id": 2584,
+          "name": "Divine Vigor"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777085670206
+    },
+    {
+      "id": 159110,
+      "name": "A Guardian of the Arx",
+      "hp": 20000,
+      "level": 60,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Double Attack",
+        "Magical Attack Drops Spawns Spawn Groups Faction Zone Coordinates (Y",
+        "Z) Respawn Sanctus Seru (-2029.0",
+        "872.0",
+        "63.7) 25 minutes and 59 seconds Sanctus Seru (-1562.0",
+        "-1276.0",
+        "58.5) 25 minutes and 59 seconds Sanctus Seru"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777086314690
+    },
+    {
+      "id": 159097,
+      "name": "A Praetorian Peritus",
+      "hp": 61000,
+      "level": 64,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 57,
+      "pr": 57,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Double Attack",
+        "Magical Attack",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 94160) 94160_A_Praetorian_Peritus_MAGELO-GEN Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-4"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777086394291
+    },
+    {
+      "id": 159099,
+      "name": "A Praetorian Medicus",
+      "hp": 59000,
+      "level": 63,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 56,
+      "pr": 56,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "Use Warrior Skills"
+      ],
+      "spells": [
+        {
+          "id": 25,
+          "name": "Pillage Enchantment"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 2508,
+          "name": "Judgement"
+        },
+        {
+          "id": 2182,
+          "name": "Ethereal Light"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777086406609
+    },
+    {
+      "id": 159100,
+      "name": "A Praetorian Pius",
+      "hp": 60000,
+      "level": 62,
+      "mr": 40,
+      "cr": 35,
+      "fr": 35,
+      "dr": 56,
+      "pr": 56,
+      "specialAbilities": [
+        "Summon",
+        "Flurry",
+        "Double Attack",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 1968,
+          "name": "Stunning Strike"
+        },
+        {
+          "id": 2585,
+          "name": "Valor of Marr"
+        },
+        {
+          "id": 1454,
+          "name": "Flame of Light"
+        },
+        {
+          "id": 1743,
+          "name": "Divine Favor"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 2589,
+          "name": "Healing Wave of Prexus"
+        },
+        {
+          "id": 1456,
+          "name": "Divine Strength"
+        },
+        {
+          "id": 1534,
+          "name": "Yaulp IV"
+        },
+        {
+          "id": 1533,
+          "name": "Heroism"
+        },
+        {
+          "id": 3195,
+          "name": "Greater Immobilize"
+        },
+        {
+          "id": 3429,
+          "name": "Touch of Nife"
+        }
+      ],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777086770330
+    },
+    {
+      "id": 159098,
+      "name": "A Praetorian Veneratius",
+      "hp": 56500,
+      "level": 61,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 55,
+      "pr": 55,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Double Attack",
+        "Magical Attack",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 94163) 94163_A_Praetorian_Veneratius_MAGELO-GEN Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 003101 Ringmail Coif (1.811%)",
+        "003109 Ringmail Bracelet (1.61%)",
+        "003107 Ringmail Skirt (1.408%)",
+        "003112 Ringmail Boots (1.408%)",
+        "003103 Ringmail Neckguard (1.207%)",
+        "003102 Iron Visor (1.006%)",
+        "003105 Ringmail Mantle"
+      ],
+      "spells": [],
+      "flurries": true,
+      "rampages": false,
+      "cachedAt": 1777087011235
+    },
+    {
+      "id": 179345,
+      "name": "A Centi Dator",
+      "hp": 13500,
+      "level": 47,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 21908) 20941_A_Centi_Dator_Trade Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-2 With a probability of 100% (multiplier: 1)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777088320656
+    },
+    {
+      "id": 179014,
+      "name": "Transient Patroller",
+      "hp": 7500,
+      "level": 47,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack"
+      ],
+      "spells": [
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 230,
+          "name": "Root"
+        },
+        {
+          "id": 452,
+          "name": "Dooming Darkness"
+        },
+        {
+          "id": 3571,
+          "name": "Torbas' Poison Blast"
+        },
+        {
+          "id": 2014,
+          "name": "Incinerate Bones"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 1415,
+          "name": "Torbas' Acid Blast"
+        },
+        {
+          "id": 1412,
+          "name": "Chilling Embrace"
+        },
+        {
+          "id": 473,
+          "name": "Invoke Fear II"
+        },
+        {
+          "id": 456,
+          "name": "Bond of Death"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 6,
+          "name": "Ignite Blood"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 436,
+          "name": "Envenomed Bolt"
+        },
+        {
+          "id": 435,
+          "name": "Venom of the Snake"
+        },
+        {
+          "id": 31,
+          "name": "Scourge"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 525,
+          "name": "Drain Spirit"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777088389159
+    },
+    {
+      "id": 179042,
+      "name": "Xi Xaui",
+      "hp": 30170,
+      "level": 57,
+      "mr": 185,
+      "cr": 35,
+      "fr": 35,
+      "dr": 350,
+      "pr": 350,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Proximity Aggro"
+      ],
+      "spells": [
+        {
+          "id": 191,
+          "name": "Feedback"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 133,
+          "name": "Paralyzing Earth"
+        },
+        {
+          "id": 195,
+          "name": "Gasping Embrace"
+        },
+        {
+          "id": 1689,
+          "name": "Rune V"
+        },
+        {
+          "id": 1697,
+          "name": "Recant Magic"
+        },
+        {
+          "id": 1708,
+          "name": "Aanya's Quickening"
+        },
+        {
+          "id": 1705,
+          "name": "Boltran`s Agacerie"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777088519933
+    },
+    {
+      "id": 179058,
+      "name": "A young centi",
+      "hp": 9800,
+      "level": 49,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 95990) 95990_A_young_centi_MAGELO-GEN Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-2 With a probability of 100% (multiplier: 1) - 0"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777088568236
+    },
+    {
+      "id": 179015,
+      "name": "A shade golem",
+      "hp": 18500,
+      "level": 55,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Uncharmable",
+        "Unfearable Drops Spawns Spawn Groups Faction (id: 114853) 114853_A_shade_golem_MAGELO-GEN Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-6"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777088673620
+    },
+    {
+      "id": 179037,
+      "name": "The Itraer Vius",
+      "hp": 600000,
+      "level": 63,
+      "mr": 60,
+      "cr": 100,
+      "fr": 150,
+      "dr": 1000,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Proximity Aggro",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 2846,
+          "name": "Itraer Vius Touch"
+        },
+        {
+          "id": 2905,
+          "name": "Touch of the Mistress"
+        }
+      ],
+      "flurries": false,
+      "rampages": true,
+      "cachedAt": 1777089220830
+    },
+    {
+      "id": 179046,
+      "name": "Sheleric Vis",
+      "hp": 19600,
+      "level": 62,
+      "mr": 100,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Double Attack",
+        "Magical Attack",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 21930) Shadow Flame Weapons Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 007555 Shadow Flame short sword (0.5%)",
+        "007565 Shadow Flame Handwraps (0.5%)",
+        "007564 Shadow Flame Claws (0.5%)",
+        "007563 Shadow Flame Claws (0.5%)",
+        "007562 Shadow Flame Warsword (0.5%)",
+        "007561 Shadow Flame Lance (0.5%)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777089623455
+    },
+    {
+      "id": 179345,
+      "name": "A Centi Dator",
+      "hp": 13500,
+      "level": 47,
+      "mr": 35,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Magical Attack Drops Spawns Spawn Groups Faction (id: 21908) 20941_A_Centi_Dator_Trade Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1-2 With a probability of 100% (multiplier: 1)"
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777089826055
+    },
+    {
+      "id": 179021,
+      "name": "Diabo Tatrua",
+      "hp": 75000,
+      "level": 60,
+      "mr": 100,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Double Attack",
+        "Magical Attack",
+        "Unslowable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Proximity Aggro",
+        "Corpse Camper Can proc: Deathly Ice Drops Spawns Spawn Groups Faction (id: 21611) Shaded Gear Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\""
+      ],
+      "spells": [],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777089883153
+    },
+    {
+      "id": 179023,
+      "name": "Va Tatrua",
+      "hp": 75000,
+      "level": 60,
+      "mr": 100,
+      "cr": 35,
+      "fr": 35,
+      "dr": 25,
+      "pr": 25,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unslowable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Proximity Aggro",
+        "Corpse Camper"
+      ],
+      "spells": [
+        {
+          "id": 346,
+          "name": "Grim Aura"
+        },
+        {
+          "id": 451,
+          "name": "Boil Blood"
+        },
+        {
+          "id": 364,
+          "name": "Banshee Aura"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 453,
+          "name": "Cascading Darkness"
+        },
+        {
+          "id": 394,
+          "name": "Diamondskin"
+        },
+        {
+          "id": 447,
+          "name": "Drain Soul"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 2994,
+          "name": "Deathly Fever"
+        }
+      ],
+      "flurries": false,
+      "rampages": false,
+      "cachedAt": 1777089920532
     }
   ],
-  "exportedAt": "2026-04-21T15:44:33.372366+00:00"
+  "exportedAt": "2026-04-25T05:48:58.078Z"
 }

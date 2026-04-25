@@ -5393,6 +5393,13 @@ ipcRenderer.on('loot-bids-open', async (e, { items }) => {
   }
 });
 
+ipcRenderer.on('loot-cross-char-alert', (e, { itemName, charName, isActiveChar }) => {
+  const msg = isActiveChar
+    ? `${itemName} is up for bid!`
+    : `${itemName} wanted by ${charName}`;
+  showToast(msg, 8000);
+});
+
 ipcRenderer.on('loot-bid', (e, { itemName, bidder, status, amount }) => {
   if (!activeLootItems[itemName]) return;
   const state = activeLootItems[itemName];
@@ -6022,9 +6029,9 @@ async function postFightToGuild() {
 
 async function dismissFight() {
   if (!selectedFightId) return;
+  await ipcRenderer.invoke('remove-boss-fight', selectedFightId);
   bossFightList = bossFightList.filter(f => f.id !== selectedFightId);
   selectedFightId = null;
-  ipcRenderer.invoke('store-set', 'bossFightsHistory', bossFightList.slice(0, 5));
   renderFightList();
   document.getElementById('fight-detail-empty').style.display = 'flex';
   document.getElementById('fight-detail').style.display = 'none';
@@ -6868,22 +6875,26 @@ function renderSpellList() {
     let statusCell = '';
     let actionCell = '';
 
+    const timerBtn = sp.durationTicks > 0
+      ? `<button class="btn spell-btn-add" style="border-color:var(--accent4);color:var(--accent4);" onclick="spellCreateTimer(${idJson})" title="Create buff/debuff timer">+Timer</button>`
+      : '';
+
     if (overlevel) {
       rowClass   = 'spell-row-overlevel';
       statusCell = '<span style="font-size:10px;color:var(--text-dim);">Not yet</span>';
-      actionCell = ignoreBtn;
+      actionCell = `<span style="display:inline-flex;gap:4px;align-items:center;">${timerBtn}${ignoreBtn}</span>`;
     } else if (known) {
       rowClass   = 'spell-row-known';
       statusCell = '<span class="spell-status">&#10003; Known</span>';
-      actionCell = ignoreBtn;
+      actionCell = `<span style="display:inline-flex;gap:4px;align-items:center;">${timerBtn}${ignoreBtn}</span>`;
     } else {
       rowClass   = 'spell-row-missing';
       statusCell = '<span style="font-size:10px;color:#ffc560;font-weight:600;">Missing</span>';
       const pqdiLink = `<a href="https://www.pqdi.cc/spell/${idJson}" target="_blank" title="View on PQDI" style="font-size:10px;color:var(--accent2);text-decoration:none;padding:1px 4px;border:1px solid var(--border);border-radius:3px;line-height:1.6;">↗</a>`;
       const addBtn = wishIds.has(sp.id)
         ? '<span class="spell-wishlist-badge">In Wishlist</span>'
-        : `<button class="btn spell-btn-add" onclick="spellAddScroll(${idJson}, ${JSON.stringify(sp.name)})">Add Scroll</button>`;
-      actionCell = `<span style="display:inline-flex;gap:4px;align-items:center;">${addBtn}${pqdiLink}${ignoreBtn}</span>`;
+        : `<button class="btn spell-btn-add" onclick="spellAddScroll(${idJson})">Add Scroll</button>`;
+      actionCell = `<span style="display:inline-flex;gap:4px;align-items:center;">${addBtn}${timerBtn}${pqdiLink}${ignoreBtn}</span>`;
     }
 
     return `<tr class="${rowClass}">
@@ -6909,8 +6920,59 @@ async function spellUnignore(spellId) {
   renderSpellList();
 }
 
-async function spellAddScroll(spellId, spellName) {
-  const scrollName = 'Spell: ' + spellName;
+async function spellCreateTimer(spellId) {
+  const sp = spellsAll.find(s => s.id === spellId);
+  const spellName = sp ? sp.name : String(spellId);
+  const statusEl = document.getElementById('spells-status');
+  if (statusEl) statusEl.textContent = `Fetching spell data for "${spellName}"…`;
+
+  const spell = await ipcRenderer.invoke('fetch-spell-by-id', spellId);
+  if (statusEl) statusEl.textContent = '';
+
+  if (!spell || spell.error) {
+    showToast((spell?.error || 'Spell not found on PQDI') + ' — fill in manually');
+    showBuffModal();
+    document.getElementById('buff-name').value = spellName;
+    return;
+  }
+
+  if (spell.durationSeconds === 0) {
+    showToast(spellName + ' is instant — no duration to track');
+    return;
+  }
+
+  if (spell.isGoodEffect) {
+    showBuffModal();
+    document.getElementById('buff-name').value = spell.name;
+    if (spell.cast_on_other && spell.cast_on_other.trim()) {
+      const cleanOther = spell.cast_on_other.trim().replace(/^soandso\s*/i, '');
+      document.getElementById('buff-pattern').value = '\\] (.+?) ' + escapeRegex(cleanOther);
+      document.getElementById('buff-is-group-spell').checked = true;
+    } else if (spell.cast_on_you) {
+      document.getElementById('buff-pattern').value = '\\] ' + escapeRegex(spell.cast_on_you);
+    }
+    if (spell.durationSeconds > 0) document.getElementById('buff-duration').value = spell.durationSeconds;
+    if (spell.spell_fades) {
+      document.getElementById('buff-fadetext-hint').style.display = 'block';
+      document.getElementById('buff-fades-text').textContent = spell.spell_fades;
+    }
+  } else {
+    showDebuffModal();
+    document.getElementById('debuff-name').value = spell.name;
+    document.getElementById('debuff-castname').value = spell.name;
+    const logText = (spell.cast_on_other || spell.cast_on_you || '').replace(/^soandso\s*/i, '').trim();
+    if (logText) document.getElementById('debuff-pattern').value = '\\] (.+?) ' + escapeRegex(logText);
+    if (spell.durationSeconds > 0) document.getElementById('debuff-duration').value = spell.durationSeconds;
+    if (spell.spell_fades) {
+      document.getElementById('debuff-fadetext-hint').style.display = 'block';
+      document.getElementById('debuff-fades-text').textContent = spell.spell_fades;
+    }
+  }
+}
+
+async function spellAddScroll(spellId) {
+  const sp = spellsAll.find(s => s.id === spellId);
+  const scrollName = 'Spell: ' + (sp ? sp.name : String(spellId));
   const statusEl   = document.getElementById('spells-status');
   if (statusEl) statusEl.textContent = `Searching for "${scrollName}"…`;
 

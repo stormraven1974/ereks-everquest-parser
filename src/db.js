@@ -409,6 +409,10 @@ function addBossFight(fight) {
     .run(fight.bossName || '', fight.id || fight.startTime || Date.now(), JSON.stringify(fight));
 }
 
+function removeBossFight(id) {
+  db.prepare('DELETE FROM boss_fights_history WHERE recorded_at = ?').run(id);
+}
+
 // ── Item / NPC cache helpers ──────────────────────────────────────────────────
 
 function getItemCache() {
@@ -713,7 +717,7 @@ module.exports = {
   // Profiles
   getProfile, setProfile, getAllProfiles,
   // Boss mobs
-  getBossMobs, setBossMobs,
+  getBossMobs, setBossMobs, removeBossFight,
   getKnownBosses, addKnownBoss, getBossFightsHistory, addBossFight, clearBossFightsHistory,
   // Item / NPC cache
   getItemCache, getItemById, setItem, getNpcCache, getNpcByKey, setNpc,

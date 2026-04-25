@@ -1116,15 +1116,21 @@ function parseGuildLootMessages(line, event) {
       .filter(s => s && !/^\s*FFA\s*$/i.test(s));
     if (items.length) {
       event.reply('loot-bids-open', { items });
-      // Voice alert for any character whose desired loot is up for bid
+      // Voice + visual alert for any character whose desired loot is up for bid
       const itemsLower = items.map(i => i.toLowerCase());
+      const activeCharName = (pGet('charName', '') || '').toLowerCase();
       const allProfiles = db.getAllProfiles();
       for (const [, profileData] of Object.entries(allProfiles)) {
         const desired = profileData.desiredLoot || [];
-        const match = desired.find(d => itemsLower.includes(d.name.toLowerCase()));
-        if (match) {
+        const matches = desired.filter(d => itemsLower.includes(d.name.toLowerCase()));
+        for (const match of matches) {
           const charName = profileData.charName || '';
-          speakText('Desired loot for ' + (charName || 'your character'));
+          const isActiveChar = charName.toLowerCase() === activeCharName;
+          const tts = isActiveChar
+            ? match.name + ' is up for bid'
+            : match.name + ' wanted by ' + (charName || 'another character');
+          speakText(tts);
+          event.reply('loot-cross-char-alert', { itemName: match.name, charName, isActiveChar });
         }
       }
     }
@@ -1370,7 +1376,6 @@ ipcMain.handle('store-get', (event, key) => {
   if (key === 'lootHistory')      return db.getLootHistory();
   if (key === 'lootConfig')       return db.getLootConfig();
   if (key === 'bossMobInfo')      return db.getBossMobs();
-  if (key === 'knownBosses')      return [...knownBosses];
   if (key === 'buffTimers')       return db.getTimers('buff_timers');
   if (key === 'debuffTimers')     return db.getTimers('debuff_timers');
   if (key === 'raidTimers')       return db.getTimers('raid_timers');
@@ -1655,9 +1660,8 @@ ipcMain.handle('export-boss-mobs', async () => {
   });
   if (!filePath) return { success: false };
   const data = {
-    bossMobInfo:  db.getBossMobs(),
-    knownBosses:  [...knownBosses],
-    exportedAt:   new Date().toISOString(),
+    bossMobInfo: db.getBossMobs(),
+    exportedAt:  new Date().toISOString(),
   };
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
   return { success: true, filePath };
@@ -1679,9 +1683,6 @@ ipcMain.handle('import-boss-mobs', async () => {
     const merged = [...existing, ...added];
     db.setBossMobs(merged);
     bossMobNames = new Set(merged.map(m => (m.name || '').toLowerCase()));
-    if (Array.isArray(data.knownBosses)) {
-      data.knownBosses.forEach(n => { knownBosses.add(n.toLowerCase()); db.addKnownBoss(n.toLowerCase()); });
-    }
     return { success: true, addedCount: added.length, skippedCount: incoming.length - added.length };
   } catch (e) { return { success: false, error: e.message }; }
 });
@@ -1874,7 +1875,7 @@ ipcMain.handle('fetch-spell-by-id', async (event, spellId) => {
     // Strip all HTML tags to get plain text
     const plain = spellHtml
       .replace(/<[^>]+>/g, ' ')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&apos;/g, "'").replace(/&quot;/g, '"')
       .replace(/\s+/g, ' ');
 
     // Extract field value: find "fieldname: " then grab text until next "word: " pattern
@@ -2221,7 +2222,9 @@ ipcMain.handle('get-class-spells', async (event, { charClass, logPath }) => {
       const id = parseInt(fields[0]);
       const name = (fields[1] || '').trim();
       if (!id || !name) continue;
-      results.push({ id, name, classLevel: lvRaw });
+      const durationTicks = parseInt(fields[17]) || 0;
+      const goodEffect = fields[71] === '1';
+      results.push({ id, name, classLevel: lvRaw, durationTicks, goodEffect });
     }
     results.sort((a, b) => a.classLevel - b.classLevel || a.name.localeCompare(b.name));
     return results;
@@ -2392,8 +2395,12 @@ ipcMain.handle('clear-trader-sales', (event, charName) => {
 });
 
 // ── Boss Fight IPC ─────────────────────────────────────────────────────────────
-ipcMain.handle('get-boss-fights',  ()  => bossFights);
-ipcMain.handle('clear-boss-fights', () => { bossFights = []; db.clearBossFightsHistory(); });
+ipcMain.handle('get-boss-fights',    ()       => bossFights);
+ipcMain.handle('clear-boss-fights',  ()       => { bossFights = []; db.clearBossFightsHistory(); });
+ipcMain.handle('remove-boss-fight',  (e, id)  => {
+  bossFights = bossFights.filter(f => f.id !== id);
+  db.removeBossFight(id);
+});
 
 ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
   if (!logPath || !fs.existsSync(logPath)) return { seeded: 0 };

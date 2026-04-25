@@ -214,7 +214,8 @@
           "name": "Spell: Omakin&#39;s Alacrity",
           "dropRate": 0.165
         }
-      ]
+      ],
+      "lastKilled": "2026-04-11T02:13:41.000Z"
     },
     {
       "id": "1776615540915",
@@ -560,7 +561,8 @@
           "name": "Spell: Spirit of the Storm",
           "dropRate": 0.165
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T02:08:06.000Z"
     },
     {
       "id": "1776615540916",
@@ -785,7 +787,8 @@
           "name": "Spell: Elnerick&#39;s Rending",
           "dropRate": 5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-14T01:41:58.000Z"
     },
     {
       "id": "1776615540917",
@@ -1121,7 +1124,9 @@
           "id": 2167,
           "name": "Fling"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-24T02:52:19.810Z",
+      "slowMitigation": 0
     },
     {
       "id": "1776615540918",
@@ -1277,7 +1282,8 @@
           "name": "Spell: Judgement",
           "dropRate": 2
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T02:29:38.930Z"
     },
     {
       "id": "1776615540919",
@@ -1518,7 +1524,58 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "cr": 90,
+      "fr": 90,
+      "dr": 65,
+      "pr": 65,
+      "specialAbilities": [
+        "Summon",
+        "Dual Wield",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 2163,
+          "name": "Lure of Shadows"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1638,
+          "name": "Lure of Flame"
+        }
+      ],
+      "slowMitigation": 100,
+      "lastKilled": "2026-04-15T02:34:41.000Z"
     },
     {
       "id": "1776615540920",
@@ -1759,7 +1816,57 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "cr": 80,
+      "fr": 80,
+      "dr": 150,
+      "pr": 150,
+      "specialAbilities": [
+        "Summon",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 2162,
+          "name": "Black Winds"
+        },
+        {
+          "id": 36,
+          "name": "Gate"
+        },
+        {
+          "id": 2554,
+          "name": "Elnerick's Entombment of Ice"
+        },
+        {
+          "id": 1631,
+          "name": "Atol's Spectral Shackles"
+        },
+        {
+          "id": 1650,
+          "name": "Inferno of Al'Kabor"
+        },
+        {
+          "id": 1526,
+          "name": "Annul Magic"
+        },
+        {
+          "id": 1638,
+          "name": "Lure of Flame"
+        }
+      ],
+      "slowMitigation": 0,
+      "lastKilled": "2026-04-15T03:59:56.000Z"
     },
     {
       "id": "1776615540921",
@@ -1995,7 +2102,34 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "cr": 75,
+      "fr": 75,
+      "dr": 50,
+      "pr": 50,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help Drops Spawns Spawn Groups Faction (id: 13162) Diabo_Xi_Xin Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary copy-btn\" data-loot=\" 028971 Veil of Flames (11.11%)",
+        "028970 Bone Chill Shield (11.11%)",
+        "028979 Cloak of Destruction (11.11%)",
+        "028978 Stein of Falling Tears (11.11%)",
+        "028977 Amu"
+      ],
+      "spells": [],
+      "slowMitigation": 0,
+      "lastKilled": "2026-04-15T02:47:05.000Z"
     },
     {
       "id": "1776615540922",
@@ -2231,7 +2365,62 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "cr": 165,
+      "fr": 125,
+      "dr": 85,
+      "pr": 85,
+      "specialAbilities": [
+        "Summon",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 1542,
+          "name": "Upheaval"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 1535,
+          "name": "Symbol of Marzin"
+        },
+        {
+          "id": 1543,
+          "name": "Reckoning"
+        },
+        {
+          "id": 2509,
+          "name": "Blessed Armor of the Risen"
+        },
+        {
+          "id": 3296,
+          "name": "Faith"
+        },
+        {
+          "id": 2164,
+          "name": "Silence of the Shadows"
+        },
+        {
+          "id": 2165,
+          "name": "Mark of Darkness"
+        }
+      ],
+      "slowMitigation": 100,
+      "lastKilled": "2026-04-15T03:02:05.000Z"
     },
     {
       "id": "1776615540923",
@@ -2248,7 +2437,7 @@
       ],
       "npcId": 162491,
       "level": 66,
-      "zone": null,
+      "zone": "ssratemple",
       "zoneLongName": "Ssraeshza Temple",
       "mr": 1000,
       "loot": [
@@ -2443,7 +2632,40 @@
           "dropRate": 3
         }
       ],
-      "expansion": 3
+      "expansion": 3,
+      "lastKilled": "2026-04-25T02:43:37.281Z",
+      "cr": 75,
+      "fr": 60,
+      "dr": 150,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except bane",
+        "Immune to lull effects",
+        "Always Calls for Help",
+        "NO LOITERING"
+      ],
+      "spells": [
+        {
+          "id": 2310,
+          "name": "Rage of Ssraeshza"
+        },
+        {
+          "id": 2981,
+          "name": "Diminutive Stature"
+        }
+      ],
+      "slowMitigation": 0
     },
     {
       "id": "1776615540931",
@@ -2624,7 +2846,8 @@
           "dropRate": 5
         }
       ],
-      "expansion": 3
+      "expansion": 3,
+      "lastKilled": "2026-04-24T01:07:46.987Z"
     },
     {
       "id": "1776615540934",
@@ -2780,7 +3003,8 @@
           "name": "Great Maul of Slaughter",
           "dropRate": 0.5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-24T01:35:05.259Z"
     },
     {
       "id": "1776615540938",
@@ -3121,7 +3345,8 @@
           "name": "Spell: Omakin&#39;s Alacrity",
           "dropRate": 0.165
         }
-      ]
+      ],
+      "lastKilled": "2026-04-11T02:17:35.000Z"
     },
     {
       "id": "1776615540940",
@@ -3142,7 +3367,8 @@
           "name": "Shissar Blood",
           "dropRate": 25
         }
-      ]
+      ],
+      "lastKilled": "2026-04-11T03:06:24.000Z"
     },
     {
       "id": "1776615540941",
@@ -3163,7 +3389,8 @@
           "name": "Shissar Blood",
           "dropRate": 25
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T02:44:57.810Z"
     },
     {
       "id": "1776615540942",
@@ -3445,7 +3672,8 @@
           "id": 1545,
           "name": "The Unspoken Word"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-14T02:38:32.000Z"
     },
     {
       "id": "1776615540944",
@@ -3960,7 +4188,8 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-15T02:23:19.000Z"
     },
     {
       "id": "1776615540946",
@@ -3975,8 +4204,8 @@
           "interval": 49
         }
       ],
-      "lastKilled": "2026-04-17T02:55:03.000Z",
-      "npcId": 158437,
+      "lastKilled": "2026-04-24T02:33:20.836Z",
+      "npcId": 158464,
       "level": 66,
       "zone": "vexthal",
       "zoneLongName": "Vex Thal",
@@ -3984,58 +4213,53 @@
       "mr": 110,
       "loot": [
         {
-          "id": 26765,
-          "name": "Silver Steel Cloak",
-          "dropRate": 100
-        },
-        {
-          "id": 26761,
-          "name": "Belt of Mastery",
+          "id": 26759,
+          "name": "Circlet of Disguise",
           "dropRate": 10
         },
         {
-          "id": 28996,
-          "name": "Bracer of Black Blood",
+          "id": 26758,
+          "name": "Orb of Satisfaction",
           "dropRate": 10
         },
         {
-          "id": 28995,
-          "name": "Thorny Chain Helm",
+          "id": 26757,
+          "name": "Ring of Resistance",
           "dropRate": 10
         },
         {
-          "id": 26769,
-          "name": "Mark of Shadows",
+          "id": 26756,
+          "name": "Mask of Dark Thoughts",
           "dropRate": 10
         },
         {
-          "id": 26768,
-          "name": "Wand of Tranquility",
+          "id": 26755,
+          "name": "Nightcaller Leggings",
           "dropRate": 10
         },
         {
-          "id": 26764,
-          "name": "Wand of Everlasting Water",
+          "id": 26754,
+          "name": "Shield of Energy",
           "dropRate": 10
         },
         {
-          "id": 26760,
-          "name": "Umbracite Plate Leggings",
+          "id": 26753,
+          "name": "Spiked Shoulderpads",
           "dropRate": 10
         },
         {
-          "id": 26762,
-          "name": "Crown of Energy",
+          "id": 26752,
+          "name": "Bracelet of Darkness",
           "dropRate": 10
         },
         {
-          "id": 26766,
-          "name": "Cloak of the Black Wind",
+          "id": 26751,
+          "name": "Mask of Piety",
           "dropRate": 10
         },
         {
-          "id": 26763,
-          "name": "Crown of Ambivalence",
+          "id": 26750,
+          "name": "Spiked Chain Leggings",
           "dropRate": 10
         },
         {
@@ -4134,8 +4358,8 @@
           "dropRate": 5
         },
         {
-          "id": 26616,
-          "name": "Ancient: Greater Concussion",
+          "id": 26621,
+          "name": "Ancient: Gift of Aegolism",
           "dropRate": 1
         },
         {
@@ -4149,8 +4373,8 @@
           "dropRate": 1
         },
         {
-          "id": 26621,
-          "name": "Ancient: Gift of Aegolism",
+          "id": 26608,
+          "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         },
         {
@@ -4171,6 +4395,11 @@
         {
           "id": 26617,
           "name": "Ancient: Shock of Sun",
+          "dropRate": 1
+        },
+        {
+          "id": 26616,
+          "name": "Ancient: Greater Concussion",
           "dropRate": 1
         },
         {
@@ -4207,11 +4436,34 @@
           "id": 26609,
           "name": "Ancient: Legacy of Blades",
           "dropRate": 1
+        }
+      ],
+      "cr": 100,
+      "fr": 100,
+      "dr": 90,
+      "pr": 90,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2167,
+          "name": "Fling"
         },
         {
-          "id": 26608,
-          "name": "Ancient: High Priest&#39;s Bulwark",
-          "dropRate": 1
+          "id": 2162,
+          "name": "Black Winds"
         }
       ]
     },
@@ -4311,7 +4563,268 @@
         "Always Calls for Help",
         "NO LOITERING Drops Spawns Spawn Groups Faction (id: 12026) Spell Dementing Visions Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 </"
       ],
-      "spells": []
+      "spells": [],
+      "lastKilled": "2026-03-04T03:34:15.000Z",
+      "slowMitigation": 100
+    },
+    {
+      "id": "1777093055255",
+      "name": "Lady Vox",
+      "hp": 32000,
+      "zoneLongName": "Permafrost Caverns",
+      "rampages": false,
+      "flurries": false,
+      "aoes": [],
+      "loot": [
+        {
+          "id": 19070,
+          "name": "Torn, Frost covered book",
+          "dropRate": 10
+        },
+        {
+          "id": 9240,
+          "name": "White Dragon Hide",
+          "dropRate": 10
+        },
+        {
+          "id": 11052,
+          "name": "Tobrin&#39;s Mystical Eyepatch",
+          "dropRate": 10
+        },
+        {
+          "id": 11512,
+          "name": "Falchion of the Mistwalker",
+          "dropRate": 10
+        },
+        {
+          "id": 11601,
+          "name": "Runed Bolster Belt",
+          "dropRate": 10
+        },
+        {
+          "id": 11602,
+          "name": "White Dragon Scales",
+          "dropRate": 10
+        },
+        {
+          "id": 11604,
+          "name": "Scimitar of the Mistwalker",
+          "dropRate": 10
+        },
+        {
+          "id": 11605,
+          "name": "White Dragon Tooth",
+          "dropRate": 10
+        },
+        {
+          "id": 11606,
+          "name": "Dragon Bone Bracelet",
+          "dropRate": 10
+        },
+        {
+          "id": 11607,
+          "name": "McVaxius` Horn of War",
+          "dropRate": 10
+        },
+        {
+          "id": 11610,
+          "name": "Crystalline Spear",
+          "dropRate": 10
+        },
+        {
+          "id": 11611,
+          "name": "Warhammer of Divine Grace",
+          "dropRate": 10
+        },
+        {
+          "id": 17701,
+          "name": "Kavruul`s Mystic Pouch",
+          "dropRate": 10
+        },
+        {
+          "id": 11807,
+          "name": "Words of Bondage",
+          "dropRate": 2.3
+        },
+        {
+          "id": 11781,
+          "name": "Rune of the Astral",
+          "dropRate": 2.25
+        },
+        {
+          "id": 11731,
+          "name": "Nilitim&#39;s Grimoire Pg. 379",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11870,
+          "name": "Words of Crippling Force",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11868,
+          "name": "Words of Odus",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11867,
+          "name": "Words of Grappling",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11866,
+          "name": "Words of Acquisition (Beza)",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11776,
+          "name": "Rune of Rathe",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11730,
+          "name": "Nilitim&#39;s Grimoire Pg. 378",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11732,
+          "name": "Nilitim&#39;s Grimoire Pg. 400",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11733,
+          "name": "Nilitim&#39;s Grimoire Pg. 401",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11734,
+          "name": "Nilitim&#39;s Grimoire Pg. 415",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11735,
+          "name": "Nilitim&#39;s Grimoire Pg. 416",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11737,
+          "name": "Nilitim&#39;s Grimoire Pg. 450",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11763,
+          "name": "Rune of Concussion",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11779,
+          "name": "Rune of Ap`Sagor",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11780,
+          "name": "Rune of Frost",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11782,
+          "name": "Rune of Impetus",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11783,
+          "name": "Rune of Crippling",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11808,
+          "name": "Breath of Ro",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11865,
+          "name": "Words of Requisition",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11736,
+          "name": "Nilitim&#39;s Grimoire Pg. 449",
+          "dropRate": 1.25
+        },
+        {
+          "id": 11806,
+          "name": "Tears of Prexus",
+          "dropRate": 1.15
+        },
+        {
+          "id": 11869,
+          "name": "Words of the Ethereal",
+          "dropRate": 1.15
+        },
+        {
+          "id": 11809,
+          "name": "Wing of Xegony",
+          "dropRate": 1.1
+        }
+      ],
+      "npcId": 73057,
+      "level": 55,
+      "zone": "permafrost",
+      "expansion": 0,
+      "mr": 340,
+      "cr": 1000,
+      "fr": 70,
+      "dr": 340,
+      "pr": 340,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unfearable",
+        "Immune to melee except magical",
+        "Resistant to Ranged Spells",
+        "Flee percentage",
+        "Proximity Aggro",
+        "Use Warrior Skills",
+        "Leashed"
+      ],
+      "spells": [
+        {
+          "id": 9,
+          "name": "Superior Healing"
+        },
+        {
+          "id": 49,
+          "name": "Nullify Magic"
+        },
+        {
+          "id": 13,
+          "name": "Complete Healing"
+        },
+        {
+          "id": 314,
+          "name": "Resolution"
+        },
+        {
+          "id": 488,
+          "name": "Symbol of Naltron"
+        },
+        {
+          "id": 672,
+          "name": "Retribution"
+        },
+        {
+          "id": 862,
+          "name": "Frost Breath"
+        },
+        {
+          "id": 981,
+          "name": "Dragon Roar"
+        }
+      ],
+      "slowMitigation": 0
     },
     {
       "id": "1776615540949",
@@ -4613,15 +5126,42 @@
       "fr": 100,
       "dr": 15,
       "pr": 15,
-      "specialAbilities": [],
-      "spells": []
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Dual Wield",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except bane",
+        "Immune to lull effects",
+        "Proximity Aggro",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 2061,
+          "name": "Torturing Winds"
+        },
+        {
+          "id": 1968,
+          "name": "Stunning Strike"
+        }
+      ],
+      "lastKilled": "2026-04-25T03:32:41.106Z",
+      "slowMitigation": 0
     },
     {
       "id": "1776621335740",
       "name": "Lord Yelinak",
       "hp": 500000,
       "zoneLongName": "Skyshrine",
-      "rampages": false,
+      "rampages": true,
       "flurries": false,
       "aoes": [],
       "loot": [
@@ -4770,8 +5310,37 @@
       "fr": 65,
       "dr": 110,
       "pr": 110,
-      "specialAbilities": [],
-      "spells": []
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Double Attack",
+        "Dual Wield",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Resistant to Ranged Spells"
+      ],
+      "spells": [
+        {
+          "id": 1949,
+          "name": "Ice breath"
+        },
+        {
+          "id": 1950,
+          "name": "Mind Cloud"
+        },
+        {
+          "id": 905,
+          "name": "AvatarKnockback"
+        }
+      ],
+      "slowMitigation": 100
     },
     {
       "id": "1776615540950",
@@ -5032,7 +5601,296 @@
           "name": "Spell: Call of the Predator",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-19T02:06:10.000Z"
+    },
+    {
+      "id": "1777093029898",
+      "name": "Nagafen",
+      "hp": 32000,
+      "zoneLongName": "Nagafen's Lair",
+      "rampages": false,
+      "flurries": false,
+      "aoes": [],
+      "loot": [
+        {
+          "id": 16976,
+          "name": "Crystallized Sulfur",
+          "dropRate": 100
+        },
+        {
+          "id": 2646,
+          "name": "Anizok&#39;s Maximizing Gadget",
+          "dropRate": 50
+        },
+        {
+          "id": 11628,
+          "name": "Blight, Hammer of the Scourge",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11621,
+          "name": "Cloak of Flames",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11622,
+          "name": "Red Dragon Scales",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11624,
+          "name": "Gauntlets of Fiery Might",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11625,
+          "name": "Orb of Tishan",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11626,
+          "name": "Selo`s Drums of the March",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11627,
+          "name": "Red Dragon Tooth",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11629,
+          "name": "Hierophant`s Crook",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11630,
+          "name": "Gold Plated Koshigatana",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11631,
+          "name": "Prayers of Life",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11632,
+          "name": "Bladestopper",
+          "dropRate": 8.33
+        },
+        {
+          "id": 17702,
+          "name": "Treasure Hunter`s Satchel",
+          "dropRate": 8.33
+        },
+        {
+          "id": 19071,
+          "name": "Torn, burnt book",
+          "dropRate": 8.33
+        },
+        {
+          "id": 11807,
+          "name": "Words of Bondage",
+          "dropRate": 2.3
+        },
+        {
+          "id": 11781,
+          "name": "Rune of the Astral",
+          "dropRate": 2.25
+        },
+        {
+          "id": 10036,
+          "name": "Black Sapphire",
+          "dropRate": 2
+        },
+        {
+          "id": 10035,
+          "name": "Ruby",
+          "dropRate": 2
+        },
+        {
+          "id": 10037,
+          "name": "Diamond",
+          "dropRate": 2
+        },
+        {
+          "id": 10048,
+          "name": "Star Ruby Earring",
+          "dropRate": 2
+        },
+        {
+          "id": 10049,
+          "name": "Fire Emerald Ring",
+          "dropRate": 2
+        },
+        {
+          "id": 10050,
+          "name": "Sapphire Necklace",
+          "dropRate": 2
+        },
+        {
+          "id": 10051,
+          "name": "Ruby Crown",
+          "dropRate": 2
+        },
+        {
+          "id": 10053,
+          "name": "Jacinth",
+          "dropRate": 2
+        },
+        {
+          "id": 22503,
+          "name": "Blue Diamond",
+          "dropRate": 2
+        },
+        {
+          "id": 11776,
+          "name": "Rune of Rathe",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11730,
+          "name": "Nilitim&#39;s Grimoire Pg. 378",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11731,
+          "name": "Nilitim&#39;s Grimoire Pg. 379",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11732,
+          "name": "Nilitim&#39;s Grimoire Pg. 400",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11733,
+          "name": "Nilitim&#39;s Grimoire Pg. 401",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11734,
+          "name": "Nilitim&#39;s Grimoire Pg. 415",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11735,
+          "name": "Nilitim&#39;s Grimoire Pg. 416",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11870,
+          "name": "Words of Crippling Force",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11868,
+          "name": "Words of Odus",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11763,
+          "name": "Rune of Concussion",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11779,
+          "name": "Rune of Ap`Sagor",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11780,
+          "name": "Rune of Frost",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11737,
+          "name": "Nilitim&#39;s Grimoire Pg. 450",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11782,
+          "name": "Rune of Impetus",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11783,
+          "name": "Rune of Crippling",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11808,
+          "name": "Breath of Ro",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11865,
+          "name": "Words of Requisition",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11866,
+          "name": "Words of Acquisition (Beza)",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11867,
+          "name": "Words of Grappling",
+          "dropRate": 1.5
+        },
+        {
+          "id": 11736,
+          "name": "Nilitim&#39;s Grimoire Pg. 449",
+          "dropRate": 1.25
+        },
+        {
+          "id": 11806,
+          "name": "Tears of Prexus",
+          "dropRate": 1.15
+        },
+        {
+          "id": 11869,
+          "name": "Words of the Ethereal",
+          "dropRate": 1.15
+        },
+        {
+          "id": 11809,
+          "name": "Wing of Xegony",
+          "dropRate": 1.1
+        }
+      ],
+      "npcId": 32040,
+      "level": 55,
+      "zone": "soldungb",
+      "expansion": 0,
+      "mr": 340,
+      "cr": 70,
+      "fr": 425,
+      "dr": 340,
+      "pr": 340,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unfearable",
+        "Immune to melee except magical",
+        "Resistant to Ranged Spells",
+        "Flee percentage",
+        "Leashed"
+      ],
+      "spells": [
+        {
+          "id": 861,
+          "name": "Lava Breath"
+        },
+        {
+          "id": 981,
+          "name": "Dragon Roar"
+        }
+      ],
+      "slowMitigation": 0
     },
     {
       "id": "1776615540951",
@@ -5283,7 +6141,8 @@
           "name": "Spell: Call of the Predator",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-19T02:42:16.000Z"
     },
     {
       "id": "1776615540953",
@@ -5298,7 +6157,8 @@
       "zoneLongName": "Ssraeshza Temple",
       "expansion": 3,
       "mr": 65,
-      "loot": []
+      "loot": [],
+      "lastKilled": "2026-04-25T02:44:22.814Z"
     },
     {
       "id": "1776615540965",
@@ -5339,7 +6199,32 @@
           "name": "Spell: Blessing of Aegolism",
           "dropRate": 5.263
         }
-      ]
+      ],
+      "cr": 100,
+      "fr": 100,
+      "dr": 180,
+      "pr": 180,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Double Attack",
+        "Dual Wield",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unfearable",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2786,
+          "name": "In Irons"
+        }
+      ],
+      "slowMitigation": 100,
+      "lastKilled": "2026-04-03T22:43:11.000Z"
     },
     {
       "id": "1776615540966",
@@ -5380,7 +6265,52 @@
           "name": "Spell: Koadic&#39;s Endless Intellect",
           "dropRate": 7.207
         }
-      ]
+      ],
+      "cr": 100,
+      "fr": 100,
+      "dr": 180,
+      "pr": 180,
+      "specialAbilities": [
+        "Summon",
+        "Dual Wield",
+        "Magical Attack",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2786,
+          "name": "In Irons"
+        },
+        {
+          "id": 191,
+          "name": "Feedback"
+        },
+        {
+          "id": 73,
+          "name": "Gravity Flux"
+        },
+        {
+          "id": 1697,
+          "name": "Recant Magic"
+        },
+        {
+          "id": 1705,
+          "name": "Boltran`s Agacerie"
+        },
+        {
+          "id": 1691,
+          "name": "Glamour of Kintaz"
+        },
+        {
+          "id": 1698,
+          "name": "Dementia"
+        }
+      ],
+      "slowMitigation": 0,
+      "lastKilled": "2026-04-04T21:35:24.000Z"
     },
     {
       "id": "1776615540967",
@@ -5421,7 +6351,29 @@
           "name": "Song: Warsong of the Vah Shir",
           "dropRate": 8.791
         }
-      ]
+      ],
+      "cr": 100,
+      "fr": 100,
+      "dr": 180,
+      "pr": 180,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Dual Wield",
+        "Magical Attack",
+        "Uncharmable",
+        "Unstunable",
+        "Unfearable",
+        "Immune to lull effects"
+      ],
+      "spells": [
+        {
+          "id": 2786,
+          "name": "In Irons"
+        }
+      ],
+      "slowMitigation": 0,
+      "lastKilled": "2026-04-03T23:16:48.000Z"
     },
     {
       "id": "1776615540968",
@@ -5484,7 +6436,9 @@
           "id": 2786,
           "name": "In Irons"
         }
-      ]
+      ],
+      "slowMitigation": 0,
+      "lastKilled": "2026-04-04T21:17:57.000Z"
     },
     {
       "id": "1776615540978",
@@ -5595,7 +6549,8 @@
           "name": "Dark Wind Shroud",
           "dropRate": 5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-24T01:17:35.748Z"
     },
     {
       "id": "1776615540987",
@@ -5863,7 +6818,9 @@
           "id": 2990,
           "name": "Chromatic Disruption"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T04:12:24.154Z",
+      "slowMitigation": 0
     },
     {
       "id": "1776615540988",
@@ -5884,7 +6841,8 @@
           "name": "Shissar Blood",
           "dropRate": 25
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T02:44:43.306Z"
     },
     {
       "id": "1776615540993",
@@ -6050,7 +7008,8 @@
           "name": "Sapphire",
           "dropRate": 1.5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-14T02:54:48.000Z"
     },
     {
       "id": "1776615540994",
@@ -6216,7 +7175,8 @@
           "name": "Sapphire",
           "dropRate": 1.5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-24T03:11:15.317Z"
     },
     {
       "id": "1776615540995",
@@ -6372,7 +7332,8 @@
           "name": "Sapphire",
           "dropRate": 1.5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-14T02:53:41.000Z"
     },
     {
       "id": "1776615540996",
@@ -6613,7 +7574,8 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-15T03:44:37.000Z"
     },
     {
       "id": "1776615540997",
@@ -6834,7 +7796,8 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-15T01:52:40.000Z"
     },
     {
       "id": "1776615540998",
@@ -7080,13 +8043,35 @@
           "name": "Ancient: High Priest&#39;s Bulwark",
           "dropRate": 1
         }
-      ]
+      ],
+      "cr": 190,
+      "fr": 155,
+      "dr": 140,
+      "pr": 150,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Dual Wield",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to lull effects",
+        "Always Calls for Help Can proc: Fling Drops Spawns Spawn Groups Faction (id: 20532) Thall_Xundraux_Diabo Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-outline-secondary co"
+      ],
+      "spells": [],
+      "lastKilled": "2026-04-24T01:29:20.577Z"
     },
     {
       "id": "1776621192617",
       "name": "The Avatar of War",
-      "hp": 850000,
-      "zoneLongName": "Kael Drakkal",
+      "hp": "850000",
+      "zoneLongName": "Kael Drakkel",
       "rampages": false,
       "flurries": true,
       "aoes": [],
@@ -7151,7 +8136,9 @@
         "025210 Blade of Carnage (16.66%)",
         "&#"
       ],
-      "spells": []
+      "spells": [],
+      "lastKilled": "2025-10-09T02:07:40.000Z",
+      "slowMitigation": 100
     },
     {
       "id": "1776615540999",
@@ -7412,7 +8399,8 @@
           "name": "Spell: Call of the Predator",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-19T02:29:45.000Z"
     },
     {
       "id": "1776615541000",
@@ -7420,7 +8408,7 @@
       "rampages": false,
       "flurries": true,
       "aoes": [],
-      "lastKilled": "2026-04-10T01:36:29.000Z",
+      "lastKilled": "2026-04-25T01:22:43.636Z",
       "npcId": 124315,
       "hp": 300000,
       "level": 66,
@@ -7769,7 +8757,39 @@
           "name": "Shadow Flame short sword",
           "dropRate": 0.5
         }
-      ]
+      ],
+      "cr": 100,
+      "fr": 150,
+      "dr": 1000,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Rampage",
+        "Magical Attack",
+        "Unslowable",
+        "Unmezzable",
+        "Uncharmable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Proximity Aggro",
+        "Always Calls for Help"
+      ],
+      "spells": [
+        {
+          "id": 2846,
+          "name": "Itraer Vius Touch"
+        },
+        {
+          "id": 2905,
+          "name": "Touch of the Mistress"
+        }
+      ],
+      "lastKilled": "2026-04-25T03:56:25.238Z",
+      "slowMitigation": 100
     },
     {
       "id": "1776615541002",
@@ -8030,7 +9050,399 @@
           "name": "Spell: Call of the Predator",
           "dropRate": 1
         }
-      ]
+      ],
+      "lastKilled": "2026-04-19T01:59:07.000Z"
+    },
+    {
+      "id": "1777090866754",
+      "name": "The Va`Dyn",
+      "hp": 250000,
+      "zoneLongName": "Akheva Ruins",
+      "rampages": false,
+      "flurries": true,
+      "aoes": [],
+      "loot": [
+        {
+          "id": 22196,
+          "name": "A Glowing Orb of Luclinite",
+          "dropRate": 100
+        },
+        {
+          "id": 32523,
+          "name": "Roudy Rubble",
+          "dropRate": 30
+        },
+        {
+          "id": 32522,
+          "name": "Shade rocks",
+          "dropRate": 25
+        },
+        {
+          "id": 30479,
+          "name": "Song: Ervaj&#39;s Lost Composition",
+          "dropRate": 20
+        },
+        {
+          "id": 28818,
+          "name": "Shield of Infused Power",
+          "dropRate": 10
+        },
+        {
+          "id": 28827,
+          "name": "Skybreaker",
+          "dropRate": 10
+        },
+        {
+          "id": 28832,
+          "name": "Toetwister",
+          "dropRate": 10
+        },
+        {
+          "id": 32178,
+          "name": "Shaderock Crown",
+          "dropRate": 10
+        },
+        {
+          "id": 32179,
+          "name": "Shaderock Robe",
+          "dropRate": 10
+        },
+        {
+          "id": 32185,
+          "name": "Shaderock girdle",
+          "dropRate": 10
+        },
+        {
+          "id": 32186,
+          "name": "Shaderock bracer",
+          "dropRate": 10
+        },
+        {
+          "id": 32187,
+          "name": "Shaderock Amulet",
+          "dropRate": 10
+        },
+        {
+          "id": 26807,
+          "name": "Gold Inlaid Ulak",
+          "dropRate": 10
+        },
+        {
+          "id": 28813,
+          "name": "Aleje&#39;s Ceremonial Cudgel",
+          "dropRate": 10
+        },
+        {
+          "id": 15995,
+          "name": "Spell: Hammer of Souls",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7710,
+          "name": "Song: Warsong of the Vah Shir",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7700,
+          "name": "Spell: Warder&#39;s Protection",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7690,
+          "name": "Spell: Brell&#39;s Mountainous Barrier",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7680,
+          "name": "Spell: Cloak of the Akheva",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7670,
+          "name": "Spell: Koadic&#39;s Endless Intellect",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7660,
+          "name": "Spell: Greater Familiar",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7650,
+          "name": "Spell: Zevfeer&#39;s Theft of Vitae",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7640,
+          "name": "Spell: Shock of Fiery Blades",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7630,
+          "name": "Spell: Khura&#39;s Focusing",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7620,
+          "name": "Spell: Nature&#39;s Recovery",
+          "dropRate": 7.692
+        },
+        {
+          "id": 7610,
+          "name": "Spell: Blessing of Aegolism",
+          "dropRate": 7.692
+        }
+      ],
+      "npcId": 179178,
+      "level": 63,
+      "zone": "akheva",
+      "expansion": 3,
+      "mr": 75,
+      "cr": 150,
+      "fr": 50,
+      "dr": 1000,
+      "pr": 1000,
+      "specialAbilities": [
+        "Summon",
+        "Enrage",
+        "Flurry",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unsnarable",
+        "Unfearable",
+        "Immune to fleeing",
+        "Immune to melee except magical",
+        "Immune to lull effects",
+        "Always Calls for Help Can proc: Storm Tremor Drops Spawns Spawn Groups Faction (id: 20900) A Glowing Orb of Luclinite Default -1.0 -> -1.0 Bulk copy in-game links: <button class=\"btn btn-sm btn-"
+      ],
+      "spells": [],
+      "slowMitigation": 0
+    },
+    {
+      "id": "1777093072727",
+      "name": "Trakanon",
+      "hp": 32000,
+      "zoneLongName": "Ruins of Sebilis",
+      "rampages": false,
+      "flurries": false,
+      "aoes": [],
+      "loot": [
+        {
+          "id": 20526,
+          "name": "Undead Dragongut Strings",
+          "dropRate": 100
+        },
+        {
+          "id": 7276,
+          "name": "Trakanon&#39;s Tooth",
+          "dropRate": 100
+        },
+        {
+          "id": 6478,
+          "name": "Undead Dragon Sinew",
+          "dropRate": 35
+        },
+        {
+          "id": 1606,
+          "name": "Mana Robe",
+          "dropRate": 8
+        },
+        {
+          "id": 6631,
+          "name": "Ton Po&#39;s Bo Stick of Understanding",
+          "dropRate": 8
+        },
+        {
+          "id": 5461,
+          "name": "Wild Lord&#39;s Tunic",
+          "dropRate": 8
+        },
+        {
+          "id": 4572,
+          "name": "Elder Spiritist&#39;s Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4565,
+          "name": "Donal&#39;s Chestplate of Mourning",
+          "dropRate": 8
+        },
+        {
+          "id": 4558,
+          "name": "Singing Steel Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4551,
+          "name": "Mrylokar&#39;s Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4537,
+          "name": "Tolan&#39;s Darkwood Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4530,
+          "name": "Jaundiced Bone Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4523,
+          "name": "Blood Ember Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 4516,
+          "name": "Cobalt Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 1627,
+          "name": "Cloak of Piety",
+          "dropRate": 8
+        },
+        {
+          "id": 1626,
+          "name": "Poisoned Mantle",
+          "dropRate": 8
+        },
+        {
+          "id": 4544,
+          "name": "Deepwater Breastplate",
+          "dropRate": 8
+        },
+        {
+          "id": 19418,
+          "name": "Spell: Mala",
+          "dropRate": 1
+        },
+        {
+          "id": 19407,
+          "name": "Spell: Visions of Grandeur",
+          "dropRate": 1
+        },
+        {
+          "id": 19406,
+          "name": "Spell: Dictate",
+          "dropRate": 1
+        },
+        {
+          "id": 19405,
+          "name": "Spell: Wind of Tashanian",
+          "dropRate": 1
+        },
+        {
+          "id": 19402,
+          "name": "Spell: Asphyxiate",
+          "dropRate": 1
+        },
+        {
+          "id": 19401,
+          "name": "Spell: Gift of Pure Thought",
+          "dropRate": 1
+        },
+        {
+          "id": 19372,
+          "name": "Spell: Greater Vocaration: Water",
+          "dropRate": 1
+        },
+        {
+          "id": 19371,
+          "name": "Spell: Greater Vocaration: Air",
+          "dropRate": 1
+        },
+        {
+          "id": 19370,
+          "name": "Spell: Manastorm",
+          "dropRate": 1
+        },
+        {
+          "id": 19262,
+          "name": "Spell: Banishment",
+          "dropRate": 1
+        },
+        {
+          "id": 15863,
+          "name": "Spell: Aegis of Ro",
+          "dropRate": 1
+        },
+        {
+          "id": 7730,
+          "name": "Spell: Spiritual Strength",
+          "dropRate": 1
+        },
+        {
+          "id": 7728,
+          "name": "Spell: Sha&#39;s Ferocity",
+          "dropRate": 1
+        }
+      ],
+      "npcId": 89154,
+      "level": 65,
+      "zone": "sebilis",
+      "expansion": 3,
+      "mr": 340,
+      "cr": 100,
+      "fr": 100,
+      "dr": 420,
+      "pr": 420,
+      "specialAbilities": [
+        "Summon",
+        "Magical Attack",
+        "Unmezzable",
+        "Uncharmable",
+        "Unstunable",
+        "Unfearable",
+        "Immune to melee except magical",
+        "Resistant to Ranged Spells",
+        "Immune to Taunt",
+        "Immune to lull effects",
+        "Proximity Aggro",
+        "Always Calls for Help",
+        "Use Warrior Skills"
+      ],
+      "spells": [
+        {
+          "id": 855,
+          "name": "Trakanon's Touch"
+        },
+        {
+          "id": 856,
+          "name": "Blinding Fear"
+        },
+        {
+          "id": 857,
+          "name": "Poison Breath"
+        },
+        {
+          "id": 1508,
+          "name": "Asystole"
+        },
+        {
+          "id": 2014,
+          "name": "Incinerate Bones"
+        },
+        {
+          "id": 3572,
+          "name": "Torbas' Venom Blast"
+        },
+        {
+          "id": 1613,
+          "name": "Deflux"
+        },
+        {
+          "id": 2015,
+          "name": "Conglaciation of Bone"
+        },
+        {
+          "id": 1615,
+          "name": "Cessation of Cor"
+        }
+      ],
+      "slowMitigation": 0
     },
     {
       "id": "1776615541003",
@@ -8807,7 +10219,8 @@
         "Immune to fleeing",
         "Immune to lull effects Drops Spawns Spawn Groups Faction (id: 20537) 20197_Va_Dyn_Khar_Misc Default -1.0 -> -1.0 Bulk copy in-game links: Item(s) 1 <h5 class=\"card"
       ],
-      "spells": []
+      "spells": [],
+      "lastKilled": "2026-04-15T01:08:23.000Z"
     },
     {
       "id": "1776615541006",
@@ -9106,7 +10519,8 @@
           "id": 2162,
           "name": "Black Winds"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-24T01:47:19.623Z"
     },
     {
       "id": "1776615541007",
@@ -9536,7 +10950,8 @@
           "id": 2096,
           "name": "Crushing Fist of the Wind"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T01:06:39.752Z"
     },
     {
       "id": "1776621036457",
@@ -9782,7 +11197,8 @@
           "id": 2106,
           "name": "Gift of A'err"
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T01:33:35.944Z"
     },
     {
       "id": "1776615541009",
@@ -10041,7 +11457,8 @@
           "dropRate": 2
         }
       ],
-      "zoneLongName": "Ssraeshza Temple"
+      "zoneLongName": "Ssraeshza Temple",
+      "lastKilled": "2026-04-24T03:38:07.504Z"
     },
     {
       "id": "1776615541010",
@@ -10318,7 +11735,8 @@
           "name": "Abysmal Banishment"
         }
       ],
-      "zoneLongName": "Ssraeshza Temple"
+      "zoneLongName": "Ssraeshza Temple",
+      "lastKilled": "2026-04-24T03:26:01.690Z"
     },
     {
       "id": "1776615541011",
@@ -10484,7 +11902,8 @@
           "name": "Sapphire",
           "dropRate": 1.5
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T01:58:34.000Z"
     },
     {
       "id": "1776615541012",
@@ -10745,7 +12164,8 @@
           "name": "Spell: Elnerick&#39;s Rending",
           "dropRate": 2
         }
-      ]
+      ],
+      "lastKilled": "2026-04-14T02:03:59.000Z"
     },
     {
       "id": "1776615541015",
@@ -10760,7 +12180,8 @@
       "zoneLongName": "Ssraeshza Temple",
       "expansion": 3,
       "mr": 65,
-      "loot": []
+      "loot": [],
+      "lastKilled": "2026-04-25T02:45:22.822Z"
     },
     {
       "id": "1776615541016",
@@ -10781,156 +12202,9 @@
           "name": "Shissar Blood",
           "dropRate": 25
         }
-      ]
+      ],
+      "lastKilled": "2026-04-25T02:46:32.343Z"
     }
   ],
-  "bossFightSettings": {
-    "always": [],
-    "never": [
-      "Eom Va Dyn",
-      "Pli Zethon Xakra",
-      "Eom Liako",
-      "Geneker",
-      "Libarer",
-      "Gebekab",
-      "Lober",
-      "by non-melee",
-      "Momula",
-      "Pli Thall Xakra",
-      "Zun Thall Xakra",
-      "Brochure"
-    ]
-  },
-  "knownBosses": [
-    "advisor zekuzh",
-    "arbiter korazhk",
-    "arch lich rhag`zadune",
-    "aten ha ra",
-    "blood of ssraeshza",
-    "diabo xi va",
-    "diabo xi va temariel",
-    "diabo xi xin",
-    "diabo xi xin thall",
-    "emperor ssraeshza",
-    "eom centien",
-    "eom centien xakra",
-    "eom liako",
-    "eom liako xakra",
-    "eom senshali",
-    "eom senshali xakra",
-    "eom thall",
-    "eom thall xakra",
-    "eom va dyn",
-    "eom va liako",
-    "eom va liako xakra",
-    "eom zethon",
-    "eom zethon xakra",
-    "gantru dralkenr",
-    "general kizuhx",
-    "granic obulus",
-    "grziz the tormentor",
-    "heriz the malignant",
-    "high priest of ssraeshza",
-    "hilog jarsath",
-    "hraashna the warder",
-    "kaas thox xi ans dyek",
-    "kaas thox xi aten ha ra",
-    "kalin nathsar",
-    "klazaz the slayer",
-    "lord inquisitor seru",
-    "master of the guard",
-    "nanzata the warder",
-    "nerla kunzar",
-    "nilasz the devourer",
-    "pli centien",
-    "pli centien xakra",
-    "pli liako",
-    "pli senshali",
-    "pli senshali xakra",
-    "pli thall",
-    "pli thall xakra",
-    "pli va dyn",
-    "pli va liako xakra",
-    "pli zethon",
-    "pli zethon xakra",
-    "praesertum bikun",
-    "praesertum matpa",
-    "praesertum rhugol",
-    "praesertum vantorus",
-    "praetorian valka",
-    "qua centien",
-    "qua centien xakra",
-    "qua liako xakra",
-    "qua senshali xakra",
-    "qua thall",
-    "qua thall xakra",
-    "qua va dyn",
-    "qua va liako",
-    "qua va liako xakra",
-    "qua zethon",
-    "qua zethon xakra",
-    "questioner rai",
-    "rhozth ssrakezh",
-    "rhozth ssravizh",
-    "rutin kylong",
-    "rygan anisher",
-    "shaded stones",
-    "shei vinitras",
-    "slakiz the malignant",
-    "ssraeshzian blood priest",
-    "ssraeshzian death priest",
-    "ssraeshzian plague priest",
-    "ssraeshzian terror priest",
-    "taskmaster mikazha",
-    "taskmaster vezhkah",
-    "taskmaster zhe`vozh",
-    "thall va kelun",
-    "thall va xakra",
-    "thall xundraux diabo",
-    "the final arbiter",
-    "the herald of vulak`aerr",
-    "the itraer vius",
-    "the progenitor",
-    "tukaarak the warder",
-    "va dyn khar",
-    "va xakra",
-    "va xi aten ha ra",
-    "ventani the warder",
-    "vethrol the skycaller",
-    "vyzh`dra the cursed",
-    "vyzh`dra the exiled",
-    "warden mekuzh",
-    "xerkizh the creator",
-    "xi vius",
-    "xi xaui",
-    "yasiz the devourer",
-    "zlakas the slayer",
-    "zov centien",
-    "zov centien xakra",
-    "zov liako",
-    "zov liako xakra",
-    "zov senshali",
-    "zov senshali xakra",
-    "zov thall",
-    "zov thall xakra",
-    "zov va dyn",
-    "zov va liako",
-    "zov va liako xakra",
-    "zov zethon",
-    "zov zethon xakra",
-    "zun centien",
-    "zun centien xakra",
-    "zun liako",
-    "zun liako xakra",
-    "zun senshali",
-    "zun senshali xakra",
-    "zun thall",
-    "zun thall xakra",
-    "zun va dyn",
-    "zun va liako",
-    "zun va liako xakra",
-    "zun zethon",
-    "zun zethon xakra"
-  ],
-  "exportedAt": "2026-04-21T15:38:59.043956+00:00"
+  "exportedAt": "2026-04-25T05:48:37.699Z"
 }
