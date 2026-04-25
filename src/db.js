@@ -161,6 +161,11 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_characters_player ON characters(player_id);
     CREATE INDEX IF NOT EXISTS idx_characters_name   ON characters(name COLLATE NOCASE);
   `);
+  // Add last_seen_time to characters if it doesn't exist yet (safe migration)
+  const cols = db.prepare("PRAGMA table_info(characters)").all().map(c => c.name);
+  if (!cols.includes('last_seen_time')) {
+    db.prepare("ALTER TABLE characters ADD COLUMN last_seen_time INTEGER").run();
+  }
 }
 
 // ── Migration from electron-store ─────────────────────────────────────────────
@@ -234,12 +239,6 @@ function migrate(store) {
     // Boss mobs
     const insBoss = db.prepare('INSERT OR IGNORE INTO boss_mobs(name, data) VALUES(?, ?)');
     for (const m of store.get('bossMobInfo', [])) insBoss.run(m.name, JSON.stringify(m));
-
-    // Boss fight settings
-    const insBFS = db.prepare('INSERT OR IGNORE INTO boss_fight_settings(list, name) VALUES(?, ?)');
-    const bfs = store.get('bossFightSettings', { always: [], never: [] });
-    for (const n of bfs.always || []) insBFS.run('always', n);
-    for (const n of bfs.never  || []) insBFS.run('never',  n);
 
     // Known bosses
     const insKB = db.prepare('INSERT OR IGNORE INTO known_bosses(name) VALUES(?)');
@@ -391,21 +390,6 @@ function setBossMobs(mobs) {
   })();
 }
 
-function getBossFightSettings() {
-  const rows = db.prepare('SELECT list, name FROM boss_fight_settings').all();
-  const out = { always: [], never: [] };
-  for (const r of rows) out[r.list]?.push(r.name);
-  return out;
-}
-
-function setBossFightSettings(settings) {
-  db.transaction(() => {
-    db.prepare('DELETE FROM boss_fight_settings').run();
-    const ins = db.prepare('INSERT INTO boss_fight_settings(list, name) VALUES(?, ?)');
-    for (const n of settings.always || []) ins.run('always', n);
-    for (const n of settings.never  || []) ins.run('never',  n);
-  })();
-}
 
 function getKnownBosses() {
   return new Set(db.prepare('SELECT name FROM known_bosses').all().map(r => r.name));
@@ -416,16 +400,13 @@ function addKnownBoss(name) {
 }
 
 function getBossFightsHistory() {
-  return db.prepare('SELECT data FROM boss_fights_history ORDER BY recorded_at DESC LIMIT 5')
+  return db.prepare('SELECT data FROM boss_fights_history ORDER BY recorded_at DESC')
     .all().map(r => JSON.parse(r.data));
 }
 
 function addBossFight(fight) {
   db.prepare('INSERT INTO boss_fights_history(boss_name, recorded_at, data) VALUES(?, ?, ?)')
     .run(fight.bossName || '', fight.id || fight.startTime || Date.now(), JSON.stringify(fight));
-  db.prepare(`DELETE FROM boss_fights_history WHERE id NOT IN (
-    SELECT id FROM boss_fights_history ORDER BY recorded_at DESC LIMIT 5
-  )`).run();
 }
 
 // ── Item / NPC cache helpers ──────────────────────────────────────────────────
@@ -621,7 +602,8 @@ function upsertCharacterSeen(name, now) {
     db.prepare('INSERT INTO characters(player_id, name) VALUES(?, ?)').run(player.lastInsertRowid, name);
     char = db.prepare('SELECT id, player_id FROM characters WHERE name = ? COLLATE NOCASE').get(name);
   }
-  db.prepare('UPDATE players SET last_seen_time = ? WHERE id = ?').run(now, char.player_id);
+  db.prepare('UPDATE players    SET last_seen_time = ? WHERE id = ?').run(now, char.player_id);
+  db.prepare('UPDATE characters SET last_seen_time = ? WHERE id = ?').run(now, char.id);
   return char;
 }
 
@@ -731,7 +713,7 @@ module.exports = {
   // Profiles
   getProfile, setProfile, getAllProfiles,
   // Boss mobs
-  getBossMobs, setBossMobs, getBossFightSettings, setBossFightSettings,
+  getBossMobs, setBossMobs,
   getKnownBosses, addKnownBoss, getBossFightsHistory, addBossFight, clearBossFightsHistory,
   // Item / NPC cache
   getItemCache, getItemById, setItem, getNpcCache, getNpcByKey, setNpc,

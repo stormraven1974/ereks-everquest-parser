@@ -897,6 +897,26 @@
   .loot-shadow { font-family: var(--mono); font-size: 9px; color: var(--accent2); }
   .loot-countdown { font-family: var(--mono); font-size: 11px; color: var(--accent2); font-weight: bold; }
 
+  /* ── Character Tab inner sub-tabs ── */
+  .char-inner-nav { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 0; flex-shrink: 0; }
+  .char-inner-tab { padding: 8px 20px; font-size: 11px; font-family: var(--mono); letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color .15s; }
+  .char-inner-tab:hover { color: var(--text); }
+  .char-inner-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .char-inner-panel { display: none; flex: 1; overflow-y: auto; }
+  .char-inner-panel.active { display: flex; flex-direction: column; }
+  #tab-character { flex-direction: column; }
+
+  /* ── Spells panel rows ── */
+  .spell-row-missing td { background: rgba(255,180,0,.07); }
+  .spell-row-missing .spell-name { color: #ffc560; font-weight: 600; }
+  .spell-row-known .spell-status { color: var(--accent); }
+  .spell-row-overlevel td { opacity: .4; }
+  .spell-btn-add { padding: 2px 8px; font-size: 10px; }
+  .spell-btn-ignore { padding: 1px 5px; font-size: 10px; background: transparent; border-color: var(--border); color: var(--text-dim); }
+  .spell-btn-ignore:hover { border-color: var(--text-dim); color: var(--text); }
+  .spell-row-ignored td { opacity: .35; }
+  .spell-wishlist-badge { font-size: 10px; color: var(--accent2); font-style: italic; }
+
   /* ── Loot Tab ── */
   .loot-setup-wrap { padding: 24px; overflow-y: auto; flex: 1; }
 
@@ -1060,7 +1080,7 @@
 <div id="nav">
   <div class="nav-tab active" data-tab="dashboard">Dashboard</div>
   <div class="nav-tab" data-tab="players">Socials</div>
-  <div class="nav-tab" data-tab="loot">Loot</div>
+  <div class="nav-tab" data-tab="character">Character</div>
   <div class="nav-tab" data-tab="fights">Fights</div>
   <div class="nav-tab" data-tab="timers">Timers</div>
   <div class="nav-tab" data-tab="raid">Raid</div>
@@ -1130,6 +1150,13 @@
             <option value="Shaman">Shaman</option>
             <option value="Warrior">Warrior</option>
             <option value="Wizard">Wizard</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Level</label>
+          <select id="char-level" style="max-width:100px;">
+            <option value="">—</option>
+            <!-- populated by JS -->
           </select>
         </div>
         <div class="field-row">
@@ -1229,20 +1256,8 @@
 
       <div class="form-section" style="margin-top:32px;">
         <div class="section-title">Boss Fights</div>
-        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:12px;">
-          Fights where player damage to a single named target exceeds 40,000 are auto-recorded. Names starting with "a " or "an " are excluded. Use the lists below to override.
-        </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:10px;color:var(--accent3);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Always Record</div>
-            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">One name per line. Recorded even if under threshold.</div>
-            <textarea id="boss-always-list" rows="6" placeholder="Lord Inquisitor Seru&#10;Vulak`Aerr"></textarea>
-          </div>
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:10px;color:var(--danger);font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Never Record</div>
-            <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:6px;">One name per line. Excluded even if over threshold.</div>
-            <textarea id="boss-never-list" rows="6" placeholder="a grimling guard&#10;an onyx warden"></textarea>
-          </div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:16px;">
+          Fights are recorded for mobs listed in the Boss Mobs tab. Add or remove mobs there to control what gets tracked.
         </div>
 
         <div class="section-title">Features</div>
@@ -1606,30 +1621,68 @@
   </div>
 
   <!-- ── LOOT TAB ── -->
-  <div class="tab-panel" id="tab-loot">
-    <div class="loot-setup-wrap">
-      <!-- ── Equipment & Desired Loot ── -->
+  <div class="tab-panel" id="tab-character">
+    <!-- Inner sub-tab nav -->
+    <div class="char-inner-nav">
+      <div class="char-inner-tab active" data-inner="gear">Gear</div>
+      <div class="char-inner-tab" data-inner="spells">Spells</div>
+      <div class="char-inner-tab" data-inner="loot">Loot</div>
+    </div>
+
+    <!-- ── GEAR sub-panel ── -->
+    <div class="char-inner-panel active loot-setup-wrap" id="char-panel-gear">
       <div class="form-section">
         <div class="section-title">Equipment &amp; Desired Loot</div>
         <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Per-character. Load your <em>CharacterName</em>-Inventory.txt to auto-populate current gear. Add desired items to receive voice alerts when they're put up for bid.</p>
-
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="loadEquipmentFile(true)">Refresh Equipment</button>
           <span id="gear-load-status" style="font-size:10px;color:var(--text-dim);"></span>
         </div>
-
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           <input type="text" id="desired-loot-search" placeholder="Search item to add to desired loot…" style="max-width:260px;" onkeydown="if(event.key==='Enter')searchDesiredLoot()"/>
           <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="searchDesiredLoot()">Search</button>
           <span id="desired-loot-search-status" style="font-size:10px;color:var(--text-dim);"></span>
         </div>
         <div id="desired-loot-search-results" style="display:none;margin-bottom:14px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
-
         <div id="gear-slots" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
       </div>
+    </div>
 
-      <!-- ── Alpha Loot Tracker ── -->
-      <div class="form-section" style="margin-top:16px;">
+    <!-- ── SPELLS sub-panel ── -->
+    <div class="char-inner-panel" id="char-panel-spells" style="display:none;padding:24px;overflow:hidden;">
+      <div class="form-section" style="height:100%;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-shrink:0;">
+          <div class="section-title" style="margin:0;border:none;">Spells</div>
+          <div style="flex:1;"></div>
+          <label style="font-size:11px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="spells-outstanding-only" onchange="renderSpellList()"/>
+            Show outstanding only
+          </label>
+          <button class="btn" style="padding:3px 10px;font-size:10px;" onclick="loadSpells(true)">Refresh</button>
+        </div>
+        <div id="spells-status" style="font-size:11px;color:var(--text-dim);margin-bottom:8px;flex-shrink:0;"></div>
+        <div style="flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
+          <table id="spells-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#0d1526;color:var(--text-dim);font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;position:sticky;top:0;z-index:1;">
+                <th style="padding:7px 12px;text-align:left;font-weight:400;width:48px;">Lvl</th>
+                <th style="padding:7px 12px;text-align:left;font-weight:400;">Spell Name</th>
+                <th style="padding:7px 12px;text-align:center;font-weight:400;width:90px;">Status</th>
+                <th style="padding:7px 8px;text-align:right;font-weight:400;width:100px;"></th>
+              </tr>
+            </thead>
+            <tbody id="spells-tbody">
+              <tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">Open the Character tab to load spells.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOOT sub-panel ── -->
+    <div class="char-inner-panel loot-setup-wrap" id="char-panel-loot" style="display:none;">
+      <!-- Alpha Loot Tracker -->
+      <div class="form-section">
         <div class="section-title">Alpha Loot Tracker</div>
         <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">
           Tracks which group member is next for alpha loot. Rotation advances automatically when a listed item is looted.
@@ -1647,16 +1700,14 @@
         <div id="alpha-item-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
 
-      <!-- ── Loot Bidding Config ── -->
+      <!-- Loot Bidding Config -->
       <div class="form-section" style="margin-top:16px;">
         <div class="section-title">Loot Bidding</div>
         <p style="font-size:11px;color:var(--text-dim);margin-bottom:16px;">Configure guild loot message patterns. Settings are global (not per-character).</p>
-
         <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="loot-enabled" class="toggle"/>
           <label style="font-size:12px;cursor:pointer;" for="loot-enabled">Enable loot tracking</label>
         </div>
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
           <div>
             <div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-bottom:4px;">BIDS OPEN KEYWORD</div>
@@ -1689,7 +1740,6 @@
             <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Separates items in CLOSING IN and SOLD messages (e.g. " // ").</div>
           </div>
         </div>
-
         <button class="btn success" onclick="saveLootConfig()">Save Settings</button>
       </div>
 
@@ -1798,6 +1848,7 @@
       <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);">
         <div class="section-title" style="margin:0;border:none;font-size:10px;color:var(--accent);">BOSS FIGHTS</div>
         <div style="flex:1;"></div>
+        <button class="btn" style="padding:3px 12px;font-size:10px;" onclick="reseedBossFights()">Reseed from Log</button>
         <button class="btn danger" style="padding:3px 12px;font-size:10px;" onclick="clearBossFights()">Clear All</button>
       </div>
 
@@ -2007,7 +2058,7 @@
         <!-- Online Friends -->
         <div style="flex:1;min-width:0;">
           <div class="section-title" style="margin-bottom:8px;font-size:10px;">Online Friends</div>
-          <div id="online-friends-list" style="display:flex;flex-direction:column;gap:4px;">
+          <div id="online-friends-list" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
             <div style="color:var(--text-dim);font-family:var(--mono);font-size:11px;">No friends online.</div>
           </div>
         </div>
@@ -2149,7 +2200,25 @@ let lastCombatSummary = null;
 let charName = '';
 let charClass = '';
 let charRace = '';
+let charLevel = 0;
 let currentProfileKey = 'default';
+
+// Spells panel state
+let spellsAll = [];
+let spellsKnown = new Set();
+let spellsIgnored = new Set();
+let spellsLoaded = false;
+let spellsLoading = false;
+
+// Populate level dropdown 1-65
+(function() {
+  const sel = document.getElementById('char-level');
+  for (let i = 1; i <= 65; i++) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = i;
+    sel.appendChild(o);
+  }
+})();
 
 function profileKeyFromPath(logPath) {
   if (!logPath) return 'default';
@@ -2177,12 +2246,14 @@ async function init() {
   // Load profile settings
   const profile = await ipcRenderer.invoke('get-profile') || {};
 
-  charName = profile.charName || '';
+  charName  = profile.charName  || '';
   charClass = profile.charClass || '';
   charRace  = profile.charRace  || '';
+  charLevel = profile.charLevel || 0;
   document.getElementById('char-name').value  = charName;
   document.getElementById('char-class').value = charClass;
   document.getElementById('char-race').value  = charRace;
+  document.getElementById('char-level').value = charLevel || '';
 
   document.getElementById('warder-name').value = profile.warderName || '';
 
@@ -2225,7 +2296,6 @@ async function init() {
   await loadFeatureToggles();
   lootHistory = await ipcRenderer.invoke('store-get', 'lootHistory') || {};
   await initGear();
-  await loadBossFightSettings();
   await loadBossMobInfo();
   await loadPlayers();
   await loadCurrentGroup();
@@ -2254,6 +2324,19 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'players') loadFriendsTab();
+    if (tab.dataset.tab === 'character') onCharacterTabOpen();
+  });
+});
+
+// ── Character inner sub-tab navigation ───────────────────────────────────────
+document.querySelectorAll('.char-inner-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.char-inner-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.char-inner-panel').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+    tab.classList.add('active');
+    const panel = document.getElementById('char-panel-' + tab.dataset.inner);
+    if (panel) { panel.classList.add('active'); panel.style.display = 'flex'; panel.style.flexDirection = 'column'; }
+    if (tab.dataset.inner === 'spells') onCharacterTabOpen();
   });
 });
 
@@ -2309,17 +2392,37 @@ async function startWatching() {
   if (!path) return;
   const newKey = profileKeyFromPath(path);
   if (newKey !== currentProfileKey) {
+    // Save the current character's profile before switching.
+    // Must be awaited so main.js processes it while _currentProfileKey still
+    // points to the old character — saveSettings() can't be used here because
+    // it reads the log path input (already updated to the new character's path).
+    await ipcRenderer.invoke('set-profile', {
+      charName:  document.getElementById('char-name').value.trim(),
+      charClass: document.getElementById('char-class').value,
+      charRace:  document.getElementById('char-race').value,
+      charLevel: parseInt(document.getElementById('char-level').value) || 0,
+      warderName: document.getElementById('warder-name').value.trim(),
+      spellExtendPct: parseInt(document.getElementById('spell-extend-pct').value) || 0,
+      announceSkillups: document.getElementById('announce-skillups').checked,
+      rampageChangeEnabled: document.getElementById('rampage-change-enabled').checked,
+      cooldownSettings: getCdSettings(),
+      enabledDiscs: getEnabledDiscs(),
+      discOverrides,
+      discTriggers: getEnabledDiscTriggers(charClass, getEnabledDiscs()),
+    });
     currentProfileKey = newKey;
     await ipcRenderer.invoke('store-set', 'currentProfileKey', currentProfileKey);
     updateProfileIndicator();
     // Reload profile settings for new character
     const profile = await ipcRenderer.invoke('get-profile') || {};
-    charName = profile.charName || '';
+    charName  = profile.charName  || '';
     charClass = profile.charClass || '';
     charRace  = profile.charRace  || '';
+    charLevel = profile.charLevel || 0;
     document.getElementById('char-name').value  = charName;
     document.getElementById('char-class').value = charClass;
     document.getElementById('char-race').value  = charRace;
+    document.getElementById('char-level').value = charLevel || '';
     document.getElementById('warder-name').value = profile.warderName || '';
     document.getElementById('spell-extend-pct').value = profile.spellExtendPct || 0;
     document.getElementById('announce-skillups').checked = !!profile.announceSkillups;
@@ -2338,6 +2441,17 @@ async function startWatching() {
     updateDiscSection(profile.charClass || '', profile.enabledDiscs || []);
     buildAaDefs(cdSettings, profile.enabledDiscs || [], profile.charClass || ''); renderAAPanel();
     renderBuffDefs(); renderDebuffDefs();
+    spellsLoaded = false; spellsAll = []; spellsKnown = new Set(); spellsIgnored = new Set();
+    // If the Spells panel is currently visible, reload it; otherwise clear it so stale data doesn't persist
+    const spellsPanel = document.getElementById('char-panel-spells');
+    if (spellsPanel && spellsPanel.style.display !== 'none') {
+      loadSpells(true);
+    } else {
+      const tbody = document.getElementById('spells-tbody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">Open the Character tab to load spells.</td></tr>';
+      const statusEl = document.getElementById('spells-status');
+      if (statusEl) statusEl.textContent = '';
+    }
     await ipcRenderer.invoke('store-set', 'logPath', path);
     await initGear();
   }
@@ -2366,9 +2480,10 @@ function getCdSettings() {
 
 function saveSettings() {
   const path = document.getElementById('log-path-input').value.trim();
-  charName = document.getElementById('char-name').value.trim();
+  charName  = document.getElementById('char-name').value.trim();
   charClass = document.getElementById('char-class').value;
   charRace  = document.getElementById('char-race').value;
+  charLevel = parseInt(document.getElementById('char-level').value) || 0;
   const warderName = document.getElementById('warder-name').value.trim();
   const spellExtend = parseInt(document.getElementById('spell-extend-pct').value) || 0;
   ipcRenderer.invoke('store-set', 'logPath', path);
@@ -2388,6 +2503,7 @@ function saveSettings() {
     warderName,
     charClass,
     charRace,
+    charLevel,
     spellExtendPct: spellExtend,
     cooldownSettings: cdSettings,
     announceSkillups: document.getElementById('announce-skillups').checked,
@@ -2398,7 +2514,6 @@ function saveSettings() {
   });
   buildAaDefs(cdSettings, enabledDiscs, charClass);
   renderAAPanel();
-  saveBossFightSettings();
   showToast('Settings saved');
 }
 
@@ -4943,18 +5058,12 @@ function renderGroupPanel(members) {
       m.do_not_help  ? `<span class="group-member-flag" title="Do Not Help" style="color:var(--danger);">⊘H</span>` : '',
     ].join('');
     const grouped = m.last_grouped_time ? timeAgo(m.last_grouped_time) : '';
-    const addFriendBtn = !m.friend
-      ? `<button class="btn" style="font-size:9px;padding:2px 6px;margin-top:2px;" onclick="groupAddFriend(${JSON.stringify(m.name)})">+ Friend</button>`
-      : '';
-    const blacklistBtn = (!m.do_not_group && !m.do_not_help)
-      ? `<button class="btn danger" style="font-size:9px;padding:2px 6px;" onclick="groupBlacklist(${JSON.stringify(m.name)})">Blacklist</button>`
-      : '';
     return `<div class="group-member-card">
       ${badge}
       <div class="group-member-name">${esc(m.name)}</div>
       <div class="group-member-flags">${flags}</div>
       ${grouped ? `<div class="group-last-grouped">${esc(grouped)}</div>` : ''}
-      <div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;">${addFriendBtn}${blacklistBtn}</div>
+      <button class="btn" style="font-size:9px;padding:2px 6px;margin-top:2px;" onclick="groupEdit('${m.name.replace(/'/g, "\\'")}')">Edit</button>
     </div>`;
   }).join('');
 }
@@ -5144,16 +5253,19 @@ function friendQuickActions(name, isFriend, isDng, isDnh) {
 function renderOnlineFriends(friends) {
   const el = document.getElementById('online-friends-list');
   if (!friends || !friends.length) {
-    el.innerHTML = `<div style="color:var(--text-dim);font-family:var(--mono);font-size:11px;">No friends online.</div>`;
+    el.innerHTML = `<div style="color:var(--text-dim);font-family:var(--mono);font-size:11px;grid-column:1/-1;">No friends online.</div>`;
     return;
   }
   el.innerHTML = friends.map(p => {
     const name = getDisplayName(p);
-    const main = p.characters?.find(c => c.is_main) || p.characters?.[0];
-    const cls  = main?.class || '';
+    // Use the character most recently seen (they may be on an alt right now)
+    const chars = p.characters || [];
+    const online = chars.reduce((best, c) =>
+      (!best || (c.last_seen_time || 0) > (best.last_seen_time || 0)) ? c : best, null);
+    const cls  = online?.class || '';
     const info = CLASS_INFO[cls];
-    const alts = (p.characters || []).filter(c => c !== main);
-    const allChars = [main, ...alts].filter(Boolean);
+    const main = chars.find(c => c.is_main) || chars[0];
+    const allChars = [main, ...chars.filter(c => c !== main)].filter(Boolean);
     const tooltip = allChars.length
       ? 'Plays: ' + allChars.map(c => c.name + (c.class ? ` (${c.class})` : '')).join(', ')
       : '';
@@ -5230,16 +5342,10 @@ async function friendsBlacklistByName(charName) {
   await loadPlayers();
 }
 
-async function groupAddFriend(charName) {
-  await friendsAddFriendByName(charName);
-  const members = await ipcRenderer.invoke('get-current-group');
-  renderGroupPanel(members);
-}
-
-async function groupBlacklist(charName) {
-  await friendsBlacklistByName(charName);
-  const members = await ipcRenderer.invoke('get-current-group');
-  renderGroupPanel(members);
+async function groupEdit(charName) {
+  const char = await ipcRenderer.invoke('ensure-character', charName);
+  if (!char) return;
+  openPlayerEdit(char.player_id);
 }
 
 ipcRenderer.on('recent-tells-update', (e, tells) => renderRecentTells(tells));
@@ -5857,7 +5963,7 @@ function selectFight(id) {
     `${fmtElapsed(fight.elapsed)}  ·  ${fight.participants.length} combatants  ·  ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
   const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
-  const rows = fight.participants.slice(0, 20).map((p, i) => {
+  const rows = fight.participants.map((p, i) => {
     const pct = totalDmg > 0 ? Math.round((p.dmg / totalDmg) * 100) : 0;
     return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);">
       <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);width:18px;">#${i+1}</span>
@@ -5879,7 +5985,23 @@ function buildGuildLines(fight) {
   };
   const totalDmg = fight.participants.reduce((s, p) => s + p.dmg, 0);
   const totalDps  = Math.round(totalDmg / Math.max(1, fight.elapsed));
-  let line = `/gu ${fight.bossName} ${fight.elapsed}s ${fmt(totalDmg)}@${totalDps}:`;
+
+  // Slow status tag from boss mob data
+  const mob = bossMobList && bossMobList.find(m => m.name.toLowerCase() === fight.bossName.toLowerCase());
+  let slowTag = '';
+  if (mob && mob.slowMitigation !== null && mob.slowMitigation !== undefined) {
+    const sa = (mob.specialAbilities || []).join(' ');
+    const immune = mob.slowMitigation >= 100 || /\bunslowable\b/i.test(sa);
+    if (immune) {
+      slowTag = ' [No slow]';
+    } else if ((mob.mr || 0) >= 200) {
+      slowTag = ' [Disease slow]';
+    } else {
+      slowTag = ' [Slowable]';
+    }
+  }
+
+  let line = `/gu ${fight.bossName} ${fight.elapsed}s ${fmt(totalDmg)}@${totalDps}${slowTag}:`;
   for (let i = 0; i < fight.participants.length; i++) {
     const p = fight.participants[i];
     const displayName = (p.name === 'You' && charName) ? charName : p.name;
@@ -5899,15 +6021,7 @@ async function postFightToGuild() {
 }
 
 async function dismissFight() {
-  const fight = bossFightList.find(f => f.id === selectedFightId);
-  if (!fight) return;
-  // Add to never list
-  const settings = await ipcRenderer.invoke('get-boss-fight-settings');
-  const never = (settings.never || []).filter(n => n.toLowerCase() !== fight.bossName.toLowerCase());
-  never.push(fight.bossName);
-  await ipcRenderer.invoke('set-boss-fight-settings', { ...settings, never });
-  document.getElementById('boss-never-list').value = never.join('\n');
-  // Remove from list and persist
+  if (!selectedFightId) return;
   bossFightList = bossFightList.filter(f => f.id !== selectedFightId);
   selectedFightId = null;
   ipcRenderer.invoke('store-set', 'bossFightsHistory', bossFightList.slice(0, 5));
@@ -5925,17 +6039,19 @@ async function clearBossFights() {
   document.getElementById('fight-detail').style.display = 'none';
 }
 
-async function loadBossFightSettings() {
-  const s = await ipcRenderer.invoke('get-boss-fight-settings');
-  document.getElementById('boss-always-list').value = (s.always || []).join('\n');
-  document.getElementById('boss-never-list').value  = (s.never  || []).join('\n');
+async function reseedBossFights() {
+  const logPath = document.getElementById('log-path-input')?.value.trim();
+  if (!logPath) { showToast('No log file selected'); return; }
+  await ipcRenderer.invoke('clear-boss-fights');
+  const result = await ipcRenderer.invoke('seed-boss-fights-from-log', logPath);
+  bossFightList = await ipcRenderer.invoke('get-boss-fights');
+  selectedFightId = null;
+  renderFightList();
+  document.getElementById('fight-detail-empty').style.display = 'flex';
+  document.getElementById('fight-detail').style.display = 'none';
+  showToast(result.seeded ? `Reseeded ${result.seeded} fight(s) from log` : 'No boss fights found in log');
 }
 
-function saveBossFightSettings() {
-  const always = document.getElementById('boss-always-list').value.split('\n').map(s => s.trim()).filter(Boolean);
-  const never  = document.getElementById('boss-never-list').value.split('\n').map(s => s.trim()).filter(Boolean);
-  ipcRenderer.invoke('set-boss-fight-settings', { always, never });
-}
 
 ipcRenderer.on('boss-fight-recorded', (e, fight) => {
   bossFightList.unshift(fight);
@@ -6074,6 +6190,27 @@ function selectMob(id) {
   if (mob.rampages) flags.push('Rampages');
   if (mob.flurries) flags.push('Flurries');
 
+  // Slow indicators — shown only when explicitly fetched from PQDI (null = unknown, 0 = fully slowable)
+  if (mob.slowMitigation !== null && mob.slowMitigation !== undefined) {
+    const sm = mob.slowMitigation;
+    const immune = sm >= 100;
+    const partial = sm > 0 && sm < 100;
+    // Magic-based slow (Shaman / Enchanter) resists via MR
+    const magicSlowTag = immune
+      ? `<span style="font-family:var(--mono);font-size:10px;background:#2a0a0a;border:1px solid #ff4444;border-radius:3px;padding:2px 8px;color:#ff6666;">✕ Shaman / Enc Slow</span>`
+      : partial
+        ? `<span style="font-family:var(--mono);font-size:10px;background:#2a1a00;border:1px solid var(--accent2);border-radius:3px;padding:2px 8px;color:var(--accent2);">~ Shaman / Enc Slow (${sm}% mit)</span>`
+        : `<span style="font-family:var(--mono);font-size:10px;background:#0a2a0a;border:1px solid #44cc44;border-radius:3px;padding:2px 8px;color:#66ff66;">✓ Shaman / Enc Slow</span>`;
+    // Disease-based slow (Turgur's) resists via DR
+    const diseaseSlowTag = immune
+      ? `<span style="font-family:var(--mono);font-size:10px;background:#2a0a0a;border:1px solid #ff4444;border-radius:3px;padding:2px 8px;color:#ff6666;">✕ Disease Slow</span>`
+      : partial
+        ? `<span style="font-family:var(--mono);font-size:10px;background:#2a1a00;border:1px solid var(--accent2);border-radius:3px;padding:2px 8px;color:var(--accent2);">~ Disease Slow (${sm}% mit)</span>`
+        : `<span style="font-family:var(--mono);font-size:10px;background:#0a2a0a;border:1px solid #44cc44;border-radius:3px;padding:2px 8px;color:#66ff66;">✓ Disease Slow</span>`;
+    flags.push('__slow_magic__' + magicSlowTag);
+    flags.push('__slow_disease__' + diseaseSlowTag);
+  }
+
   let html = '';
 
   const hasSpecialAbilities = mob.specialAbilities && mob.specialAbilities.length;
@@ -6081,9 +6218,13 @@ function selectMob(id) {
   const hasContent = flags.length || hasSpecialAbilities || hasSpells || (mob.aoes && mob.aoes.length) || (mob.loot && mob.loot.length);
 
   if (flags.length) {
-    html += `<div style="margin-bottom:10px;">`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">`;
     flags.forEach(f => {
-      html += `<span style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--accent2);border-radius:3px;padding:2px 8px;margin-right:6px;color:var(--accent2);">${f}</span>`;
+      if (f.startsWith('__slow_')) {
+        html += f.replace(/^__slow_\w+__/, '');
+      } else {
+        html += `<span style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--accent2);border-radius:3px;padding:2px 8px;color:var(--accent2);">${f}</span>`;
+      }
     });
     html += `</div>`;
   }
@@ -6380,6 +6521,9 @@ async function applyNpcData(npc) {
     const htmlResists      = result.resists          || null;
     const specialAbilities = result.specialAbilities || [];
     const spells           = result.spells           || [];
+    // Prefer HTML-parsed slow mitigation, fall back to API field, then null (unknown)
+    const slowMitigation   = result.slowMitigation  != null ? result.slowMitigation
+                           : (npc.slow_mitigation   != null ? parseInt(npc.slow_mitigation) : null);
 
     contentDiv.innerHTML = `<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Found ${drops.length} drops — fetching item data…</span>`;
 
@@ -6403,6 +6547,7 @@ async function applyNpcData(npc) {
 
     mob.specialAbilities = specialAbilities;
     mob.spells           = spells;
+    mob.slowMitigation   = slowMitigation;
     // Auto-detect flags from special abilities list
     if (specialAbilities.some(a => /flurry/i.test(a))) mob.flurries  = true;
     if (specialAbilities.some(a => /rampage/i.test(a))) mob.rampages = true;
@@ -6619,6 +6764,171 @@ async function deleteSelectedBossMob() {
   renderMobList();
   document.getElementById('mob-detail-empty').style.display = 'flex';
   document.getElementById('mob-detail').style.display = 'none';
+}
+
+// ── Spells Panel ──────────────────────────────────────────────────────────────
+function onCharacterTabOpen() {
+  // Only auto-load when the Spells inner tab is active
+  const spellsTab = document.querySelector('.char-inner-tab[data-inner="spells"]');
+  if (!spellsTab || !spellsTab.classList.contains('active')) return;
+  if (spellsLoaded) {
+    renderSpellList();
+  } else {
+    loadSpells(false);
+  }
+}
+
+async function loadSpells(force = false) {
+  if (spellsLoading) return;
+  if (!force && spellsLoaded) return;
+
+  const statusEl = document.getElementById('spells-status');
+  const tbody    = document.getElementById('spells-tbody');
+  const logPath  = document.getElementById('log-path-input')?.value.trim();
+
+  if (!charClass) {
+    if (statusEl) statusEl.textContent = 'Set a character class in Setup to load spells.';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">No class selected.</td></tr>';
+    return;
+  }
+
+  const noSpellClasses = ['Warrior','Monk','Rogue','Bard','Berserker'];
+  if (noSpellClasses.includes(charClass)) {
+    if (statusEl) statusEl.textContent = `${charClass}s do not use spells.`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">${charClass}s do not use spells.</td></tr>`;
+    spellsLoaded = true;
+    return;
+  }
+
+  if (!logPath) {
+    if (statusEl) statusEl.textContent = 'Set a log path in Setup to load spells.';
+    return;
+  }
+
+  spellsLoading = true;
+  if (statusEl) statusEl.textContent = 'Loading…';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">Loading…</td></tr>';
+
+  try {
+    const [allSpells, knownIds, ignoredIds] = await Promise.all([
+      ipcRenderer.invoke('get-class-spells', { charClass, logPath }),
+      ipcRenderer.invoke('get-spellbook',    { charName, logPath }),
+      ipcRenderer.invoke('store-get', 'spellsIgnored_' + currentProfileKey),
+    ]);
+    spellsAll     = allSpells  || [];
+    spellsKnown   = new Set(knownIds   || []);
+    spellsIgnored = new Set(ignoredIds || []);
+    spellsLoaded = true;
+    if (statusEl) statusEl.textContent = `${spellsAll.length} spells for ${charClass}  ·  ${spellsKnown.size} known`;
+    renderSpellList();
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Error loading spells: ' + e.message;
+  } finally {
+    spellsLoading = false;
+  }
+}
+
+function renderSpellList() {
+  const tbody        = document.getElementById('spells-tbody');
+  const outstandOnly = document.getElementById('spells-outstanding-only')?.checked;
+  if (!tbody) return;
+
+  if (!spellsLoaded || !spellsAll.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">No spell data loaded.</td></tr>';
+    return;
+  }
+
+  const level   = charLevel || 0;
+  const wishIds = new Set(gearDesiredLoot.map(d => d.id));
+
+  const rows = spellsAll.map(sp => {
+    const ignored   = spellsIgnored.has(sp.id);
+    const known     = spellsKnown.has(sp.id);
+    const overlevel = level > 0 && sp.classLevel > level;
+    const missing   = !known && !overlevel && !ignored;
+
+    // In "outstanding only" mode: hide everything except missing entries
+    if (outstandOnly && !missing) return '';
+
+    const safeName   = sp.name.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const idJson     = sp.id;
+    const ignoreBtn  = `<button class="btn spell-btn-ignore" title="Not a spell / ignore" onclick="spellIgnore(${idJson})">✕</button>`;
+    const unignoreBtn = `<button class="btn spell-btn-ignore" title="Restore" onclick="spellUnignore(${idJson})" style="opacity:.6;">↩</button>`;
+
+    if (ignored) {
+      return `<tr class="spell-row-ignored">
+        <td style="padding:5px 12px;font-family:var(--mono);font-size:11px;">${sp.classLevel}</td>
+        <td style="padding:5px 12px;">${safeName}</td>
+        <td style="padding:5px 12px;text-align:center;"><span style="font-size:10px;font-style:italic;">Not a spell</span></td>
+        <td style="padding:5px 8px;text-align:right;">${unignoreBtn}</td>
+      </tr>`;
+    }
+
+    let rowClass = '';
+    let statusCell = '';
+    let actionCell = '';
+
+    if (overlevel) {
+      rowClass   = 'spell-row-overlevel';
+      statusCell = '<span style="font-size:10px;color:var(--text-dim);">Not yet</span>';
+      actionCell = ignoreBtn;
+    } else if (known) {
+      rowClass   = 'spell-row-known';
+      statusCell = '<span class="spell-status">&#10003; Known</span>';
+      actionCell = ignoreBtn;
+    } else {
+      rowClass   = 'spell-row-missing';
+      statusCell = '<span style="font-size:10px;color:#ffc560;font-weight:600;">Missing</span>';
+      const pqdiLink = `<a href="https://www.pqdi.cc/spell/${idJson}" target="_blank" title="View on PQDI" style="font-size:10px;color:var(--accent2);text-decoration:none;padding:1px 4px;border:1px solid var(--border);border-radius:3px;line-height:1.6;">↗</a>`;
+      const addBtn = wishIds.has(sp.id)
+        ? '<span class="spell-wishlist-badge">In Wishlist</span>'
+        : `<button class="btn spell-btn-add" onclick="spellAddScroll(${idJson}, ${JSON.stringify(sp.name)})">Add Scroll</button>`;
+      actionCell = `<span style="display:inline-flex;gap:4px;align-items:center;">${addBtn}${pqdiLink}${ignoreBtn}</span>`;
+    }
+
+    return `<tr class="${rowClass}">
+      <td style="padding:5px 12px;font-family:var(--mono);font-size:11px;color:var(--text-dim);">${sp.classLevel}</td>
+      <td style="padding:5px 12px;" class="spell-name">${safeName}</td>
+      <td style="padding:5px 12px;text-align:center;">${statusCell}</td>
+      <td style="padding:5px 8px;text-align:right;">${actionCell}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+
+  tbody.innerHTML = rows || '<tr><td colspan="4" style="padding:24px;text-align:center;color:var(--text-dim);">No spells to display.</td></tr>';
+}
+
+async function spellIgnore(spellId) {
+  spellsIgnored.add(spellId);
+  await ipcRenderer.invoke('store-set', 'spellsIgnored_' + currentProfileKey, [...spellsIgnored]);
+  renderSpellList();
+}
+
+async function spellUnignore(spellId) {
+  spellsIgnored.delete(spellId);
+  await ipcRenderer.invoke('store-set', 'spellsIgnored_' + currentProfileKey, [...spellsIgnored]);
+  renderSpellList();
+}
+
+async function spellAddScroll(spellId, spellName) {
+  const scrollName = 'Spell: ' + spellName;
+  const statusEl   = document.getElementById('spells-status');
+  if (statusEl) statusEl.textContent = `Searching for "${scrollName}"…`;
+
+  try {
+    const results = await ipcRenderer.invoke('search-items', scrollName);
+    if (!results || !results.length) {
+      if (statusEl) statusEl.textContent = `No item found for "${scrollName}".`;
+      return;
+    }
+    // Prefer an exact name match, otherwise take first result
+    const exact = results.find(r => r.name.toLowerCase() === scrollName.toLowerCase());
+    const item  = exact || results[0];
+    await addDesiredLootById(item.id, item.name);
+    if (statusEl) statusEl.textContent = `Added "${item.name}" to desired loot.`;
+    renderSpellList();   // refresh so button turns to "In Wishlist"
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Error searching item: ' + e.message;
+  }
 }
 </script>
 <div id="item-compare-tooltip" class="item-compare-tooltip"></div>

@@ -74,13 +74,13 @@ let dismissedPets = new Set(); // pet names dismissed from unassigned panel this
 let knownPetNames = new Set(); // loaded from db after init
 let knownPlayers  = new Set(); // loaded from db after init
 let knownBosses   = new Set(); // loaded from db after init
+let bossMobNames  = new Set(); // boss mob list names (lowercase) — loaded from db after init
 let currentGroup  = [];        // character names currently in group (session only)
 let recentTells   = [];        // last 5 incoming tells [{sender, msg, ts}]
 let alphaRotation = [];        // ordered player names; index 0 = current
 let alphaLastLooted = null;    // { name, item } — last alpha loot event
 
 const PET_CLASSES = ['Magician', 'Necromancer', 'Enchanter', 'Bard', 'Druid'];
-const BOSS_DMG_THRESHOLD = 40000;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -100,6 +100,7 @@ app.whenReady().then(() => {
   // Load in-memory sets from db
   bossFights    = db.getBossFightsHistory();
   knownBosses   = db.getKnownBosses();
+  bossMobNames  = new Set(db.getBossMobs().map(m => (m.name || '').toLowerCase()));
   knownPetNames = db.getKnownNames('pet');
   knownPlayers  = db.getKnownNames('player');
   // Restore currentProfileKey
@@ -204,14 +205,23 @@ function parseLineTimestamp(line) {
 
 function trackCharacterSeen(name, line) {
   if (!name || /^you$/i.test(name)) return;
+  if (name.includes(' ')) return; // NPCs, vendors, pets — EQ PC names are always one word
   if (!db.isFeatureEnabled('player_tracking')) return;
   db.upsertCharacterSeen(name, parseLineTimestamp(line));
 }
 
-function parseGroupChat(line) {
+function parseGroupChat(line, event) {
   const m = line.match(/\] (.+?) tells the group, '(.+?)'\s*$/i)
           || line.match(/\] (You) tell the group, '(.+?)'\s*$/i);
-  if (m) trackCharacterSeen(m[1].trim(), line);
+  if (!m) return;
+  const speaker = m[1].trim();
+  trackCharacterSeen(speaker, line);
+  // Infer group membership from group chat — catches pre-existing members when joining mid-session
+  if (speaker !== 'You' && !currentGroup.includes(speaker)) {
+    currentGroup.push(speaker);
+    if (currentGroup.length > 6) currentGroup.shift();
+    emitGroupUpdate(event);
+  }
 }
 
 function parseRaidChat(line) {
@@ -225,7 +235,7 @@ function parseRaidChat(line) {
 function buildGroupMember(name) {
   const char   = db.findCharacter(name);
   const player = char ? db.getPlayer(char.player_id) : null;
-  const cls    = player?.characters.find(c => c.is_main)?.class || char?.class || null;
+  const cls    = char?.class || player?.characters.find(c => c.is_main)?.class || null;
   return {
     name,
     class:           cls,
@@ -252,7 +262,7 @@ function parseGroupMembership(line, event) {
     const name = joinM[1].trim();
     if (!currentGroup.includes(name)) currentGroup.push(name);
     if (currentGroup.length > 6) currentGroup.shift();
-    if (db.isFeatureEnabled('player_tracking')) db.recordGrouped(name, ts);
+    if (!name.includes(' ') && db.isFeatureEnabled('player_tracking')) db.recordGrouped(name, ts);
     syncAlphaRotation({ added: name });
     emitGroupUpdate(event);
     emitAlphaUpdate(event);
@@ -368,7 +378,7 @@ function processLine(line, event) {
   parseDiscs(line, event);
   parseRaidTimers(line, event);
   parseRollMessages(line, event);   // system /random messages — always immediate
-  parseGroupChat(line);
+  parseGroupChat(line, event);
   parseRaidChat(line);
   parseGroupMembership(line, event);
   parseTell(line, event);
@@ -390,7 +400,7 @@ function parseCurrentTarget(line, event) {
   if (zoneM) { currentZone = zoneM[1].trim(); return; }
 
   // Player melee hit: "You slash MobName for N points of damage"
-  const meleeM = line.match(/\] You (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:s|es|ed|ing)? (?!YOU)(.+?) for \d+ points? of damage/i);
+  const meleeM = line.match(/\] You (?:hit|slash|slice|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:s|es|ed|ing)? (?!YOU)(.+?) for \d+ points? of damage/i);
   if (meleeM) {
     event.reply('mob-engaged', { name: stripArticle(meleeM[1]), zone: currentZone });
     return;
@@ -431,9 +441,9 @@ function parseCombat(line, event) {
     { re: /\] (.+?) was hit by non-melee for (\d+) points? of damage/i, who: 'You', type: 'spell' },
     { re: /\] Your .+? (?:hit|hits|blast|blasts|burn|burns|pierce|pierces) .+? for (\d+) points? of (?:non-melee |fire |cold |magic |poison |disease |chromatic )?damage/i, who: 'You', type: 'spell', dmgIdx: 1 },
     // Mob hits YOU - attacker is m[1], dmg is m[2]; flagged as incoming
-    { re: /\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? YOU for (\d+) points? of damage/i, who: null, type: 'melee', isIncoming: true },
+    { re: /\] (.+?) (?:hit|slash|slice|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? YOU for (\d+) points? of damage/i, who: null, type: 'melee', isIncoming: true },
     // Named attacker hits named target (not YOU) — target captured in m[2], dmg in m[3]
-    { re: /\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of damage/i, who: null, type: 'melee', dmgIdx: 3, targetIdx: 2 },
+    { re: /\] (.+?) (?:hit|slash|slice|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of damage/i, who: null, type: 'melee', dmgIdx: 3, targetIdx: 2 },
     // Named spellcaster hits named target for non-melee damage: "Sever hit Emperor Ssraeshza for 645 points of non-melee damage."
     { re: /\] (.+?) hit (?!YOU)(.+?) for (\d+) points? of non-melee damage/i, who: null, type: 'spell', dmgIdx: 3, targetIdx: 2 },
   ];
@@ -585,12 +595,7 @@ function buildCombatSummary() {
 
 function isBossTarget(name) {
   if (!name || !name.trim()) return false;
-  // Generic mobs start with lowercase article — never a boss
-  if (/^an? /i.test(name) && /^[a-z]/.test(name.replace(/^an? /i, ''))) return false;
-  const settings = db.getBossFightSettings();
-  const neverList = (settings.never || []).map(n => n.toLowerCase());
-  if (neverList.includes(name.toLowerCase())) return false;
-  return true;
+  return bossMobNames.has(name.toLowerCase());
 }
 
 function parseBossFight(line, event) {
@@ -599,7 +604,7 @@ function parseBossFight(line, event) {
   // Damage dealt BY a player/pet TO a named target
   // Reuse the two outgoing hit patterns from parseCombat
   const hitPatterns = [
-    /\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of damage/i,
+    /\] (.+?) (?:hit|slash|slice|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of damage/i,
     /\] (.+?) hit (?!YOU)(.+?) for (\d+) points? of non-melee damage/i,
   ];
 
@@ -615,8 +620,6 @@ function parseBossFight(line, event) {
     const isMobAttacker = /\s/.test(attacker) && !/[`']s?\s+warder\b/i.test(attacker) && !/\s/.test(target);
     if (isMobAttacker) break;
 
-    if (!isBossTarget(target)) break;
-
     const fkey = target.toLowerCase();
     if (!activeFights[fkey]) activeFights[fkey] = { bossName: target, startTime: ts, players: {} };
     const fight = activeFights[fkey];
@@ -627,7 +630,7 @@ function parseBossFight(line, event) {
     break;
   }
 
-  // Boss slain lines
+  // Boss slain lines — check boss list only here, not on every hit
   const slainPatterns = [
     /\] (.+?) has been slain by/i,
     /\] You have slain (.+?)!/i,
@@ -639,7 +642,7 @@ function parseBossFight(line, event) {
     const name = (m[1] || m[2] || m[3] || '').trim();
     const fkey = name.toLowerCase();
     if (activeFights[fkey]) {
-      finalizeFight(activeFights[fkey], event);
+      if (isBossTarget(name)) finalizeFight(activeFights[fkey], event);
       delete activeFights[fkey];
     }
     break;
@@ -650,12 +653,7 @@ function finalizeFight(fight, event) {
   if (!fight) return;
 
   const totalDmg = Object.values(fight.players).reduce((s, v) => s + v.dmg, 0);
-  const settings = db.getBossFightSettings();
-  const alwaysList = (settings.always || []).map(n => n.toLowerCase());
   const bossKey = fight.bossName.toLowerCase();
-  const isAlways = alwaysList.includes(bossKey) || knownBosses.has(bossKey);
-
-  if (!isAlways && totalDmg < BOSS_DMG_THRESHOLD) return;
 
   if (!knownBosses.has(bossKey)) {
     knownBosses.add(bossKey);
@@ -677,7 +675,6 @@ function finalizeFight(fight, event) {
   };
 
   bossFights.unshift(record);
-  bossFights = bossFights.slice(0, 5);
   db.addBossFight(record);
   if (event) event.reply('boss-fight-recorded', record);
 }
@@ -865,19 +862,23 @@ function parseWornOff(line, event) {
     }
   });
   // Also check spell_fades text on buff definitions
+  // Skip isGroupSpell: their fades message appears for any nearby group member, not just self
   if (clearedBuffs.length === 0) {
+    const charName = pGet('charName', '').toLowerCase();
     const buffDefs = db.getTimers('buff_timers');
     buffDefs.forEach(def => {
-      if (!def.spellFades) return;
+      if (!def.spellFades || def.isGroupSpell) return;
       try {
         const re = new RegExp(def.spellFades.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
         if (re.test(line)) {
           Object.keys(buffTimers).forEach(id => {
-            if (buffTimers[id].name.toLowerCase() === def.name.toLowerCase()) {
-              clearTimeout(buffTimers[id].timeout);
-              clearedBuffs.push({ id, name: buffTimers[id].name, recipient: buffTimers[id].recipient });
-              delete buffTimers[id];
-            }
+            const b = buffTimers[id];
+            if (b.name.toLowerCase() !== def.name.toLowerCase()) return;
+            const recip = b.recipient.toLowerCase();
+            if (recip !== charName && recip !== 'me') return;
+            clearTimeout(b.timeout);
+            clearedBuffs.push({ id, name: b.name, recipient: b.recipient });
+            delete buffTimers[id];
           });
         }
       } catch (e) {}
@@ -1102,12 +1103,17 @@ function parseGuildLootMessages(line, event) {
     }).filter(Boolean);
   }
 
-  // BIDS OPEN: "Item One, Item Two - BIDS OPEN"
+  // BIDS OPEN: "Item One, Item Two - BIDS OPEN" or "| Item One | Item Two | BIDS OPEN"
   if (msgUp.includes(bidsOpenKw)) {
-    const bidsOpenSep = config.bidsOpenSeparator || ',';
+    const cfgSep = config.bidsOpenSeparator || ',';
     const idx = msgUp.lastIndexOf(bidsOpenKw);
-    const itemsPart = msg.substring(0, idx).replace(/[\s\-]+$/, '').replace(new RegExp(escapeRegex(bidsOpenSep) + '\\s*$'), '').trim();
-    const items = itemsPart.split(bidsOpenSep).map(s => s.trim()).filter(Boolean);
+    let itemsPart = msg.substring(0, idx).replace(/[\s\-]+$/, '').trim();
+    // Auto-detect | separator; fall back to configured separator
+    const sep = itemsPart.includes('|') ? '|' : cfgSep;
+    itemsPart = itemsPart.replace(new RegExp('[\\s' + escapeRegex(sep) + ']+$'), '').trim();
+    const items = itemsPart.split(sep)
+      .map(s => s.replace(/\s*-?\s*FFA\s*$/i, '').replace(/\s*\(second\)\s*$/i, '').replace(/\s*\(\d+\)\s*$/, '').trim())
+      .filter(s => s && !/^\s*FFA\s*$/i.test(s));
     if (items.length) {
       event.reply('loot-bids-open', { items });
       // Voice alert for any character whose desired loot is up for bid
@@ -1156,9 +1162,23 @@ function parseGuildLootMessages(line, event) {
     return;
   }
 
-  // Individual bid: "[item name] [status] [amount]"
+  // Alternative closing: "CLOSING Item - Winner - N dkp - [Ns | LAST CALL!]"
+  {
+    const altSecM  = msg.match(/^CLOSING\s+(.+?)\s*-\s*(\S+)\s*-\s*(\d+)\s*dkp\s*-\s*(\d+)\s*s\s*$/i);
+    const altLastM = msg.match(/^CLOSING\s+(.+?)\s*-\s*(\S+)\s*-\s*(\d+)\s*dkp\s*-\s*LAST\s+CALL!?\s*$/i);
+    if (altSecM) {
+      event.reply('loot-closing', { countdown: parseInt(altSecM[4]), isLastCall: false, updates: [{ itemName: altSecM[1].trim(), winner: altSecM[2].trim(), amount: parseInt(altSecM[3]) }] });
+      return;
+    }
+    if (altLastM) {
+      event.reply('loot-closing', { countdown: null, isLastCall: true, updates: [{ itemName: altLastM[1].trim(), winner: altLastM[2].trim(), amount: parseInt(altLastM[3]) }] });
+      return;
+    }
+  }
+
+  // Individual bid: "[item name] [status] [amount]" — optional trailing note allowed
   for (const status of statuses) {
-    const re = new RegExp('^(.+?)\\s+' + escapeRegex(status) + '\\s+(\\d+)\\s*$', 'i');
+    const re = new RegExp('^(.+?)\\s+' + escapeRegex(status) + '\\s+(\\d+)(?:\\s+.*)?$', 'i');
     const m  = msg.match(re);
     if (m) {
       event.reply('loot-bid', { itemName: m[1].trim(), bidder: speaker, status, amount: parseInt(m[2]) });
@@ -1350,7 +1370,6 @@ ipcMain.handle('store-get', (event, key) => {
   if (key === 'lootHistory')      return db.getLootHistory();
   if (key === 'lootConfig')       return db.getLootConfig();
   if (key === 'bossMobInfo')      return db.getBossMobs();
-  if (key === 'bossFightSettings')return db.getBossFightSettings();
   if (key === 'knownBosses')      return [...knownBosses];
   if (key === 'buffTimers')       return db.getTimers('buff_timers');
   if (key === 'debuffTimers')     return db.getTimers('debuff_timers');
@@ -1376,14 +1395,18 @@ ipcMain.handle('store-set', (event, key, value) => {
     return;
   }
   if (key === 'lootConfig')        return db.setLootConfig(value);
-  if (key === 'bossMobInfo')       return db.setBossMobs(value);
-  if (key === 'bossFightSettings') return db.setBossFightSettings(value);
+  if (key === 'bossMobInfo') {
+    db.setBossMobs(value);
+    bossMobNames = new Set((value || []).map(m => (m.name || '').toLowerCase()));
+    return;
+  }
   if (key === 'buffTimers')        return db.setTimers('buff_timers',   value);
   if (key === 'debuffTimers')      return db.setTimers('debuff_timers', value);
   if (key === 'raidTimers')        return db.setTimers('raid_timers',   value);
   if (key === 'buffTimerGroups')   return db.setTimerGroups('buff',   value);
   if (key === 'debuffTimerGroups') return db.setTimerGroups('debuff', value);
   if (key === 'featureToggles')    return; // set individually via set-feature-toggle
+  if (key === 'currentProfileKey') { _currentProfileKey = value; db.setSetting(key, value); return; }
   // profile sub-key
   const profM = key.match(/^profiles\.(.+?)\.(.+)$/);
   if (profM) {
@@ -1503,6 +1526,10 @@ ipcMain.handle('seed-players-from-log', () => {
 });
 
 ipcMain.handle('find-character', (e, name) => db.findCharacter(name));
+ipcMain.handle('ensure-character', (e, name) => {
+  db.upsertCharacterSeen(name, Date.now());
+  return db.findCharacter(name);
+});
 
 // ── Friends IPC ────────────────────────────────────────────────────────────────
 const ONLINE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
@@ -1628,10 +1655,9 @@ ipcMain.handle('export-boss-mobs', async () => {
   });
   if (!filePath) return { success: false };
   const data = {
-    bossMobInfo:       db.getBossMobs(),
-    bossFightSettings: db.getBossFightSettings(),
-    knownBosses:       [...knownBosses],
-    exportedAt:        new Date().toISOString(),
+    bossMobInfo:  db.getBossMobs(),
+    knownBosses:  [...knownBosses],
+    exportedAt:   new Date().toISOString(),
   };
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
   return { success: true, filePath };
@@ -1650,15 +1676,9 @@ ipcMain.handle('import-boss-mobs', async () => {
     const existing = db.getBossMobs();
     const existingNames = new Set(existing.map(m => m.name.toLowerCase()));
     const added = incoming.filter(m => !existingNames.has(m.name.toLowerCase()));
-    db.setBossMobs([...existing, ...added]);
-    if (data.bossFightSettings) {
-      const cur = db.getBossFightSettings();
-      const mergeList = (a, b) => [...new Set([...(a||[]), ...(b||[])].map(n => n.toLowerCase()))];
-      db.setBossFightSettings({
-        always: mergeList(cur.always, data.bossFightSettings.always),
-        never:  mergeList(cur.never,  data.bossFightSettings.never),
-      });
-    }
+    const merged = [...existing, ...added];
+    db.setBossMobs(merged);
+    bossMobNames = new Set(merged.map(m => (m.name || '').toLowerCase()));
     if (Array.isArray(data.knownBosses)) {
       data.knownBosses.forEach(n => { knownBosses.add(n.toLowerCase()); db.addKnownBoss(n.toLowerCase()); });
     }
@@ -2049,7 +2069,24 @@ function parseNpcPageHtml(html) {
     }
   }
 
-  return { drops, resists, specialAbilities, spells };
+  // Slow mitigation — PQDI renders as <b>slow_mitigation:</b> VALUE
+  let slowMitigation = 0; // default: slowable unless evidence otherwise
+  const saJoined = specialAbilities.join(' ');
+  // "Unslowable" is the actual special ability flag used by PQDI; also catch "immune to slow" variants
+  if (/\bunslowable\b/i.test(saJoined) ||
+      /immune.{0,10}slow|slow.{0,10}immune/i.test(html + saJoined)) {
+    slowMitigation = 100;
+  } else {
+    // Match <b>slow_mitigation:</b> 75  or <strong>slow_mitigation:</strong> 75
+    const smTag = html.match(/<(?:b|strong)>slow[_ ]mitigation[^<]*<\/(?:b|strong)>[^<]*?(\d+)/i);
+    if (smTag) slowMitigation = parseInt(smTag[1]);
+    else {
+      const smFallback = html.match(/slow[_ ]mitigation[\s\S]{0,80}?(\d+)/i);
+      if (smFallback) slowMitigation = parseInt(smFallback[1]);
+    }
+  }
+
+  return { drops, resists, specialAbilities, spells, slowMitigation };
 }
 
 ipcMain.handle('fetch-npc-drops', async (event, npcId) => {
@@ -2058,7 +2095,7 @@ ipcMain.handle('fetch-npc-drops', async (event, npcId) => {
     return parseNpcPageHtml(html);
   } catch (e) {
     console.error('fetch-npc-drops error:', e);
-    return { drops: [], resists: null, specialAbilities: [], spells: [] };
+    return { drops: [], resists: null, specialAbilities: [], spells: [], slowMitigation: null };
   }
 });
 
@@ -2093,6 +2130,14 @@ ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
 
     const toResist = v => (v === undefined || v === null) ? 0 : Math.min(1000, Math.max(0, parseInt(v) || 0));
     const r = resists || {};
+
+    // Slow mitigation: prefer API field, fall back to parsing special abilities text
+    let slowMitigation = parseInt(best.slow_mitigation) || 0;
+    const saText = specialAbilities.join(' ');
+    if (/immune.{0,10}slow|slow.{0,10}immune/i.test(saText)) slowMitigation = 100;
+    const smMatch = saText.match(/slow\s+mitigation[:\s]+(\d+)/i);
+    if (smMatch) slowMitigation = Math.max(slowMitigation, parseInt(smMatch[1]));
+
     const result = {
       id:               best.id,
       name:             best.name.replace(/_/g, ' '),
@@ -2100,6 +2145,7 @@ ipcMain.handle('fetch-npc-by-name', async (event, name, zone) => {
       level:            best.level || 0,
       mr: toResist(r.mr), cr: toResist(r.cr), fr: toResist(r.fr),
       dr: toResist(r.dr), pr: toResist(r.pr),
+      slowMitigation,
       specialAbilities,
       spells,
       flurries:  specialAbilities.some(a => /flurry/i.test(a)),
@@ -2147,6 +2193,63 @@ ipcMain.handle('get-equipment',    ()           => pGet('equipment',   []));
 ipcMain.handle('set-equipment',    (event, val) => pSet('equipment',   val));
 ipcMain.handle('get-desired-loot', ()           => pGet('desiredLoot', []));
 ipcMain.handle('set-desired-loot', (event, val) => pSet('desiredLoot', val));
+
+// ── Spells ────────────────────────────────────────────────────────────────────
+// Class name → 0-indexed column in spells_en.txt for that class's level field
+const SPELL_CLASS_COL = {
+  'Warrior': 92, 'Cleric': 93, 'Paladin': 94, 'Ranger': 95,
+  'Shadow Knight': 96, 'Shadowknight': 96,
+  'Druid': 97, 'Monk': 98, 'Bard': 99, 'Rogue': 100,
+  'Shaman': 101, 'Necromancer': 102, 'Wizard': 103,
+  'Magician': 104, 'Enchanter': 105, 'Beastlord': 106,
+};
+
+ipcMain.handle('get-class-spells', async (event, { charClass, logPath }) => {
+  const col = SPELL_CLASS_COL[charClass];
+  if (col == null) return [];
+  const eqDir = require('path').dirname(logPath);
+  const spellsFile = require('path').join(eqDir, 'spells_en.txt');
+  try {
+    const fs = require('fs');
+    const text = fs.readFileSync(spellsFile, 'utf8');
+    const results = [];
+    for (const line of text.split('\n')) {
+      const fields = line.split('^');
+      if (fields.length < col + 1) continue;
+      const lvRaw = parseInt(fields[col]);
+      if (!lvRaw || lvRaw <= 0 || lvRaw === 255) continue; // 255 = -1 = can't use
+      const id = parseInt(fields[0]);
+      const name = (fields[1] || '').trim();
+      if (!id || !name) continue;
+      results.push({ id, name, classLevel: lvRaw });
+    }
+    results.sort((a, b) => a.classLevel - b.classLevel || a.name.localeCompare(b.name));
+    return results;
+  } catch (e) {
+    console.error('get-class-spells error:', e);
+    return [];
+  }
+});
+
+ipcMain.handle('get-spellbook', async (event, { charName, logPath }) => {
+  if (!charName || !logPath) return [];
+  const eqDir = require('path').dirname(logPath);
+  const bookFile = require('path').join(eqDir, `${charName}-Spellbook.txt`);
+  try {
+    const fs = require('fs');
+    const text = fs.readFileSync(bookFile, 'utf8');
+    const known = new Set();
+    for (const line of text.split('\n')) {
+      const parts = line.split('\t');
+      if (parts.length < 2) continue;
+      const id = parseInt(parts[1]);
+      if (id) known.add(id);
+    }
+    return [...known];
+  } catch (e) {
+    return []; // file missing is normal for chars without a spellbook
+  }
+});
 
 // ── Trader ────────────────────────────────────────────────────────────────────
 
@@ -2289,26 +2392,18 @@ ipcMain.handle('clear-trader-sales', (event, charName) => {
 });
 
 // ── Boss Fight IPC ─────────────────────────────────────────────────────────────
-ipcMain.handle('get-boss-fights',          ()           => bossFights);
-ipcMain.handle('get-boss-fight-settings',  ()           => db.getBossFightSettings());
-ipcMain.handle('set-boss-fight-settings',  (e, val)     => db.setBossFightSettings(val));
-ipcMain.handle('clear-boss-fights',        ()           => { bossFights = []; db.clearBossFightsHistory(); });
+ipcMain.handle('get-boss-fights',  ()  => bossFights);
+ipcMain.handle('clear-boss-fights', () => { bossFights = []; db.clearBossFightsHistory(); });
 
 ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
   if (!logPath || !fs.existsSync(logPath)) return { seeded: 0 };
 
-  const settings   = db.getBossFightSettings();
-  const alwaysList = (settings.always || []).map(n => n.toLowerCase());
-  const neverList  = (settings.never  || []).map(n => n.toLowerCase());
-
   function qualifies(name) {
     if (!name) return false;
-    if (/^an? /i.test(name) && /^[a-z]/.test(name.replace(/^an? /i, ''))) return false;
-    if (neverList.includes(name.toLowerCase())) return false;
-    return true;
+    return bossMobNames.has(name.toLowerCase());
   }
 
-  const hitRe   = /\[.+?\] (.+?) (?:hit|slash|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of (?:non-melee )?damage/i;
+  const hitRe   = /\[.+?\] (.+?) (?:hit|slash|slice|crush|pierce|kick|bash|strike|punch|backstab|bite|claw|sting|maul|gore|rend|burn|blast)(?:es|ing|s|ed)? (?!YOU)(.+?) for (\d+) points? of (?:non-melee )?damage/i;
   const slainRe = /\[.+?\] (?:(.+?) has been slain by|You have slain (.+?)!|(.+?) was slain by)/i;
   const tsRe    = /^\[(.+?)\]/;
 
@@ -2324,7 +2419,7 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
       const target   = hm[2].trim();
       const dmg      = parseInt(hm[3]);
       const isMob    = /\s/.test(attacker) && !/[`']s?\s+warder\b/i.test(attacker) && !/\s/.test(target);
-      if (!isMob && qualifies(target)) {
+      if (!isMob) {
         const tsM = line.match(tsRe);
         const ts  = tsM ? new Date(tsM[1]).getTime() : Date.now();
         const key = target.toLowerCase();
@@ -2336,26 +2431,22 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
       continue;
     }
 
-    // Slain line — finalize that target's fight
+    // Slain line — check boss list only here, not on every hit
     const sm = line.match(slainRe);
     if (sm) {
       const name = (sm[1] || sm[2] || sm[3] || '').trim();
       const key  = name.toLowerCase();
       if (active[key]) {
-        completed.push(active[key]);
+        if (qualifies(name)) completed.push(active[key]);
         delete active[key];
       }
     }
   }
-  // Any fights still open (no slain line found) — push them too
-  Object.values(active).forEach(f => completed.push(f));
+  // Any fights still open — check boss list and push qualifying ones
+  Object.values(active).forEach(f => { if (qualifies(f.bossName)) completed.push(f); });
 
-  // Filter by threshold / always list and build records
+  // All completed fights passed qualifies() — build records, newest first
   const records = completed
-    .filter(f => {
-      const total = Object.values(f.players).reduce((s, v) => s + v.dmg, 0);
-      return alwaysList.includes(f.bossName.toLowerCase()) || total >= BOSS_DMG_THRESHOLD;
-    })
     .map(f => ({
       id: f.startMs,
       bossName: f.bossName,
@@ -2365,7 +2456,6 @@ ipcMain.handle('seed-boss-fights-from-log', (e, logPath) => {
         .map(([name, p]) => ({ name, dmg: p.dmg, elapsed: Math.max(1, Math.round((f.lastMs - p.firstHit) / 1000)) }))
         .sort((a, b) => b.dmg - a.dmg),
     }))
-    .slice(-5)
     .reverse();
 
   bossFights = records;
