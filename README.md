@@ -100,9 +100,21 @@ The first time you run a new version, any data from the old electron-store forma
 ### Group Panel
 - Appears automatically at the top of the main view whenever you are in a group
 - One card per member showing class icon, character name, and flag indicators (friend ★, Do Not Group, Do Not Help)
-- Updates in real time as players join or leave the group
+- **Class-based color coding** — each card has a muted dark background and colored left-border accent matching the character's class
+- Updates in real time as players join or leave the group; class changes in the edit modal reflect immediately
 - **Add Friend** and **Blacklist** quick-action buttons on each card
 - Class icons for all 16 EQ classes; falls back to a colored abbreviation badge if the image is missing
+- Your own character card always appears even if you were grouped before the app started
+
+### Alpha Loot Tracker
+- Tracks who is next for alpha (first pick) loot in a group
+- Rotation seeded automatically from current group members when enabled; new members joining mid-session are slotted in alphabetically without requiring a reset
+- Rotation advances only when the **current alpha person** loots a tracked item — not on any arbitrary loot
+- **Voice + toast confirmation** when the alpha looter takes an item: announces who looted what and who is next
+- **On/Off toggle** in the group panel alpha bar — enable or disable without going to Setup
+- **Item search** in Setup — type to search PQDI item database and add items to the alpha list directly from results
+- **Post** button sends `Next alpha: X (after: Y)` to group chat via xdotool
+- Skip and Reset buttons available in the alpha bar
 
 ### Boss Mob List
 - Maintain a roster of raid bosses with HP, level, zone, resists, and notes
@@ -120,6 +132,7 @@ The first time you run a new version, any data from the old electron-store forma
 ### Buff & Debuff Timers
 - Add buff/debuff definitions with name, log trigger pattern, and duration
 - Use **PQDI Spell Lookup** to auto-fill cast text and duration from pqdi.cc
+- **+Timer button on Spells list** — click any spell with a duration to open the buff or debuff modal pre-filled with name, trigger pattern, duration, and spell-fades text pulled from PQDI; instant spells (direct damage etc.) do not show the button
 - Countdown bars with warning highlight under 30 seconds
 - Optional TTS alert when buff expires
 - Timers grouped by category (Pet Buffs, Stat Buffs, Regen, Haste, etc.)
@@ -160,7 +173,8 @@ The first time you run a new version, any data from the old electron-store forma
 
 Player records are automatically created when a character is seen speaking in group chat,
 guild chat, raid chat, or an incoming tell. Auction, OOC, shout, and chat channels are
-ignored.
+ignored for record creation, but if a **known friend** speaks in any of those channels their
+online status is updated silently.
 
 #### Players Tab
 - Full list of all known players, searchable by name

@@ -611,6 +611,18 @@ function upsertCharacterSeen(name, now) {
   return char;
 }
 
+function touchFriendSeen(name, now) {
+  now = now || Date.now();
+  const row = db.prepare(`
+    SELECT c.id, c.player_id FROM characters c
+    JOIN players p ON p.id = c.player_id
+    WHERE c.name = ? COLLATE NOCASE AND p.friend = 1
+  `).get(name);
+  if (!row) return;
+  db.prepare('UPDATE players    SET last_seen_time = ? WHERE id = ?').run(now, row.player_id);
+  db.prepare('UPDATE characters SET last_seen_time = ? WHERE id = ?').run(now, row.id);
+}
+
 function recordGrouped(name, now) {
   now = now || Date.now();
   const char = upsertCharacterSeen(name, now);
@@ -736,7 +748,7 @@ module.exports = {
   getTraderSnapshot, setTraderSnapshot,
   getTraderSales, addTraderSales, clearTraderSales,
   // Players / Characters
-  findCharacter, upsertCharacterSeen, recordGrouped,
+  findCharacter, upsertCharacterSeen, touchFriendSeen, recordGrouped,
   getPlayer, getAllPlayers, updatePlayer, updateCharacter,
   addCharacterToPlayer, moveCharacter, deleteStaleNonFlaggedPlayers,
 };

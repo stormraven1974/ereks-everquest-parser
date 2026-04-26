@@ -210,6 +210,16 @@ function trackCharacterSeen(name, line) {
   db.upsertCharacterSeen(name, parseLineTimestamp(line));
 }
 
+// Shout / OOC / Auction / numbered channel — update seen time for known friends only, no new records
+const PUBLIC_CHAT_RE = /\] (.+?) (?:shouts?|auctions?|says out of character|tells? (?:the )?[A-Za-z]+:\d+),\s*'/i;
+function parsePublicChatSeen(line) {
+  const m = line.match(PUBLIC_CHAT_RE);
+  if (!m) return;
+  const name = m[1].trim();
+  if (!name || name.includes(' ')) return;
+  db.touchFriendSeen(name, parseLineTimestamp(line));
+}
+
 function parseGroupChat(line, event) {
   const m = line.match(/\] (.+?) tells the group, '(.+?)'\s*$/i)
           || line.match(/\] (You) tell the group, '(.+?)'\s*$/i);
@@ -217,11 +227,22 @@ function parseGroupChat(line, event) {
   const speaker = m[1].trim();
   trackCharacterSeen(speaker, line);
   // Infer group membership from group chat — catches pre-existing members when joining mid-session
+  const myName = pGet('charName', '');
+  let groupChanged = false;
   if (speaker !== 'You' && !currentGroup.includes(speaker)) {
     currentGroup.push(speaker);
     if (currentGroup.length > 6) currentGroup.shift();
-    emitGroupUpdate(event);
+    syncAlphaRotation({ added: speaker });
+    groupChanged = true;
   }
+  // Ensure the active character is always included when group chat is active
+  if (myName && !currentGroup.includes(myName)) {
+    currentGroup.push(myName);
+    if (currentGroup.length > 6) currentGroup.shift();
+    syncAlphaRotation({ added: myName });
+    groupChanged = true;
+  }
+  if (groupChanged) emitGroupUpdate(event);
 }
 
 function parseRaidChat(line) {
@@ -235,7 +256,9 @@ function parseRaidChat(line) {
 function buildGroupMember(name) {
   const char   = db.findCharacter(name);
   const player = char ? db.getPlayer(char.player_id) : null;
-  const cls    = char?.class || player?.characters.find(c => c.is_main)?.class || null;
+  const myName = pGet('charName', '');
+  const isMe   = myName && name.toLowerCase() === myName.toLowerCase();
+  const cls    = char?.class || player?.characters.find(c => c.is_main)?.class || (isMe ? pGet('charClass', '') || null : null);
   return {
     name,
     class:           cls,
@@ -330,18 +353,21 @@ function emitAlphaUpdate(event) {
 function parseAlphaLoot(line, event) {
   const cfg = getAlphaConfig();
   if (!cfg.enabled || !cfg.items?.some(i => i.active)) return;
-  // "You have looted a Fungi Tunic from ..."  or  "Erek has looted a Fungi Tunic from ..."
-  const m = line.match(/\] (You|.+?) (?:have )?looted (?:a |an )?(.+?) (?:from |\.)/i);
+  // "[...] --Erek has looted a Fungi Tunic.--"  or  "[...] --You have looted a Fungi Tunic.--"
+  const m = line.match(/\] --?(You|.+?) (?:have )?looted (?:a |an )?(.+?)\.--?/i);
   if (!m) return;
   const item = m[2].trim();
   const match = cfg.items.find(i => i.active && i.name.toLowerCase() === item.toLowerCase());
   if (!match) return;
   const playerName = m[1] === 'You' ? (pGet('charName', '') || 'You') : m[1].trim();
   alphaLastLooted = { name: playerName, item };
-  // Advance rotation: current goes to back
-  if (alphaRotation.length > 0) {
+  // Only advance rotation when the current alpha person takes the item
+  if (alphaRotation.length > 0 && alphaRotation[0].toLowerCase() === playerName.toLowerCase()) {
     const current = alphaRotation.shift();
     alphaRotation.push(current);
+    const next = alphaRotation[0];
+    speakText(`${playerName} looted ${item}. Next alpha: ${next}`);
+    if (mainWindow) mainWindow.webContents.send('alpha-loot-confirm', { looter: playerName, item, next });
   }
   emitAlphaUpdate(event);
 }
@@ -380,6 +406,7 @@ function processLine(line, event) {
   parseRollMessages(line, event);   // system /random messages — always immediate
   parseGroupChat(line, event);
   parseRaidChat(line);
+  parsePublicChatSeen(line);
   parseGroupMembership(line, event);
   parseTell(line, event);
   parseZone(line, event);
@@ -1565,8 +1592,13 @@ ipcMain.handle('get-alpha-config', () => getAlphaConfig());
 
 ipcMain.handle('save-alpha-config', (e, cfg) => {
   db.setSetting('alphaLoot', JSON.stringify(cfg));
-  // Re-sync rotation if enabled state changed
-  if (!cfg.enabled) alphaRotation = [];
+  if (!cfg.enabled) {
+    alphaRotation = [];
+  } else if (alphaRotation.length === 0 && currentGroup.length > 0) {
+    // Seed rotation from current group when enabling mid-session
+    alphaRotation = [...currentGroup].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  }
+  emitAlphaUpdate(null);
   return { ok: true };
 });
 

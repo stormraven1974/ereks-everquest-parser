@@ -1329,6 +1329,7 @@
           <button class="btn" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="skipAlpha()">Skip</button>
           <button class="btn" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="resetAlphaRotation()">Reset</button>
           <button class="btn success" style="padding:2px 8px;font-size:9px;flex-shrink:0;" onclick="postAlpha()">Post</button>
+          <button class="btn" style="padding:2px 8px;font-size:9px;flex-shrink:0;border-color:var(--text-dim);color:var(--text-dim);" onclick="toggleAlphaEnabled()" id="alpha-toggle-btn">Off</button>
         </div>
       </div>
 
@@ -1692,11 +1693,13 @@
           <input type="checkbox" id="alpha-enabled" class="toggle" onchange="saveAlphaConfig()"/>
           <label style="font-size:12px;cursor:pointer;" for="alpha-enabled">Enable Alpha Loot Tracker</label>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <input type="text" id="alpha-item-input" placeholder="Item name…" style="max-width:280px;"
-            onkeydown="if(event.key==='Enter')alphaAddItem()"/>
-          <button class="btn" onclick="alphaAddItem()">Add Item</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="text" id="alpha-item-input" placeholder="Search item name…" style="max-width:280px;"
+            oninput="alphaSearchItems()" onkeydown="if(event.key==='Enter')alphaAddItem()"/>
+          <button class="btn" onclick="alphaAddItem()">Add</button>
+          <span id="alpha-search-status" style="font-size:10px;color:var(--text-dim);"></span>
         </div>
+        <div id="alpha-search-results" style="display:none;margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;max-height:180px;overflow-y:auto;"></div>
         <div id="alpha-item-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
       </div>
 
@@ -4968,6 +4971,7 @@ async function savePlayerEdit() {
   closePlayerEdit();
   await loadPlayers();
   await loadFriendsTab();
+  await loadCurrentGroup();
 }
 
 async function deletePlayer() {
@@ -5012,22 +5016,22 @@ async function runPlayerCleanup() {
 
 // ── Group Panel ──────────────────────────────────────────────────────────────
 const CLASS_INFO = {
-  'Beastlord':    { abbr: 'BST', color: '#9b59b6' },
-  'Warrior':      { abbr: 'WAR', color: '#e74c3c' },
-  'Paladin':      { abbr: 'PAL', color: '#f39c12' },
-  'Ranger':       { abbr: 'RNG', color: '#27ae60' },
-  'Shadow Knight':{ abbr: 'SK',  color: '#8e44ad' },
-  'Druid':        { abbr: 'DRU', color: '#2ecc71' },
-  'Monk':         { abbr: 'MNK', color: '#d4ac0d' },
-  'Bard':         { abbr: 'BRD', color: '#16a085' },
-  'Rogue':        { abbr: 'ROG', color: '#7f8c8d' },
-  'Shaman':       { abbr: 'SHM', color: '#1abc9c' },
-  'Necromancer':  { abbr: 'NEC', color: '#6c3483' },
-  'Wizard':       { abbr: 'WIZ', color: '#2980b9' },
-  'Magician':     { abbr: 'MAG', color: '#e67e22' },
-  'Enchanter':    { abbr: 'ENC', color: '#8e44ad' },
-  'Cleric':       { abbr: 'CLR', color: '#d4e6f1' },
-  'Berserker':    { abbr: 'BER', color: '#c0392b' },
+  'Warrior':      { abbr: 'WAR', color: '#2a5a7a', bg: '#1a2e3d', border: '#2a5a7a' },
+  'Paladin':      { abbr: 'PAL', color: '#2a2a8a', bg: '#1a1e3d', border: '#2a2a8a' },
+  'Ranger':       { abbr: 'RNG', color: '#2a5a2a', bg: '#1a2d1a', border: '#2a5a2a' },
+  'Shadow Knight':{ abbr: 'SK',  color: '#4a2a6a', bg: '#2a1a3d', border: '#4a2a6a' },
+  'Druid':        { abbr: 'DRU', color: '#6a4a1a', bg: '#2d1f0a', border: '#6a4a1a' },
+  'Monk':         { abbr: 'MNK', color: '#6a5a3a', bg: '#2a2015', border: '#6a5a3a' },
+  'Bard':         { abbr: 'BRD', color: '#1a5a5a', bg: '#0a2020', border: '#1a5a5a' },
+  'Rogue':        { abbr: 'ROG', color: '#4a5a1a', bg: '#1e2010', border: '#4a5a1a' },
+  'Shaman':       { abbr: 'SHM', color: '#1a4a4a', bg: '#0a1e1e', border: '#1a4a4a' },
+  'Necromancer':  { abbr: 'NEC', color: '#5a1a1a', bg: '#1e0a0a', border: '#5a1a1a' },
+  'Wizard':       { abbr: 'WIZ', color: '#2a1a6a', bg: '#0f0a2a', border: '#2a1a6a' },
+  'Magician':     { abbr: 'MAG', color: '#6a3a1a', bg: '#2a1505', border: '#6a3a1a' },
+  'Enchanter':    { abbr: 'ENC', color: '#5a2a5a', bg: '#1e0a1e', border: '#5a2a5a' },
+  'Cleric':       { abbr: 'CLR', color: '#5a4a1a', bg: '#1e1a05', border: '#5a4a1a' },
+  'Beastlord':    { abbr: 'BST', color: '#3a5a1a', bg: '#152010', border: '#3a5a1a' },
+  'Berserker':    { abbr: 'BER', color: '#6a1a1a', bg: '#200a0a', border: '#6a1a1a' },
 };
 
 function renderGroupPanel(members) {
@@ -5046,11 +5050,11 @@ function renderGroupPanel(members) {
     if (info) {
       const iconPath = `../assets/class-icons/${cls.toLowerCase().replace(/ /g, '')}.webp`;
       badge = `<img src="${iconPath}" class="group-class-badge"
-        style="object-fit:contain;background:${info.color}22;border:1px solid ${info.color}44;"
-        onerror="this.outerHTML='<div class=\\'group-class-badge\\' style=\\'background:${info.color}22;color:${info.color};border:1px solid ${info.color}44;\\'>${info.abbr}</div>'"
+        style="object-fit:contain;background:${info.border}33;border:1px solid ${info.border}88;"
+        onerror="this.outerHTML='<div class=\\'group-class-badge\\' style=\\'background:${info.border}33;color:#e0e0e0;border:1px solid ${info.border}88;\\'>${info.abbr}</div>'"
         alt="${esc(cls)}">`;
     } else {
-      badge = `<div class="group-class-badge" style="background:#1e2a4a;color:var(--text-dim);border:1px solid var(--border);">?</div>`;
+      badge = `<div class="group-class-badge" style="background:#1e2a4a;color:#a0a0a0;border:1px solid var(--border);">?</div>`;
     }
     const flags = [
       m.friend       ? `<span class="group-member-flag" title="Friend" style="color:var(--accent4);">★</span>` : '',
@@ -5058,9 +5062,11 @@ function renderGroupPanel(members) {
       m.do_not_help  ? `<span class="group-member-flag" title="Do Not Help" style="color:var(--danger);">⊘H</span>` : '',
     ].join('');
     const grouped = m.last_grouped_time ? timeAgo(m.last_grouped_time) : '';
-    return `<div class="group-member-card">
+    const cardBg     = info ? info.bg     : 'var(--bg3)';
+    const cardBorder = info ? info.border : 'var(--border)';
+    return `<div class="group-member-card" style="background:${cardBg};border-left:3px solid ${cardBorder};">
       ${badge}
-      <div class="group-member-name">${esc(m.name)}</div>
+      <div class="group-member-name" style="color:#e0e0e0;">${esc(m.name)}</div>
       <div class="group-member-flags">${flags}</div>
       ${grouped ? `<div class="group-last-grouped">${esc(grouped)}</div>` : ''}
       <button class="btn" style="font-size:9px;padding:2px 6px;margin-top:2px;" onclick="groupEdit('${m.name.replace(/'/g, "\\'")}')">Edit</button>
@@ -5071,6 +5077,7 @@ function renderGroupPanel(members) {
 ipcRenderer.on('group-update', (e, members) => {
   window._currentGroupNames = members.map(m => m.name);
   renderGroupPanel(members);
+  renderAlphaBar(alphaState);
 });
 
 async function loadCurrentGroup() {
@@ -5112,17 +5119,77 @@ async function saveAlphaConfig() {
   renderAlphaBar(state);
 }
 
+let _alphaSearchTimer = null;
+let _alphaSearchResults = [];
+async function alphaSearchItems() {
+  const query = document.getElementById('alpha-item-input').value.trim();
+  const statusEl  = document.getElementById('alpha-search-status');
+  const resultsEl = document.getElementById('alpha-search-results');
+  clearTimeout(_alphaSearchTimer);
+  if (!query) { resultsEl.style.display = 'none'; statusEl.textContent = ''; return; }
+  _alphaSearchTimer = setTimeout(async () => {
+    statusEl.textContent = 'Searching…';
+    resultsEl.style.display = 'none';
+    resultsEl.innerHTML = '';
+    const results = await ipcRenderer.invoke('search-items', query);
+    if (!results.length) { statusEl.textContent = 'No results'; return; }
+    statusEl.textContent = `${results.length} result${results.length !== 1 ? 's' : ''}`;
+    _alphaSearchResults = results.slice(0, 20);
+    resultsEl.innerHTML = _alphaSearchResults.map((r, i) =>
+      `<div class="gear-search-result" onclick="alphaAddItemByIndex(${i})">
+        <span class="gear-search-id">#${r.id}</span>
+        <span style="font-size:11px;">${esc(r.name)}</span>
+      </div>`
+    ).join('');
+    resultsEl.style.display = 'block';
+  }, 300);
+}
+
+function alphaClearSearch() {
+  document.getElementById('alpha-item-input').value = '';
+  document.getElementById('alpha-search-results').style.display = 'none';
+  document.getElementById('alpha-search-status').textContent = '';
+  _alphaSearchResults = [];
+}
+
+async function alphaAddItemByIndex(i) {
+  const r = _alphaSearchResults[i];
+  if (!r) return;
+  alphaClearSearch();
+  if (alphaConfig.items.some(item => item.name.toLowerCase() === r.name.toLowerCase())) return;
+  alphaConfig.items.push({ name: r.name, active: true });
+  await saveAlphaConfig();
+}
+
 async function alphaAddItem() {
   const input = document.getElementById('alpha-item-input');
   const name = input.value.trim();
   if (!name) return;
-  if (alphaConfig.items.some(i => i.name.toLowerCase() === name.toLowerCase())) {
-    input.value = '';
-    return;
-  }
+  alphaClearSearch();
+  if (alphaConfig.items.some(i => i.name.toLowerCase() === name.toLowerCase())) return;
   alphaConfig.items.push({ name, active: true });
-  input.value = '';
   await saveAlphaConfig();
+}
+
+async function toggleAlphaEnabled() {
+  alphaConfig.enabled = !alphaConfig.enabled;
+  document.getElementById('alpha-enabled').checked = alphaConfig.enabled;
+  await saveAlphaConfig();
+  updateAlphaToggleBtn();
+}
+
+function updateAlphaToggleBtn() {
+  const btn = document.getElementById('alpha-toggle-btn');
+  if (!btn) return;
+  if (alphaConfig.enabled) {
+    btn.textContent = 'On';
+    btn.style.borderColor = 'var(--accent3)';
+    btn.style.color = 'var(--accent3)';
+  } else {
+    btn.textContent = 'Off';
+    btn.style.borderColor = 'var(--text-dim)';
+    btn.style.color = 'var(--text-dim)';
+  }
 }
 
 async function alphaRemoveItem(idx) {
@@ -5138,13 +5205,16 @@ async function alphaToggleItem(idx, val) {
 function renderAlphaBar(state = {}) {
   alphaState = state;
   const { rotation, lastLooted } = alphaState;
-  const bar = document.getElementById('alpha-bar');
+  const bar  = document.getElementById('alpha-bar');
   const disp = document.getElementById('alpha-rotation-display');
+  const inGroup = window._currentGroupNames?.length > 0;
+  if (!inGroup) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  updateAlphaToggleBtn();
   if (!alphaConfig.enabled || !rotation?.length) {
-    bar.style.display = 'none';
+    disp.innerHTML = '';
     return;
   }
-  bar.style.display = 'flex';
   disp.innerHTML = rotation.map((name, i) => {
     const isCurrent = i === 0;
     return `<span style="font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:3px;
@@ -5173,18 +5243,20 @@ async function resetAlphaRotation() {
 }
 
 function postAlpha() {
-  const { rotation, lastLooted } = alphaState;
+  const { rotation } = alphaState;
   if (!rotation?.length) return;
   const current = rotation[0];
   const next    = rotation[1];
-  let msg = '';
-  if (lastLooted) msg += `${lastLooted.name} looted ${lastLooted.item}. `;
-  msg += `Next alpha: ${current}`;
+  let msg = `Next alpha: ${current}`;
   if (next) msg += ` (after: ${next})`;
   sendLineToEQ(`/gsay ${msg}`);
 }
 
 ipcRenderer.on('alpha-update', (e, state) => renderAlphaBar(state));
+
+ipcRenderer.on('alpha-loot-confirm', (e, { looter, item, next }) => {
+  showToast(`${looter} looted ${item} — next alpha: ${next}`, 6000);
+});
 
 // ── Pet Tracking ──────────────────────────────────────────────────────────────
 function renderUnassignedPets(unassigned) {
@@ -6758,7 +6830,7 @@ function sendLineToEQ(line) {
     if (winId) {
       exec(`wmctrl -ia ${winId}`, () => setTimeout(doType, 150));
     } else {
-      doType();
+      showToast('EQ window not found — is EverQuest running?', 4000);
     }
   });
 }
