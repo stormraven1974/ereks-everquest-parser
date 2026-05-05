@@ -83,11 +83,24 @@ let alphaLastLooted = null;    // { name, item } — last alpha loot event
 const PET_CLASSES = ['Magician', 'Necromancer', 'Enchanter', 'Bard', 'Druid'];
 
 function createWindow() {
+  const savedBounds = (() => {
+    try { return JSON.parse(db.getSetting('windowBounds') || 'null'); } catch (e) { return null; }
+  })();
+  const bounds = (savedBounds && savedBounds.width >= 700 && savedBounds.height >= 600)
+    ? savedBounds
+    : { width: 900, height: 800 };
+
   mainWindow = new BrowserWindow({
-    width: 900, height: 800, minWidth: 700, minHeight: 600,
+    ...bounds,
+    minWidth: 700, minHeight: 600,
     backgroundColor: '#0a0e1a', titleBarStyle: 'hidden', frame: false,
     webPreferences: { nodeIntegration: true, contextIsolation: false },
   });
+
+  mainWindow.on('close', () => {
+    db.setSetting('windowBounds', JSON.stringify(mainWindow.getBounds()));
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'src/index.html'));
   // Open dev tools with F12
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -354,7 +367,7 @@ function parseAlphaLoot(line, event) {
   const cfg = getAlphaConfig();
   if (!cfg.enabled || !cfg.items?.some(i => i.active)) return;
   // "[...] --Erek has looted a Fungi Tunic.--"  or  "[...] --You have looted a Fungi Tunic.--"
-  const m = line.match(/\] --?(You|.+?) (?:have )?looted (?:a |an )?(.+?)\.--?/i);
+  const m = line.match(/\] --?(You|.+?) ha(?:s|ve) looted (?:a |an )?(.+?)\.--?/i);
   if (!m) return;
   const item = m[2].trim();
   const match = cfg.items.find(i => i.active && i.name.toLowerCase() === item.toLowerCase());
@@ -826,6 +839,20 @@ function parseDeaths(line, event) {
     }
   });
   if (cleared.length > 0) event.reply('debuffs-cleared', { mobName, ids: cleared });
+
+  // Respawn timer — look up in cached zone spawn data (no-op if not cached yet)
+  const spawnData = currentZone ? (() => {
+    const list = pqdiZoneList;
+    if (!list) return null;
+    const id = list[normalizeZoneName(currentZone)];
+    return id ? zoneSpawnCache[id] : null;
+  })() : null;
+  if (spawnData) {
+    const respawnSec = spawnData.spawnMap[mobName.toLowerCase()];
+    if (respawnSec && mainWindow) {
+      mainWindow.webContents.send('mob-respawn-start', { mobName, respawnSec });
+    }
+  }
 }
 
 // Warder Death - audio alert and clear warder buff timers
@@ -1343,12 +1370,19 @@ const wordNums = { one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:
 function parseZone(line, event) {
   const zoneM = line.match(/\] You have entered (.+?)\./i);
   if (zoneM) {
-    event.reply('zone-entered', { zoneName: zoneM[1].trim() });
+    const zoneName = zoneM[1].trim();
+    event.reply('zone-entered', { zoneName });
+    lookupZoneSpawn(zoneName).then(data => {
+      if (!data || !mainWindow) return;
+      mainWindow.webContents.send('zone-respawn-info', {
+        modalRespawnText: data.modalRespawn ? formatRespawnReadable(data.modalRespawn) : ''
+      });
+    }).catch(() => {});
     return;
   }
-  const afkM = line.match(/\] \[AFK Kick\].+?kicked in (\d+) Minutes? and (\d+) Seconds?/i);
+  const afkM = line.match(/\] \[AFK Kick\].+?kicked in (?:(\d+) Hours? and )?(\d+) Minutes? and (\d+) Seconds?/i);
   if (afkM) {
-    const totalSeconds = parseInt(afkM[1]) * 60 + parseInt(afkM[2]);
+    const totalSeconds = (parseInt(afkM[1] || 0)) * 3600 + parseInt(afkM[2]) * 60 + parseInt(afkM[3]);
     event.reply('zone-afk-timer', { totalSeconds });
     return;
   }
@@ -1981,6 +2015,111 @@ function pqdiGet(url) {
   });
 }
 
+// ── Zone Respawn Data ────────────────────────────────────────────────────────
+
+let pqdiZoneList = null; // normalized-name -> zoneId, fetched once per session
+const zoneSpawnCache = {}; // zoneId -> { spawnMap: { nameLower -> seconds }, modalRespawn: seconds }
+
+function normalizeZoneName(name) {
+  return name.toLowerCase()
+    .replace(/^the\s+/, '')
+    .replace(/'s\b/g, 's')
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim();
+}
+
+function parseRespawnSeconds(str) {
+  if (!str) return 0;
+  let total = 0;
+  const d = str.match(/(\d+)\s*days?/i);
+  const h = str.match(/(\d+)\s*hours?/i);
+  const m = str.match(/(\d+)\s*minutes?/i);
+  const s = str.match(/(\d+)\s*seconds?/i);
+  if (d) total += parseInt(d[1]) * 86400;
+  if (h) total += parseInt(h[1]) * 3600;
+  if (m) total += parseInt(m[1]) * 60;
+  if (s) total += parseInt(s[1]);
+  return total;
+}
+
+function formatRespawnReadable(seconds) {
+  if (!seconds) return '';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const parts = [];
+  if (d) parts.push(`${d} ${d === 1 ? 'day' : 'days'}`);
+  if (h) parts.push(`${h} ${h === 1 ? 'hour' : 'hours'}`);
+  if (m) parts.push(`${m} ${m === 1 ? 'minute' : 'minutes'}`);
+  if (!parts.length) parts.push('< 1 minute');
+  return parts.join(' and ');
+}
+
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&#(\d+);/g, (_, c) => String.fromCharCode(parseInt(c)))
+    .replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+}
+
+async function fetchPqdiZoneList() {
+  if (pqdiZoneList) return pqdiZoneList;
+  try {
+    const html = await pqdiGet('https://www.pqdi.cc/zones');
+    const map = {};
+    // PQDI uses string slugs (e.g. /zone/maidens_eye), not numeric IDs
+    for (const m of html.matchAll(/href="\/zone\/([^"#]+)"[^>]*>\s*([^<]+?)\s*</g)) {
+      const id = m[1];
+      const norm = normalizeZoneName(decodeHtmlEntities(m[2].trim()));
+      if (norm && id) map[norm] = id;
+    }
+    pqdiZoneList = map;
+    return map;
+  } catch (e) {
+    console.error('PQDI zone list fetch error:', e.message);
+    return {};
+  }
+}
+
+async function fetchZoneSpawnData(zoneId) {
+  if (zoneSpawnCache[zoneId]) return zoneSpawnCache[zoneId];
+  try {
+    const html = await pqdiGet(`https://www.pqdi.cc/zone/${zoneId}`);
+    const spawnMap = {};
+    const respawnCounts = {};
+    for (const rowM of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+      const cells = [...rowM[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m => m[1]);
+      if (cells.length < 3) continue;
+      const respawnText = cells[2].replace(/<[^>]+>/g, '').trim();
+      const respawnSec = parseRespawnSeconds(respawnText);
+      if (!respawnSec) continue;
+      respawnCounts[respawnSec] = (respawnCounts[respawnSec] || 0) + 1;
+      for (const npcM of cells[1].matchAll(/href="\/npc\/\d+"[^>]*>\s*([^<]+?)\s*</g)) {
+        const name = decodeHtmlEntities(npcM[1].trim());
+        if (name) spawnMap[name.toLowerCase()] = respawnSec;
+      }
+    }
+    let modalRespawn = 0, maxCount = 0;
+    for (const [sec, count] of Object.entries(respawnCounts)) {
+      if (count > maxCount) { maxCount = count; modalRespawn = parseInt(sec); }
+    }
+    const result = { spawnMap, modalRespawn };
+    zoneSpawnCache[zoneId] = result;
+    return result;
+  } catch (e) {
+    console.error('PQDI zone spawn fetch error:', e.message);
+    return { spawnMap: {}, modalRespawn: 0 };
+  }
+}
+
+async function lookupZoneSpawn(zoneName) {
+  const list = await fetchPqdiZoneList();
+  const norm = normalizeZoneName(zoneName);
+  const zoneId = list[norm];
+  if (!zoneId) return null;
+  return fetchZoneSpawnData(zoneId);
+}
+
 async function fetchEffectName(id) {
   if (!id || id <= 0) return null;
   try {
@@ -2017,7 +2156,9 @@ ipcMain.handle('fetch-item', async (event, itemId, force) => {
       pr:     d.pr     || 0,  damage: d.damage || 0,
       delay:  d.delay  || 0,  slots:   d.slots   || 0,
       magic:  d.magic  || 0,  classes: d.classes || 0,  races: d.races || 0,
-      icon:   d.icon   || 0,
+      icon:   d.icon   || 0,  price:    d.price    || 0,
+      itemtype: d.itemtype !== undefined ? d.itemtype : 11,
+      nodrop:   d.nodrop   || 0,
       effects: {
         focus: focusName,
         worn:  wornName,
@@ -2226,6 +2367,112 @@ ipcMain.handle('get-equipment',    ()           => pGet('equipment',   []));
 ipcMain.handle('set-equipment',    (event, val) => pSet('equipment',   val));
 ipcMain.handle('get-desired-loot', ()           => pGet('desiredLoot', []));
 ipcMain.handle('set-desired-loot', (event, val) => pSet('desiredLoot', val));
+
+// ── Zone Drops ────────────────────────────────────────────────────────────────
+ipcMain.handle('get-zone-drops', async (event, { zoneName, force = false } = {}) => {
+  if (!zoneName) return { error: 'No zone name provided', gear: [], quest: [], valuable: [] };
+
+  let list;
+  try { list = await fetchPqdiZoneList(); }
+  catch (e) { return { error: 'Could not load zone list: ' + e.message, gear: [], quest: [], valuable: [] }; }
+
+  const norm = normalizeZoneName(zoneName);
+  const zoneId = list[norm];
+  if (!zoneId) return { error: `Zone not found on PQDI: "${zoneName}"`, gear: [], quest: [], valuable: [] };
+
+  const cacheKey = `zoneDrops_v1_${zoneId}`;
+  if (!force) {
+    const cached = db.getSetting(cacheKey);
+    if (cached) { try { return JSON.parse(cached); } catch (e) {} }
+  }
+
+  const send = (phase, done, total) => {
+    if (mainWindow) mainWindow.webContents.send('zone-drops-progress', { phase, done, total });
+  };
+
+  let zoneHtml;
+  try { zoneHtml = await pqdiGet(`https://www.pqdi.cc/zone/${zoneId}`); }
+  catch (e) { return { error: 'Zone page load failed: ' + e.message, gear: [], quest: [], valuable: [] }; }
+
+  const npcIds = [...new Set([...zoneHtml.matchAll(/href="\/npc\/(\d+)"/g)].map(m => parseInt(m[1])))];
+  send('npcs', 0, npcIds.length);
+
+  const BATCH = 8;
+  const dropMap = new Map(); // id -> name (deduplicated across all NPCs)
+  for (let i = 0; i < npcIds.length; i += BATCH) {
+    const pages = await Promise.all(
+      npcIds.slice(i, i + BATCH).map(id => pqdiGet(`https://www.pqdi.cc/npc/${id}`).catch(() => ''))
+    );
+    for (const html of pages) {
+      for (const { id, name } of parseNpcPageHtml(html).drops) {
+        if (!dropMap.has(id)) dropMap.set(id, name);
+      }
+    }
+    send('npcs', Math.min(i + BATCH, npcIds.length), npcIds.length);
+  }
+
+  const itemIds = [...dropMap.keys()];
+  send('items', 0, itemIds.length);
+
+  const allItems = [];
+  for (let i = 0; i < itemIds.length; i += BATCH) {
+    const results = await Promise.all(
+      itemIds.slice(i, i + BATCH).map(async id => {
+        const cached = db.getItemById(id);
+        if (cached && cached.itemtype !== undefined) return cached;
+        try {
+          const d = JSON.parse(await pqdiGet(`https://www.pqdi.cc/api/v1/item/${id}`));
+          if (!d || !d.Name) return null;
+          const [focusName, wornName, clickName, procName] = await Promise.all([
+            fetchEffectName(d.focuseffect), fetchEffectName(d.worneffect),
+            fetchEffectName(d.clickeffect), fetchEffectName(d.proceffect),
+          ]);
+          const item = {
+            id: d.id, name: d.Name,
+            ac: d.ac||0, hp: d.hp||0, mana: d.mana||0,
+            astr: d.astr||0, adex: d.adex||0, asta: d.asta||0,
+            aint: d.aint||0, awis: d.awis||0, aagi: d.aagi||0, acha: d.acha||0,
+            cr: d.cr||0, dr: d.dr||0, fr: d.fr||0, mr: d.mr||0, pr: d.pr||0,
+            damage: d.damage||0, delay: d.delay||0,
+            slots: d.slots||0, magic: d.magic||0, classes: d.classes||0, races: d.races||0,
+            icon: d.icon||0, price: d.price||0,
+            itemtype: d.itemtype !== undefined ? d.itemtype : 11,
+            nodrop: d.nodrop||0,
+            effects: { focus: focusName, worn: wornName, click: clickName, proc: procName },
+          };
+          db.setItem(item);
+          return item;
+        } catch (e) { return null; }
+      })
+    );
+    allItems.push(...results.filter(Boolean));
+    send('items', Math.min(i + BATCH, itemIds.length), itemIds.length);
+  }
+
+  // Filter and categorize
+  const TRASH_TYPES = new Set([14, 15, 18, 38]); // food, drink, bandage, alcohol
+  const GENERIC_IDS = new Set([
+    1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,
+    1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,
+  ]);
+  const TRASH_RE = /\b(words? of|runes? of|grimoire|pg\.|rusty|raw-?hide)\b/i;
+
+  const gear = [], quest = [], valuable = [];
+  for (const item of allItems) {
+    if (GENERIC_IDS.has(item.id) || TRASH_TYPES.has(item.itemtype) || TRASH_RE.test(item.name)) continue;
+    if (item.slots > 0) gear.push(item);
+    else quest.push(item);
+    if (item.price > 0) valuable.push(item);
+  }
+
+  gear.sort((a, b) => a.name.localeCompare(b.name));
+  quest.sort((a, b) => a.name.localeCompare(b.name));
+  valuable.sort((a, b) => (b.price || 0) - (a.price || 0));
+
+  const result = { gear, quest, valuable, zoneName, zoneId };
+  db.setSetting(cacheKey, JSON.stringify(result));
+  return result;
+});
 
 // ── Spells ────────────────────────────────────────────────────────────────────
 // Class name → 0-indexed column in spells_en.txt for that class's level field

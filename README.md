@@ -1,7 +1,8 @@
 # Erek's Everquest Parser
 
 A native Linux EverQuest log parser with DPS meter, buff/debuff timers, boss mob tracker,
-loot bidding, loot wishlist, player/friend tracking, and audio triggers. Built with Electron — no Wine required.
+loot bidding, loot wishlist, zone drop browser, mob respawn timers, player/friend tracking,
+and audio triggers. Built with Electron — no Wine required.
 
 ## Prerequisites
 
@@ -169,6 +170,23 @@ The first time you run a new version, any data from the old electron-store forma
 - **I Want This** button on mob loot items adds them to your wishlist in one click
 - Item data pulled from pqdi.cc API and cached locally; refreshed automatically when syncing a mob
 
+### Zone Drops
+- **Zone Drops sub-tab** under Character — browse every item that can drop in your current zone
+- Manual load: click **Load Zone** to fetch from PQDI (or **Refresh** to force a re-fetch); results cached in SQLite so subsequent visits are instant
+- **Gear** section — items organized by equipment slot, shown as chips; cyan left-border = usable by your class/race, dimmed = not usable
+- **Hover tooltips** on gear chips compare the drop against your currently equipped item (same stat-diff display as the wishlist)
+- **Quest Items** section — no-slot items (tongues, keys, paws, combinable materials, etc.) listed flat with gold border
+- **Valuable** section — any drop with a vendor value above the configurable threshold (default 50pp), sorted by price with the slot noted; purple border
+- **Filter pills** — switch between All, Usable by me, Not usable, Quest, or Valuable in one click
+- Threshold input next to the filter pills: change what counts as "valuable" (saved per session)
+
+### Mob Respawn Timers
+- When you kill a mob, a countdown chip appears in the **Respawn Timers** panel on the dashboard (between Target and DPS panels)
+- Chip color indicates time remaining: cyan > 5 min, gold 2–5 min, orange 30 s–2 min, red < 30 s, blinking < 10 s
+- Chip turns green ("UP") when the mob is back; auto-removes 15 seconds later; click any chip to dismiss early
+- **Modal respawn time** shown next to the zone name (e.g. `· 6 minutes`) — pulled from PQDI spawn table for the current zone
+- Enable/disable toggle in the panel header; state persisted across restarts
+
 ### Player & Friend Tracking
 
 Player records are automatically created when a character is seen speaking in group chat,
@@ -197,6 +215,9 @@ Shown at the top of the Players tab:
 - Use **PQDI Spell Lookup** to auto-fill cast text from spell data
 - Per-trigger enable/disable toggle
 - Test button to preview TTS
+
+### Window & Session
+- Window size and position are automatically saved on close and restored on next launch
 
 ### Feature Toggles
 Heavy features can be individually disabled from the Setup tab if they impact performance:
